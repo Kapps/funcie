@@ -27,7 +27,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		pubSub.EXPECT().Channel().Return(messageChannel).Times(3)
 		pubSub.EXPECT().Close().Return(nil).Once()
 
-		redisClient.On("Subscribe", ctx, channelName).Return(pubSub).Once()
+		redisClient.EXPECT().Subscribe(ctx, channelName).Return(pubSub).Once()
 
 		go func() {
 			defer close(completedChannel)
@@ -41,15 +41,14 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		msg2 := NewMessage([]byte("msg2"), time.Minute)
 
 		redisClient.EXPECT().BRPush(
-			//redisClient.On("BRPush",
 			ctx,
 			GetResponseKeyForMessage(msg1.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg1.ID, []byte("resp")))),
 		).Return(&redis.IntCmd{}).Once()
+
 		messageChannel <- &redis.Message{
 			Payload: string(MustSerialize(msg1)),
 		}
-
 		require.Empty(t, completedChannel)
 
 		redisClient.EXPECT().BRPush(
@@ -57,10 +56,10 @@ func TestRedisConsumer_Consume(t *testing.T) {
 			GetResponseKeyForMessage(msg2.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg2.ID, []byte("resp")))),
 		).Return(&redis.IntCmd{}).Once()
+
 		messageChannel <- &redis.Message{
 			Payload: string(MustSerialize(msg2)),
 		}
-
 		require.Empty(t, completedChannel)
 
 		close(messageChannel)
