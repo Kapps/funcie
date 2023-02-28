@@ -24,62 +24,6 @@ func (_m *RedisConsumeClient) EXPECT() *RedisConsumeClient_Expecter {
 	return &RedisConsumeClient_Expecter{mock: &_m.Mock}
 }
 
-// BRPush provides a mock function with given fields: ctx, key, values
-func (_m *RedisConsumeClient) BRPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
-	var _ca []interface{}
-	_ca = append(_ca, ctx, key)
-	_ca = append(_ca, values...)
-	ret := _m.Called(_ca...)
-
-	var r0 *redis.IntCmd
-	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) *redis.IntCmd); ok {
-		r0 = rf(ctx, key, values...)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*redis.IntCmd)
-		}
-	}
-
-	return r0
-}
-
-// RedisConsumeClient_BRPush_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BRPush'
-type RedisConsumeClient_BRPush_Call struct {
-	*mock.Call
-}
-
-// BRPush is a helper method to define mock.On call
-//   - ctx context.Context
-//   - key string
-//   - values ...interface{}
-func (_e *RedisConsumeClient_Expecter) BRPush(ctx interface{}, key interface{}, values ...interface{}) *RedisConsumeClient_BRPush_Call {
-	return &RedisConsumeClient_BRPush_Call{Call: _e.mock.On("BRPush",
-		append([]interface{}{ctx, key}, values...)...)}
-}
-
-func (_c *RedisConsumeClient_BRPush_Call) Run(run func(ctx context.Context, key string, values ...interface{})) *RedisConsumeClient_BRPush_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		variadicArgs := make([]interface{}, len(args)-2)
-		for i, a := range args[2:] {
-			if a != nil {
-				variadicArgs[i] = a.(interface{})
-			}
-		}
-		run(args[0].(context.Context), args[1].(string), variadicArgs...)
-	})
-	return _c
-}
-
-func (_c *RedisConsumeClient_BRPush_Call) Return(_a0 *redis.IntCmd) *RedisConsumeClient_BRPush_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *RedisConsumeClient_BRPush_Call) RunAndReturn(run func(context.Context, string, ...interface{}) *redis.IntCmd) *RedisConsumeClient_BRPush_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Publish provides a mock function with given fields: ctx, channel, message
 func (_m *RedisConsumeClient) Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd {
 	ret := _m.Called(ctx, channel, message)
@@ -122,6 +66,62 @@ func (_c *RedisConsumeClient_Publish_Call) Return(_a0 *redis.IntCmd) *RedisConsu
 }
 
 func (_c *RedisConsumeClient_Publish_Call) RunAndReturn(run func(context.Context, string, interface{}) *redis.IntCmd) *RedisConsumeClient_Publish_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RPush provides a mock function with given fields: ctx, key, values
+func (_m *RedisConsumeClient) RPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd {
+	var _ca []interface{}
+	_ca = append(_ca, ctx, key)
+	_ca = append(_ca, values...)
+	ret := _m.Called(_ca...)
+
+	var r0 *redis.IntCmd
+	if rf, ok := ret.Get(0).(func(context.Context, string, ...interface{}) *redis.IntCmd); ok {
+		r0 = rf(ctx, key, values...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.IntCmd)
+		}
+	}
+
+	return r0
+}
+
+// RedisConsumeClient_RPush_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RPush'
+type RedisConsumeClient_RPush_Call struct {
+	*mock.Call
+}
+
+// RPush is a helper method to define mock.On call
+//   - ctx context.Context
+//   - key string
+//   - values ...interface{}
+func (_e *RedisConsumeClient_Expecter) RPush(ctx interface{}, key interface{}, values ...interface{}) *RedisConsumeClient_RPush_Call {
+	return &RedisConsumeClient_RPush_Call{Call: _e.mock.On("RPush",
+		append([]interface{}{ctx, key}, values...)...)}
+}
+
+func (_c *RedisConsumeClient_RPush_Call) Run(run func(ctx context.Context, key string, values ...interface{})) *RedisConsumeClient_RPush_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]interface{}, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(interface{})
+			}
+		}
+		run(args[0].(context.Context), args[1].(string), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *RedisConsumeClient_RPush_Call) Return(_a0 *redis.IntCmd) *RedisConsumeClient_RPush_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *RedisConsumeClient_RPush_Call) RunAndReturn(run func(context.Context, string, ...interface{}) *redis.IntCmd) *RedisConsumeClient_RPush_Call {
 	_c.Call.Return(run)
 	return _c
 }

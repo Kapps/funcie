@@ -20,13 +20,19 @@ func (_m *RedisPubSub) EXPECT() *RedisPubSub_Expecter {
 	return &RedisPubSub_Expecter{mock: &_m.Mock}
 }
 
-// Channel provides a mock function with given fields:
-func (_m *RedisPubSub) Channel() <-chan *redis.Message {
-	ret := _m.Called()
+// Channel provides a mock function with given fields: opts
+func (_m *RedisPubSub) Channel(opts ...redis.ChannelOption) <-chan *redis.Message {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 <-chan *redis.Message
-	if rf, ok := ret.Get(0).(func() <-chan *redis.Message); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(...redis.ChannelOption) <-chan *redis.Message); ok {
+		r0 = rf(opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(<-chan *redis.Message)
@@ -42,13 +48,21 @@ type RedisPubSub_Channel_Call struct {
 }
 
 // Channel is a helper method to define mock.On call
-func (_e *RedisPubSub_Expecter) Channel() *RedisPubSub_Channel_Call {
-	return &RedisPubSub_Channel_Call{Call: _e.mock.On("Channel")}
+//   - opts ...redis.ChannelOption
+func (_e *RedisPubSub_Expecter) Channel(opts ...interface{}) *RedisPubSub_Channel_Call {
+	return &RedisPubSub_Channel_Call{Call: _e.mock.On("Channel",
+		append([]interface{}{}, opts...)...)}
 }
 
-func (_c *RedisPubSub_Channel_Call) Run(run func()) *RedisPubSub_Channel_Call {
+func (_c *RedisPubSub_Channel_Call) Run(run func(opts ...redis.ChannelOption)) *RedisPubSub_Channel_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		variadicArgs := make([]redis.ChannelOption, len(args)-0)
+		for i, a := range args[0:] {
+			if a != nil {
+				variadicArgs[i] = a.(redis.ChannelOption)
+			}
+		}
+		run(variadicArgs...)
 	})
 	return _c
 }
@@ -58,7 +72,7 @@ func (_c *RedisPubSub_Channel_Call) Return(_a0 <-chan *redis.Message) *RedisPubS
 	return _c
 }
 
-func (_c *RedisPubSub_Channel_Call) RunAndReturn(run func() <-chan *redis.Message) *RedisPubSub_Channel_Call {
+func (_c *RedisPubSub_Channel_Call) RunAndReturn(run func(...redis.ChannelOption) <-chan *redis.Message) *RedisPubSub_Channel_Call {
 	_c.Call.Return(run)
 	return _c
 }

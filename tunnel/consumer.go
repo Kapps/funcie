@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/exp/slog"
 	"time"
 )
 
@@ -38,15 +37,23 @@ type Consumer interface {
 }
 
 type RedisPubSub interface {
-	Channel() <-chan *redis.Message
+	Channel(opts ...redis.ChannelOption) <-chan *redis.Message
 	Close() error
 }
 
 // RedisConsumeClient is the interface that wraps the redis client methods used by the consumer.
 type RedisConsumeClient interface {
 	Subscribe(ctx context.Context, channels ...string) RedisPubSub
-	BRPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd
+	RPush(ctx context.Context, key string, values ...interface{}) *redis.IntCmd
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
+}
+
+type redisConsumeClient struct {
+	*redis.Client
+}
+
+func (c *redisConsumeClient) Subscribe(ctx context.Context, channels ...string) RedisPubSub {
+	return c.Client.Subscribe(ctx, channels...)
 }
 
 // RedisConsumer represents a consumer that consumes messages from a Redis channel.
@@ -56,7 +63,19 @@ type RedisConsumer struct {
 }
 
 // NewRedisConsumer creates a new RedisConsumer that consumes messages from the given channel.
-func NewRedisConsumer(redisClient RedisConsumeClient, channelName string) Consumer {
+// This implementation takes in a *redis.Client instead of a RedisConsumeClient so that it can be used with a real Redis client.
+func NewRedisConsumer(redisClient *redis.Client, channelName string) Consumer {
+	wrappedRedis := &redisConsumeClient{
+		Client: redisClient,
+	}
+	return &RedisConsumer{
+		redisClient: wrappedRedis,
+		channelName: channelName,
+	}
+}
+
+// NewRedisConsumerWithClient creates a new RedisConsumer that consumes messages from the given channel.
+func NewRedisConsumerWithClient(redisClient RedisConsumeClient, channelName string) Consumer {
 	return &RedisConsumer{
 		redisClient: redisClient,
 		channelName: channelName,
@@ -66,12 +85,7 @@ func NewRedisConsumer(redisClient RedisConsumeClient, channelName string) Consum
 // Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
 func (c *RedisConsumer) Consume(ctx context.Context, handler Handler) error {
 	pubSub := c.redisClient.Subscribe(ctx, c.channelName)
-	defer func() {
-		err := pubSub.Close()
-		if err != nil {
-			slog.Error("error closing pubsub", err)
-		}
-	}()
+	defer CloseOrLog(pubSub)
 
 	for {
 		select {
@@ -97,7 +111,7 @@ func (c *RedisConsumer) Consume(ctx context.Context, handler Handler) error {
 				return fmt.Errorf("error formatting response: %w", err)
 			}
 
-			cmd := c.redisClient.BRPush(ctx, responseKey, responseData)
+			cmd := c.redisClient.RPush(ctx, responseKey, responseData)
 			if err := cmd.Err(); err != nil {
 				return fmt.Errorf("error pushing response to queue: %w", err)
 			}

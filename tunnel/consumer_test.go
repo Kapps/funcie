@@ -16,7 +16,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 	ctx := context.Background()
 	redisClient := mocks.NewRedisConsumeClient(t)
 	channelName := faker.Word()
-	consumer := NewRedisConsumer(redisClient, channelName)
+	consumer := NewRedisConsumerWithClient(redisClient, channelName)
 
 	t.Run("should consume a message from the channel", func(t *testing.T) {
 		t.Parallel()
@@ -40,7 +40,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		msg1 := NewMessage([]byte("msg1"), time.Minute)
 		msg2 := NewMessage([]byte("msg2"), time.Minute)
 
-		redisClient.EXPECT().BRPush(
+		redisClient.EXPECT().RPush(
 			ctx,
 			GetResponseKeyForMessage(msg1.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg1.ID, []byte("resp")))),
@@ -51,7 +51,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		}
 		require.Empty(t, completedChannel)
 
-		redisClient.EXPECT().BRPush(
+		redisClient.EXPECT().RPush(
 			ctx,
 			GetResponseKeyForMessage(msg2.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg2.ID, []byte("resp")))),
