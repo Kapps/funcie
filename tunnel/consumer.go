@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/exp/slog"
 	"time"
 )
 
@@ -85,24 +86,27 @@ func NewRedisConsumerWithClient(redisClient RedisConsumeClient, channelName stri
 // Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
 func (c *RedisConsumer) Consume(ctx context.Context, handler Handler) error {
 	pubSub := c.redisClient.Subscribe(ctx, c.channelName)
-	defer CloseOrLog(pubSub)
+	defer CloseOrLog(fmt.Sprintf("pubsub channel %v", c.channelName), pubSub)
 
 	for {
 		select {
 		case <-ctx.Done():
+			slog.Warn("context cancelled", "err", ctx.Err())
 			return ctx.Err()
 		case msg, ok := <-pubSub.Channel():
 			if !ok {
-				return nil
+				slog.Debug("pubsub channel closed")
+				break
 			}
 
 			message, err := parseMessage(msg.Payload)
 			if err != nil {
-				return err
+				return fmt.Errorf("error parsing message: %w", err)
 			}
+
 			response, err := handler(ctx, message)
 			if err != nil {
-				return err
+				return fmt.Errorf("error handling message: %w", err)
 			}
 
 			responseKey := GetResponseKeyForMessage(message.ID)

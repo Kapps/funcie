@@ -28,8 +28,10 @@ type Closable interface {
 }
 
 // CloseOrLog closes the given closable, logging any errors (but continuing execution).
-func CloseOrLog(c Closable) {
+func CloseOrLog(name string, c Closable) {
 	if err := c.Close(); err != nil {
 		slog.Error("error closing", err)
+	} else {
+		slog.Debug("closed resource", "resource", name)
 	}
 }

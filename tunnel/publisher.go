@@ -83,22 +83,22 @@ func (p *RedisPublisher) Publish(ctx context.Context, message *Message) (*Respon
 	}
 
 	// Wait for a response from the consumer.
-	resp, err := p.redisClient.BRPop(ctx, message.Ttl, message.ID).Result()
+	responseKey := GetResponseKeyForMessage(message.ID)
+	resp, err := p.redisClient.BRPop(ctx, message.Ttl, responseKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get response within ttl: %w", err)
 	}
 
 	// The response should be a list of two items, the first being the key and the second being the value.
+	if len(resp) == 0 {
+		return nil, fmt.Errorf("no response received within ttl of %s", message.Ttl)
+	}
+
 	if len(resp) != 2 {
-		return nil, fmt.Errorf("expected response to be a list of two items, got %d", len(resp))
+		panic(fmt.Sprintf("expected response to be a list of two items, got %d", len(resp)))
 	}
 
-	// The key should be the message ID.
-	if resp[0] != message.ID {
-		return nil, fmt.Errorf("expected response key to be %s, got %s", message.ID, resp[0])
-	}
-
-	// The value should be the response data.
+	// First entry is key; value should be the serialized response data.
 	data := []byte(resp[1])
 
 	var response *Response

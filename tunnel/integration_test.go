@@ -6,6 +6,9 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
+	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -17,12 +20,12 @@ func TestIntegration(t *testing.T) {
 	consumerClient := redis.NewClient(&redis.Options{
 		Addr: redisServer.Addr(),
 	})
-	defer CloseOrLog(consumerClient)
+	defer CloseOrLog("consumer client", consumerClient)
 
 	producerClient := redis.NewClient(&redis.Options{
 		Addr: redisServer.Addr(),
 	})
-	defer CloseOrLog(producerClient)
+	defer CloseOrLog("producer client", producerClient)
 
 	producer := NewRedisPublisher(producerClient, "test-channel")
 	consumer := NewRedisConsumer(consumerClient, "test-channel")
@@ -41,30 +44,47 @@ func TestIntegration(t *testing.T) {
 	consumerCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	done := false
+
 	go func() {
 		err := consumer.Consume(consumerCtx, func(ctx context.Context, message *Message) (*Response, error) {
 			return NewResponse(message.ID, []byte("resp")), nil
 		})
-		require.NoError(t, err)
+		require.True(t, done)
+		require.Equal(t, context.Canceled, err)
 	}()
 
 	time.Sleep(100 * time.Millisecond)
+	log.Println("Starting to publish messages...")
 
 	// Now we should be able to publish
 	resp, err := producer.Publish(ctx, first)
 	require.NoError(t, err)
-	require.True(t, RoughCompare(expectedFirstResponse, resp))
+	RequireRoughCompare(t, expectedFirstResponse, resp)
 
 	// And again
 	resp, err = producer.Publish(ctx, second)
 	require.NoError(t, err)
-	require.True(t, RoughCompare(expectedSecondResponse, resp))
+	RequireRoughCompare(t, expectedSecondResponse, resp)
 
 	// Then, cancel the consumer
+	log.Println("Cancelling consumer...")
+	done = true
 	cancel()
 	time.Sleep(100 * time.Millisecond)
 
 	// And try to publish again
 	_, err = producer.Publish(ctx, first)
 	require.ErrorIs(t, err, ErrNoActiveConsumer)
+}
+
+func TestMain(m *testing.M) {
+	programLevel := new(slog.LevelVar)
+	h := slog.HandlerOptions{
+		AddSource: true,
+		Level:     programLevel,
+	}.NewJSONHandler(os.Stdout)
+	slog.SetDefault(slog.New(h))
+	programLevel.Set(slog.LevelDebug)
+	m.Run()
 }
