@@ -28,14 +28,16 @@ use long polling or eventing to receive messages.
 
 ## Consumer State
 
-POTENTIALLY. This may be unnecessary as the backend should have a way
-of understanding if a message is delivered.
-
 Because the system is meant to have standard execution within the Lambda
-itself until a local function is active, we need to store the consumer
-state of each active consumer. If a client disconnects or crashes,
-the Lambda should fail any outstanding requests and handle all future
-requests itself.
+itself until a local function is active, each backend should know whether
+a message was able to reach any consumer.
+
+If a consumer disconnects or crashes, the Lambda should fail any outstanding
+requests and handle all future requests itself.
+
+This means that the default state of the Lambda should be to handle all
+requests itself, and only forward requests to a local function if it is
+available.
 
 In addition, a client reconnecting should only process requests that
 come in _after_ the client reconnects, not retroactively process requests
