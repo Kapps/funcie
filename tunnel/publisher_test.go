@@ -56,8 +56,8 @@ func TestRedisPublisher_Publish(t *testing.T) {
 		redisClient.On("Publish", ctx, channel, serializedMessage).Return(publishResult)
 
 		popResult := redis.NewStringSliceCmd(ctx)
-		popResult.SetVal([]string{message.ID, string(serializedResponse)})
-		redisClient.On("BRPop", ctx, time.Second, message.ID).Return(popResult)
+		popResult.SetVal([]string{GetResponseKeyForMessage(message.ID), string(serializedResponse)})
+		redisClient.On("BRPop", ctx, time.Second, GetResponseKeyForMessage(message.ID)).Return(popResult)
 
 		resp, err := publisher.Publish(ctx, message)
 		require.NoError(t, err)

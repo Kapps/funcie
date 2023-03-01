@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrPubSubChannelClosed = fmt.Errorf("pubsub channel closed")
+
 // Response represents a response to a message sent to a tunnel.
 type Response struct {
 	// ID is the unique identifier for this message.
@@ -96,7 +98,7 @@ func (c *RedisConsumer) Consume(ctx context.Context, handler Handler) error {
 		case msg, ok := <-pubSub.Channel():
 			if !ok {
 				slog.Debug("pubsub channel closed")
-				break
+				return ErrPubSubChannelClosed
 			}
 
 			message, err := parseMessage(msg.Payload)
