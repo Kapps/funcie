@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang.org/x/exp/slog"
+	"os"
 )
 
 // GetResponseKeyForMessage returns the Redis key for the response of a message
@@ -34,4 +35,9 @@ func CloseOrLog(name string, c Closable) {
 	} else {
 		slog.Debug("closed resource", "resource", name)
 	}
+}
+
+// IsRunningWithLambda returns true if the current process is running in AWS Lambda.
+func IsRunningWithLambda() bool {
+	return os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != ""
 }
