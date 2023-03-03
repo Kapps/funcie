@@ -1,11 +1,11 @@
-package tunnel_test
+package funcie_test
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	. "funcie/tunnel"
-	"funcie/tunnel/mocks"
+	. "github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/go-faker/faker/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"

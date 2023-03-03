@@ -4,8 +4,8 @@ package mocks
 
 import (
 	context "context"
-	tunnel "funcie/tunnel"
 
+	funcie "github.com/Kapps/funcie/pkg/funcie"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,23 +23,23 @@ func (_m *Publisher) EXPECT() *Publisher_Expecter {
 }
 
 // Publish provides a mock function with given fields: ctx, message
-func (_m *Publisher) Publish(ctx context.Context, message *tunnel.Message) (*tunnel.Response, error) {
+func (_m *Publisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	ret := _m.Called(ctx, message)
 
-	var r0 *tunnel.Response
+	var r0 *funcie.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *tunnel.Message) (*tunnel.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) (*funcie.Response, error)); ok {
 		return rf(ctx, message)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *tunnel.Message) *tunnel.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) *funcie.Response); ok {
 		r0 = rf(ctx, message)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*tunnel.Response)
+			r0 = ret.Get(0).(*funcie.Response)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *tunnel.Message) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *funcie.Message) error); ok {
 		r1 = rf(ctx, message)
 	} else {
 		r1 = ret.Error(1)
@@ -55,24 +55,24 @@ type Publisher_Publish_Call struct {
 
 // Publish is a helper method to define mock.On call
 //   - ctx context.Context
-//   - message *tunnel.Message
+//   - message *funcie.Message
 func (_e *Publisher_Expecter) Publish(ctx interface{}, message interface{}) *Publisher_Publish_Call {
 	return &Publisher_Publish_Call{Call: _e.mock.On("Publish", ctx, message)}
 }
 
-func (_c *Publisher_Publish_Call) Run(run func(ctx context.Context, message *tunnel.Message)) *Publisher_Publish_Call {
+func (_c *Publisher_Publish_Call) Run(run func(ctx context.Context, message *funcie.Message)) *Publisher_Publish_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*tunnel.Message))
+		run(args[0].(context.Context), args[1].(*funcie.Message))
 	})
 	return _c
 }
 
-func (_c *Publisher_Publish_Call) Return(_a0 *tunnel.Response, _a1 error) *Publisher_Publish_Call {
+func (_c *Publisher_Publish_Call) Return(_a0 *funcie.Response, _a1 error) *Publisher_Publish_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Publisher_Publish_Call) RunAndReturn(run func(context.Context, *tunnel.Message) (*tunnel.Response, error)) *Publisher_Publish_Call {
+func (_c *Publisher_Publish_Call) RunAndReturn(run func(context.Context, *funcie.Message) (*funcie.Response, error)) *Publisher_Publish_Call {
 	_c.Call.Return(run)
 	return _c
 }

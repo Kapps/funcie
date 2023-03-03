@@ -5,8 +5,9 @@ package mocks
 import (
 	context "context"
 
-	redis "github.com/redis/go-redis/v9"
 	mock "github.com/stretchr/testify/mock"
+
+	redis "github.com/redis/go-redis/v9"
 
 	time "time"
 )

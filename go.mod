@@ -1,4 +1,4 @@
-module funcie
+module github.com/Kapps/funcie
 
 go 1.20
 

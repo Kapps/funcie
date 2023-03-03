@@ -1,7 +1,7 @@
-package tunnel_test
+package funcie_test
 
 import (
-	. "funcie/tunnel"
+	. "github.com/Kapps/funcie/pkg/funcie"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
