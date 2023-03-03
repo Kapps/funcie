@@ -36,7 +36,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		go func() {
 			defer close(completedChannel)
 			err := consumer.Consume(consumerCtx, func(ctx context.Context, message *Message) (*Response, error) {
-				return NewResponse(message.ID, []byte("resp")), nil
+				return NewResponse(message.ID, []byte("resp"), nil), nil
 			})
 			require.Equal(t, ErrPubSubChannelClosed, err)
 		}()
@@ -47,7 +47,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		redisClient.EXPECT().RPush(
 			consumerCtx,
 			GetResponseKeyForMessage(msg1.ID),
-			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg1.ID, []byte("resp")))),
+			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg1.ID, []byte("resp"), nil))),
 		).Return(&redis.IntCmd{}).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
@@ -58,7 +58,7 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		redisClient.EXPECT().RPush(
 			consumerCtx,
 			GetResponseKeyForMessage(msg2.ID),
-			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg2.ID, []byte("resp")))),
+			mock.MatchedBy(RoughCompareMatcherJson(NewResponse(msg2.ID, []byte("resp"), nil))),
 		).Return(&redis.IntCmd{}).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{

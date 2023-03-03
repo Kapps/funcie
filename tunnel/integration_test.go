@@ -33,8 +33,8 @@ func TestIntegration(t *testing.T) {
 	first := NewMessage([]byte("first"), time.Minute)
 	second := NewMessage([]byte("second"), time.Minute)
 
-	expectedFirstResponse := NewResponse(first.ID, []byte("resp"))
-	expectedSecondResponse := NewResponse(second.ID, []byte("resp"))
+	expectedFirstResponse := NewResponse(first.ID, []byte("resp"), nil)
+	expectedSecondResponse := NewResponse(second.ID, []byte("resp"), nil)
 
 	// No consumer yet, so this should fail with ErrNoConsumer
 	_, err := producer.Publish(ctx, first)
@@ -48,7 +48,7 @@ func TestIntegration(t *testing.T) {
 
 	go func() {
 		err := consumer.Consume(consumerCtx, func(ctx context.Context, message *Message) (*Response, error) {
-			return NewResponse(message.ID, []byte("resp")), nil
+			return NewResponse(message.ID, []byte("resp"), nil), nil
 		})
 		require.True(t, done)
 		require.Equal(t, context.Canceled, err)

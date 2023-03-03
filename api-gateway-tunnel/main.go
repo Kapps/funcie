@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"funcie/tunnel"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/redis/go-redis/v9"
+	"os"
 )
 
 type Response struct {
@@ -14,7 +17,11 @@ type Response struct {
 
 func HandleRequest(ctx context.Context, event events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
 	resp := Response{
-		Greeting: fmt.Sprintf("Hello %s!", event.QueryStringParameters["name"]),
+		Greeting: fmt.Sprintf("Hello %s -- yay!", event.QueryStringParameters["name"]),
+	}
+
+	if event.QueryStringParameters["error"] == "true" {
+		return events.LambdaFunctionURLResponse{}, errors.New("error")
 	}
 
 	body, err := json.Marshal(resp)
@@ -29,5 +36,11 @@ func HandleRequest(ctx context.Context, event events.LambdaFunctionURLRequest) (
 }
 
 func main() {
-	tunnel.Start(HandleRequest)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("FUNCIE_REDIS_ADDR"),
+	})
+	publisher := tunnel.NewRedisPublisher(redisClient, "funcie:requests")
+	consumer := tunnel.NewRedisConsumer(redisClient, "funcie:requests")
+	tunnel := tunnel.NewLambdaTunnel(HandleRequest, publisher, consumer)
+	tunnel.Start()
 }

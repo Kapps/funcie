@@ -15,18 +15,23 @@ var ErrPubSubChannelClosed = fmt.Errorf("pubsub channel closed")
 type Response struct {
 	// ID is the unique identifier for this message.
 	ID string `json:"id"`
-	// Data is the actual message payload.
+	// Data is the actual message payload, or nil if an error occurred.
+	// Exactly one of Data or Error are not nil.
 	Data []byte `json:"data"`
+	// Error is the error that occurred, or nil if no error occurred.
+	// Exactly one of Data or Error are not nil.
+	Error error `json:"error"`
 	// Received is the time the response was received.
 	Received time.Time `json:"received"`
 }
 
 // NewResponse creates a new response with the given data and the current time as the received time.
-func NewResponse(id string, data []byte) *Response {
+func NewResponse(id string, data []byte, error error) *Response {
 	return &Response{
 		ID:       id,
 		Data:     data,
 		Received: time.Now().Truncate(time.Millisecond),
+		Error:    error,
 	}
 }
 

@@ -47,7 +47,7 @@ func TestRedisPublisher_Publish(t *testing.T) {
 		serializedMessage, err := json.Marshal(message)
 		require.NoError(t, err)
 
-		response := NewResponse(message.ID, []byte("hello"))
+		response := NewResponse(message.ID, []byte("hello"), nil)
 		serializedResponse, err := json.Marshal(response)
 		require.NoError(t, err)
 

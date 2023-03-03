@@ -43,7 +43,7 @@ func newId() string {
 type Publisher interface {
 	// Publish publishes a message to the tunnel, synchronously waiting for a response from the other side.
 	// If no consumer is active, ErrNoConsumerActive is returned.
-	Publish(ctx context.Context, message Message) (*Response, error)
+	Publish(ctx context.Context, message *Message) (*Response, error)
 }
 
 type RedisPublishClient interface {
