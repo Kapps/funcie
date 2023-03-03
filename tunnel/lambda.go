@@ -60,14 +60,14 @@ func (t *lambdaTunnel) beginProxyConsume() {
 	slog.Info("created proxy handler")
 
 	err := t.consumer.Consume(context.Background(), func(ctx context.Context, message *Message) (*Response, error) {
-		slog.Info("received message from tunnel", "message", string(message.Data))
+		slog.Debug("received message from tunnel", "message", string(message.Data))
 
 		// Invoke the handler.
 		resp, err := localHandler.Invoke(ctx, message.Data)
 		response := NewResponse(message.ID, resp, err)
 
 		// Publish the response to the tunnel.
-		slog.Info("returning response to tunnel", "response", response, "err", err)
+		slog.Debug("returning response to tunnel", "response", response, "err", err)
 
 		return response, nil
 	})
@@ -86,7 +86,7 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 	slog.Info("created lambda handler")
 
 	wrapper := func(ctx context.Context, message *json.RawMessage) (*json.RawMessage, error) {
-		slog.Info("publishing message to tunnel", "payload", message)
+		slog.Debug("publishing message to tunnel", "payload", message)
 
 		bytes, err := message.MarshalJSON()
 		if err != nil {
