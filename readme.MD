@@ -1,19 +1,26 @@
 # Funcie
 
-Funcie is a framework for local development of AWS Lambda or other serverless functions. 
+Funcie is a framework for easier local development of AWS Lambda or other serverless functions. 
 It is heavily inspired by the Live Lambda Development from SST (https://docs.sst.dev/live-lambda-development).
 
 It works by creating a tunnel where messages can pass through between
 a local environment and a Lambda. Then, when a Lambda is invoked, it
 checks if there is a local function connected to that tunnel, and if so,
-it forwards the request to that local function. Once the local function
-returns, the response is returned to the Lambda which forwards it back
+forwards the request to that local function handler. Once the local function
+returns, the response is returned to the Lambda which sends it back
 to the cloud provider.
 
-This means that you can use Step Functions, triggers, and any other approach
-for invoking the Lambda, as the invocation is separated from the implementation.
+This means that you can use Step Functions, triggers, and any other method of 
+invoking the Lambda, as the invocation is separated from the implementation.
 In addition, local changes are immediately applied without needing to
-republish anything.
+republish anything, and you can debug and step through your code as normal.
+
+When there is no local function connected, the Lambda will simply execute
+as normal, and the local function will not be invoked. Once a local function
+is connected, the Lambda will forward all requests to the local function
+until the local function disconnects.
+
+Currently only Go is supported.
 
 ## Backends
 
@@ -22,9 +29,13 @@ Various backends will exist to allow for flexibility in how to send
 messages back and forth.
 
 ### Redis
-The first backend that will be supported is a Redis instance.
-The sender will use Redis as a queue, while the receiver will either
-use long polling or eventing to receive messages.
+Currently the only supported backend is Redis.
+
+The Redis backend uses a Redis instance as a queue to send messages
+between the Lambda and the local environment using the PUBSUB mechanism.
+
+Responses are stored as Redis keys, and the Lambda will wait for a
+response to be available before returning.
 
 ## Consumer State
 

@@ -108,7 +108,7 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 				rawResp = &json.RawMessage{}
 				err = rawResp.UnmarshalJSON(res.Data)
 				if err != nil {
-					return nil, fmt.Errorf("failed to marshal response: %w", err)
+					return nil, fmt.Errorf("failed to marshal response from proxied implementation: %w", err)
 				}
 			}
 
@@ -124,9 +124,12 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 			return nil, fmt.Errorf("failed to invoke handler: %w", err)
 		}
 
-		err = rawResp.UnmarshalJSON(implRes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal response: %w", err)
+		if len(implRes) > 0 {
+			rawResp = &json.RawMessage{}
+			err = rawResp.UnmarshalJSON(implRes)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal response from direct implementation: %w", err)
+			}
 		}
 
 		return rawResp, nil
