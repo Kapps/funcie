@@ -2,6 +2,8 @@ package tunnel_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	. "funcie/tunnel"
 	"funcie/tunnel/mocks"
 	"github.com/go-faker/faker/v4"
@@ -70,4 +72,30 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		ExpectReceiveFromChannel(t, completedChannel)
 	})
+}
+
+func TestResponseUnmarshal(t *testing.T) {
+	t.Parallel()
+
+	response := NewResponse("id", []byte("data"), nil)
+	data, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	var resp Response
+	err = json.Unmarshal(data, &resp)
+	require.NoError(t, err)
+	require.Equal(t, response, &resp)
+}
+
+func TestResponseUnmarshal_WithError(t *testing.T) {
+	t.Parallel()
+
+	response := NewResponse("id", nil, errors.New("error"))
+	data, err := json.Marshal(response)
+	require.NoError(t, err)
+
+	var resp Response
+	err = json.Unmarshal(data, &resp)
+	require.NoError(t, err)
+	require.Equal(t, response, &resp)
 }

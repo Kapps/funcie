@@ -7,7 +7,7 @@ type proxyErrorJsonWrapper ProxyError
 // ProxyError is an error that can be sent through a tunnel.
 type ProxyError struct {
 	// Message is the error message.
-	Message string `json:"message"`
+	Message string `json:"message,omitempty"`
 }
 
 // NewProxyError creates a new ProxyError with the given message.

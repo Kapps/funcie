@@ -37,6 +37,27 @@ func TestProxyError_UnmarshalJSON_InvalidJson(t *testing.T) {
 	require.Error(t, err)
 }
 
+/*func TestProxyError_UnmarshalJSON_Null(t *testing.T) {
+	proxyError := &ProxyError{}
+	err := proxyError.UnmarshalJSON([]byte("null"))
+	require.NoError(t, err)
+	require.Nil(t, proxyError)
+}
+
+func TestProxyError_UnmarshalJSON_Empty(t *testing.T) {
+	proxyError := &ProxyError{}
+	err := proxyError.UnmarshalJSON([]byte(""))
+	require.NoError(t, err)
+	require.Nil(t, proxyError)
+}
+
+func TestProxyError_UnmarshalJSON_NilData(t *testing.T) {
+	proxyError := &ProxyError{}
+	err := proxyError.UnmarshalJSON(nil)
+	require.NoError(t, err)
+	require.Nil(t, proxyError)
+}*/
+
 func TestNewProxyErrorFromError(t *testing.T) {
 	proxyError := NewProxyErrorFromError(nil)
 	require.Nil(t, proxyError)

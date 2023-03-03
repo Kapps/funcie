@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/redis/go-redis/v9"
 	"os"
+	"strings"
 )
 
 type Response struct {
@@ -16,12 +17,13 @@ type Response struct {
 }
 
 func HandleRequest(ctx context.Context, event events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
+	name := event.QueryStringParameters["name"]
 	resp := Response{
-		Greeting: fmt.Sprintf("Hello %s -- yay!", event.QueryStringParameters["name"]),
+		Greeting: fmt.Sprintf("Hello %s -- yay!", name),
 	}
 
-	if event.QueryStringParameters["error"] == "true" {
-		return events.LambdaFunctionURLResponse{}, errors.New("error")
+	if strings.ToLower(event.QueryStringParameters["error"]) == "true" {
+		return events.LambdaFunctionURLResponse{}, errors.New("error :(")
 	}
 
 	body, err := json.Marshal(resp)

@@ -17,10 +17,10 @@ type Response struct {
 	ID string `json:"id"`
 	// Data is the actual message payload, or nil if an error occurred.
 	// Exactly one of Data or Error are not nil.
-	Data []byte `json:"data"`
+	Data []byte `json:"data,omitempty"`
 	// Error is the error that occurred, or nil if no error occurred.
 	// Exactly one of Data or Error are not nil.
-	Error error `json:"error"`
+	Error *ProxyError `json:"error,omitempty"`
 	// Received is the time the response was received.
 	Received time.Time `json:"received"`
 }
@@ -31,7 +31,7 @@ func NewResponse(id string, data []byte, error error) *Response {
 		ID:       id,
 		Data:     data,
 		Received: time.Now().Truncate(time.Millisecond),
-		Error:    error,
+		Error:    NewProxyErrorFromError(error),
 	}
 }
 

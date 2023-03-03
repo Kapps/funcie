@@ -85,7 +85,7 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 	awsHandler := lambda.NewHandler(t.handler)
 	slog.Info("created lambda handler")
 
-	wrapper := func(ctx context.Context, message json.RawMessage) (json.RawMessage, error) {
+	wrapper := func(ctx context.Context, message *json.RawMessage) (*json.RawMessage, error) {
 		slog.Info("publishing message to tunnel", "payload", message)
 
 		bytes, err := message.MarshalJSON()
@@ -93,16 +93,23 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 			return nil, fmt.Errorf("failed to marshal message: %w", err)
 		}
 
-		rawResp := json.RawMessage{}
+		var rawResp *json.RawMessage
 
 		msg := NewMessage(bytes, 10*time.Minute)
 		res, err := t.publisher.Publish(ctx, msg)
 		if err == nil {
 			// If we got a response, then we can return it immediately.
 			slog.Debug("received response from tunnel", "response", string(res.Data), "err", err)
-			err = rawResp.UnmarshalJSON(res.Data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal response: %w", err)
+			if res.Error != nil {
+				return nil, fmt.Errorf("received error from proxied implementation: %w", res.Error)
+			}
+
+			if len(res.Data) > 0 {
+				rawResp = &json.RawMessage{}
+				err = rawResp.UnmarshalJSON(res.Data)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal response: %w", err)
+				}
 			}
 
 			return rawResp, nil
