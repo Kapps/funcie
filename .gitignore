@@ -15,3 +15,5 @@
 # vendor/
 
 .idea/
+
+examples/lambda-url/config.tfvars
