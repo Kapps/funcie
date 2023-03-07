@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+*.zip
+*.tfvars
+*.tfstate
+*.tfstate.backup
 
 # Test binary, built with `go test -c`
 *.test
@@ -15,5 +19,3 @@
 # vendor/
 
 .idea/
-
-examples/lambda-url/config.tfvars
