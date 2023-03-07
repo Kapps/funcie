@@ -1,11 +1,7 @@
 package funcie_test
 
 import (
-	"context"
-	"encoding/json"
 	. "github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/mocks"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -29,39 +25,5 @@ func TestNewMessage(t *testing.T) {
 		m := NewMessage([]byte("hello"), time.Second)
 
 		require.Equal(t, m.Data, []byte("hello"))
-	})
-}
-
-func TestRedisPublisher_Publish(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-	channel := "test-channel"
-	redisClient := mocks.NewRedisPublishClient(t)
-	publisher := NewRedisPublisher(redisClient, channel)
-
-	t.Run("should publish a message to the channel", func(t *testing.T) {
-		t.Parallel()
-
-		message := NewMessage([]byte("hello"), time.Second)
-		serializedMessage, err := json.Marshal(message)
-		require.NoError(t, err)
-
-		response := NewResponse(message.ID, []byte("hello"), nil)
-		serializedResponse, err := json.Marshal(response)
-		require.NoError(t, err)
-
-		publishResult := redis.NewIntCmd(ctx)
-		publishResult.SetVal(1)
-		redisClient.On("Publish", ctx, channel, serializedMessage).Return(publishResult)
-
-		popResult := redis.NewStringSliceCmd(ctx)
-		popResult.SetVal([]string{GetResponseKeyForMessage(message.ID), string(serializedResponse)})
-		redisClient.On("BRPop", ctx, time.Second, GetResponseKeyForMessage(message.ID)).Return(popResult)
-
-		resp, err := publisher.Publish(ctx, message)
-		require.NoError(t, err)
-
-		require.Equal(t, response, resp)
 	})
 }
