@@ -3,6 +3,7 @@ package funcie_test
 import (
 	"context"
 	. "github.com/Kapps/funcie/pkg/funcie"
+	redistransport "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
@@ -27,8 +28,8 @@ func TestIntegration(t *testing.T) {
 	})
 	defer CloseOrLog("producer client", producerClient)
 
-	producer := NewRedisPublisher(producerClient, "test-channel")
-	consumer := NewRedisConsumer(consumerClient, "test-channel")
+	producer := redistransport.NewPublisher(producerClient, "test-channel")
+	consumer := redistransport.NewConsumer(consumerClient, "test-channel")
 
 	first := NewMessage([]byte("first"), time.Minute)
 	second := NewMessage([]byte("second"), time.Minute)
