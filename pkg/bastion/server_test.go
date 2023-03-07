@@ -3,14 +3,18 @@ package bastion_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/Kapps/funcie/pkg/bastion"
 	bastionMocks "github.com/Kapps/funcie/pkg/bastion/mocks"
+	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"testing"
 )
 
-const testAddress = "127.0.0.1:8080/dispatch"
+const testAddress = "http://127.0.0.1:8080/dispatch"
 
 func TestServer_Listen_Shutdown(t *testing.T) {
 	stubs := makeServerAndListen(t)
@@ -57,17 +61,35 @@ func TestServer_Request_InternalError(t *testing.T) {
 	stubs.shutdown(t)
 }
 
-/*func TestServer_Request_Valid(t *testing.T) {
+func TestServer_Request_Valid(t *testing.T) {
 	stubs := makeServerAndListen(t)
+
 	payload := json.RawMessage(`{"foo":"bar"}`)
 	request := bastion.NewRequest("foo", &payload, map[string]string{"param": "one"})
 	requestBytes, err := json.Marshal(request)
 	require.NoError(t, err)
 
+	handlerResponse := funcie.NewResponse("resp", []byte(`{"foo":"bar"}`), nil)
+
+	stubs.handler.EXPECT().Dispatch(mock.Anything, request).
+		Return(handlerResponse, nil).Once()
+
 	req, err := http.NewRequest("POST", testAddress, bytes.NewBuffer(requestBytes))
 	require.NoError(t, err)
 
-}*/
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	respBytes, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	var response bastion.Response
+	err = json.Unmarshal(respBytes, &response)
+	require.NoError(t, err)
+
+	stubs.shutdown(t)
+}
 
 func makeServerAndListen(t *testing.T) *stubs {
 	ctx := context.Background()
