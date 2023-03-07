@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/Kapps/funcie/pkg/bastion"
-	"github.com/Kapps/funcie/pkg/funcie"
+	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/redis/go-redis/v9"
 )
 
 func main() {
 	config := NewConfigFromEnvironment()
 	redisClient := &redis.Client{}
-	publisher := funcie.NewRedisPublisher(redisClient, config.RequestChannel)
+	publisher := r.NewPublisher(redisClient, config.RequestChannel)
 	handler := bastion.NewRequestHandler(publisher, config.RequestTtl)
 	server := bastion.NewServer(config.ListenAddress, handler)
 
