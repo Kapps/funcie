@@ -37,13 +37,21 @@ type server struct {
 	handler    RequestHandler
 }
 
-// NewServer creates a new Server.
+// NewServer creates a new Server along with a backing HTTP server.
 func NewServer(address string, handler RequestHandler) Server {
 	return &server{
 		httpServer: &http.Server{
 			Addr: address,
 		},
 		handler: handler,
+	}
+}
+
+// NewServerWithHTTPServer creates a new Server with the given HTTP server instead of creating one.
+func NewServerWithHTTPServer(httpServer *http.Server, handler RequestHandler) Server {
+	return &server{
+		httpServer: httpServer,
+		handler:    handler,
 	}
 }
 
@@ -95,6 +103,9 @@ func NewDataResponse(resultCode ResultCode, data interface{}) *Response {
 func (s *server) Listen() error {
 	s.httpServer.Handler = http.HandlerFunc(s.handleRequest)
 	if err := s.httpServer.ListenAndServe(); err != nil {
+		if err == http.ErrServerClosed {
+			return nil
+		}
 		return fmt.Errorf("failed to listen or serve: %w", err)
 	}
 

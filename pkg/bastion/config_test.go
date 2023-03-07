@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+func TestNewConfig(t *testing.T) {
+	t.Parallel()
+
+	config := NewConfig()
+	require.NotNilf(t, config, "config should not be nil")
+}
+
 func TestNewConfigFromEnvironment(t *testing.T) {
 	t.Run("should return a config with the correct values", func(t *testing.T) {
 		t.Setenv("FUNCIE_REDIS_ADDRESS", "localhost:6379")
