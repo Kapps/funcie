@@ -1,7 +1,7 @@
-package bastion_test
+package main_test
 
 import (
-	. "github.com/Kapps/funcie/pkg/bastion"
+	. "github.com/Kapps/funcie/cmd/server-bastion"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -19,11 +19,15 @@ func TestNewConfigFromEnvironment(t *testing.T) {
 		t.Setenv("FUNCIE_REDIS_ADDRESS", "localhost:6379")
 		t.Setenv("FUNCIE_LISTEN_ADDRESS", "password")
 		t.Setenv("FUNCIE_REQUEST_TTL", "30m")
+		t.Setenv("FUNCIE_REQUEST_CHANNEL", "channel")
+		t.Setenv("FUNCIE_RESPONSE_KEY_PREFIX", "prefix:")
 
 		config := NewConfigFromEnvironment()
 		require.Equal(t, "localhost:6379", config.RedisAddress)
 		require.Equal(t, "password", config.ListenAddress)
 		require.Equal(t, 30*time.Minute, config.RequestTtl)
+		require.Equal(t, "channel", config.RequestChannel)
+		require.Equal(t, "prefix:", config.ResponseKeyPrefix)
 	})
 
 	t.Run("should panic if FUNCIE_REDIS_ADDRESS is not set", func(t *testing.T) {

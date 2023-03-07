@@ -17,13 +17,9 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	config := &Config{
-		RedisAddress:  "redis:6379",
-		ListenAddress: "listen:8080",
-		RequestTtl:    12 * time.Minute,
-	}
 	publisher := mocks.NewPublisher(t)
-	handler := NewRequestHandler(config, publisher)
+	ttl := time.Minute * 12
+	handler := NewRequestHandler(publisher, ttl)
 
 	t.Run("should publish the request payload to the publisher", func(t *testing.T) {
 		payload := json.RawMessage(`{"foo": "bar"}`)
@@ -36,7 +32,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 		messagePayload, err := request.Payload.MarshalJSON()
 		require.NoError(t, err)
 
-		message := funcie.NewMessage(messagePayload, config.RequestTtl)
+		message := funcie.NewMessage(messagePayload, ttl)
 
 		responsePayload := []byte("response")
 		response := funcie.NewResponse(message.ID, responsePayload, nil)

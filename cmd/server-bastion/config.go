@@ -1,4 +1,4 @@
-package bastion
+package main
 
 import (
 	"fmt"
@@ -14,6 +14,10 @@ type Config struct {
 	ListenAddress string `json:"listenAddress"`
 	// RequestTtl indicates the time to live for a request.
 	RequestTtl time.Duration `json:"requestTtl"`
+	// RequestChannel is the channel to publish requests to.
+	RequestChannel string `json:"requestChannel"`
+	// ResponseChannel is the channel to listen for responses on.
+	ResponseKeyPrefix string `json:"responseKeyPrefix"`
 }
 
 // NewConfig creates a new Config with no values set.
@@ -27,11 +31,15 @@ func NewConfig() *Config {
 //	FUNCIE_REDIS_ADDRESS (required)
 //	FUNCIE_LISTEN_ADDRESS (required)
 //	FUNCIE_REQUEST_TTL (optional; defaults to 15 minutes; values are parsed using time.ParseDuration)
+//	FUNCIE_REQUEST_CHANNEL (optional; defaults to "funcie:requests")
+//	FUNCIE_RESPONSE_KEY_PREFIX (optional; defaults to "funcie:response:")
 func NewConfigFromEnvironment() *Config {
 	return &Config{
-		RedisAddress:  requiredEnv("FUNCIE_REDIS_ADDRESS"),
-		ListenAddress: requiredEnv("FUNCIE_LISTEN_ADDRESS"),
-		RequestTtl:    parseTimeDuration(optionalEnv("FUNCIE_REQUEST_TTL", "15m")),
+		RedisAddress:      requiredEnv("FUNCIE_REDIS_ADDRESS"),
+		ListenAddress:     requiredEnv("FUNCIE_LISTEN_ADDRESS"),
+		RequestTtl:        parseTimeDuration(optionalEnv("FUNCIE_REQUEST_TTL", "15m")),
+		RequestChannel:    optionalEnv("FUNCIE_REQUEST_CHANNEL", "funcie:requests"),
+		ResponseKeyPrefix: optionalEnv("FUNCIE_RESPONSE_KEY_PREFIX", "funcie:response:"),
 	}
 }
 
