@@ -1,4 +1,4 @@
-package main
+package bastion
 
 import (
 	"fmt"
@@ -26,6 +26,7 @@ func NewConfig() *Config {
 }
 
 // NewConfigFromEnvironment creates a new Config from environment variables.
+// If any required environment variables are not set, this function will panic with a user-friendly error message.
 // The following environment variables are used:
 //
 //	FUNCIE_REDIS_ADDRESS (required)

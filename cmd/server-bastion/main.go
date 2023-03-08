@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	config := NewConfigFromEnvironment()
+	config := bastion.NewConfigFromEnvironment()
 	redisClient := &redis.Client{}
 	publisher := r.NewPublisher(redisClient, config.RequestChannel)
 	handler := bastion.NewRequestHandler(publisher, config.RequestTtl)

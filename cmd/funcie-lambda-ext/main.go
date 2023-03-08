@@ -4,49 +4,74 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/funcie-lambda-ext/lambdaext"
+	"github.com/Kapps/funcie/pkg/bastion"
+	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/slog"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
+const (
+	extensionName = "funcie-lambda-ext"
+)
+
 var (
-	extensionClient = lambdaext.NewClient(os.Getenv("AWS_LAMBDA_RUNTIME_API"))
-	extensionName   = "funcie-lambda-ext"
-	redisAddr       = os.Getenv("FUNCIE_REDIS_ADDR")
+	runtimeApi = os.Getenv("AWS_LAMBDA_RUNTIME_API")
 )
 
 func main() {
-	if redisAddr == "" {
-		panic("FUNCIE_REDIS_ADDR not set")
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		s := <-sigs
-		slog.Info("Received signal; exiting", "signal", s)
 		cancel()
+		slog.Info("Received signal; exiting", "signal", s)
 	}()
 
+	extensionClient := lambdaext.NewClient(runtimeApi)
+	registerExtension(ctx, extensionClient)
+
+	bastionServer := createBastion()
+	go func() {
+		if err := bastionServer.Listen(); err != nil {
+			slog.Info("Error; exiting", "error", err)
+			panic(err)
+		}
+	}()
+
+	// Will block until shutdown event is received or cancelled via the context.
+	if err := processEvents(ctx, extensionClient); err != nil {
+		slog.Info("Error; exiting", "error", err)
+		panic(err)
+	}
+}
+
+func createBastion() bastion.Server {
+	config := bastion.NewConfigFromEnvironment()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:       config.RedisAddress,
+		ClientName: "Funcie Bastion",
+	})
+	publisher := r.NewPublisher(redisClient, config.RequestChannel)
+	handler := bastion.NewRequestHandler(publisher, config.RequestTtl)
+	server := bastion.NewServer(config.ListenAddress, handler)
+	return server
+}
+
+func registerExtension(ctx context.Context, extensionClient *lambdaext.Client) {
 	res, err := extensionClient.Register(ctx, extensionName)
 	if err != nil {
 		panic(err)
 	}
 
 	slog.Info("Register response:", "response", res)
-
-	// Will block until shutdown event is received or cancelled via the context.
-	if err := processEvents(ctx); err != nil {
-		slog.Info("Error; exiting", "error", err)
-		panic(err)
-	}
 }
 
 // Method to process events
-func processEvents(ctx context.Context) error {
+func processEvents(ctx context.Context, extensionClient *lambdaext.Client) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -66,7 +91,7 @@ func processEvents(ctx context.Context) error {
 
 			if res.EventType == lambdaext.Invoke {
 				slog.Debug("Received INVOKE event; invoking consumer")
-
+				continue
 			}
 		}
 	}
