@@ -6,29 +6,29 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"golang.org/x/exp/slog"
-	"net/url"
 	ws "nhooyr.io/websocket"
 )
 
-func (c *Consumer) Subscribe(ctx context.Context, url *url.URL, channel string) error {
-	conn, _, err := ws.Dial(ctx, url.String(), nil)
+func (c *Consumer) Connect(ctx context.Context) (Websocket, error) {
+	conn, _, err := c.wsClient.Dial(ctx, c.URL, nil)
 	if err != nil {
-		return fmt.Errorf("error dialing websocket: %w", err)
+		return nil, fmt.Errorf("error dialing Websocket: %w", err)
 	}
-	defer conn.Close(ws.StatusInternalError, "unexpected error, closing WebSocket")
 
-	c.ws = conn
+	return conn, nil
+}
 
+func (c *Consumer) Subscribe(ctx context.Context, conn Websocket, channel string) error {
 	r := ClientToServerMessage{
 		Channel:     channel,
 		RequestType: ClientToServerMessageRequestTypeSubscribe,
 	}
 
-	return c.writeJson(ctx, r)
+	return c.writeJson(ctx, conn, r)
 }
 
-func (c *Consumer) writeJson(ctx context.Context, v interface{}) (err error) {
-	w, err := c.ws.Writer(ctx, ws.MessageText)
+func (c *Consumer) writeJson(ctx context.Context, conn Websocket, v interface{}) (err error) {
+	w, err := conn.Writer(ctx, ws.MessageText)
 	if err != nil {
 		return err
 	}
@@ -46,38 +46,40 @@ func (c *Consumer) writeJson(ctx context.Context, v interface{}) (err error) {
 // Consumer represents a consumer that consumes messages from a Redis channel.
 type Consumer struct {
 	channelName string
-	URL         *url.URL
-	ws          websocket
+	URL         string
+	wsClient    WebsocketClient
 }
 
 // NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
-func NewConsumer(url *url.URL, channelName string) funcie.Consumer {
+func NewConsumer(url string, channelName string) funcie.Consumer {
 	return &Consumer{
 		URL:         url,
 		channelName: channelName,
+		wsClient:    &WebsocketClientWrapper{},
 	}
 }
 
-// NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given websocket.
-func NewConsumerWithWS(ws websocket, url *url.URL, channelName string) funcie.Consumer {
+// NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
+func NewConsumerWithWS(wsClient WebsocketClient, url string, channelName string) *Consumer {
 	return &Consumer{
-		ws:          ws,
+		wsClient:    wsClient,
 		channelName: channelName,
 		URL:         url,
 	}
-}
-
-func (c *Consumer) Close() error {
-	return c.ws.Close(ws.StatusNormalClosure, "closing websocket")
 }
 
 // Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
 func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
-	err := c.Subscribe(ctx, c.URL, c.channelName)
+	conn, err := c.Connect(ctx)
+	if err != nil {
+		return fmt.Errorf("error connecting to Websocket: %w", err)
+	}
+	defer conn.Close(ws.StatusNormalClosure, "exiting consumer")
+
+	err = c.Subscribe(ctx, conn, c.channelName)
 	if err != nil {
 		return fmt.Errorf("error subscribing to channel: %w", err)
 	}
-	defer funcie.CloseOrLog(fmt.Sprintf("pubsub channel %v", c.channelName), c)
 
 	for {
 		select {
@@ -85,7 +87,7 @@ func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
 			slog.Warn("context cancelled", "err", ctx.Err())
 			return ctx.Err()
 		default:
-			message, err := readMessage(ctx, c.ws)
+			message, err := readMessage(ctx, conn)
 			if err != nil {
 				return fmt.Errorf("error reading message: %w", err)
 			}
@@ -100,14 +102,14 @@ func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
 				return fmt.Errorf("error formatting response: %w", err)
 			}
 
-			if err := c.ws.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
+			if err := conn.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
 				return fmt.Errorf("error writing message: %w", err)
 			}
 		}
 	}
 }
 
-func readMessage(ctx context.Context, conn websocket) (*funcie.Message, error) {
+func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {
 	messageType, message, err := conn.Read(ctx)
 	if err != nil {
 		return nil, err
