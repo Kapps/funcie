@@ -24,23 +24,16 @@ func (c *Consumer) Subscribe(ctx context.Context, conn Websocket, channel string
 		RequestType: ClientToServerMessageRequestTypeSubscribe,
 	}
 
-	return c.writeJson(ctx, conn, r)
-}
-
-func (c *Consumer) writeJson(ctx context.Context, conn Websocket, v interface{}) (err error) {
-	w, err := conn.Writer(ctx, ws.MessageText)
+	jsonValue, err := json.Marshal(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshalling JSON: %w", err)
 	}
 
-	// json.Marshal cannot reuse buffers between calls as it has to return
-	// a copy of the byte slice but Encoder does as it directly writes to w.
-	err = json.NewEncoder(w).Encode(v)
+	err = conn.Write(ctx, ws.MessageText, jsonValue)
 	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
+		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
-
-	return w.Close()
+	return nil
 }
 
 // Consumer represents a consumer that consumes messages from a Redis channel.
