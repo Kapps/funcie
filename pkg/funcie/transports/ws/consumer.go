@@ -10,7 +10,10 @@ import (
 )
 
 func (c *Consumer) Connect(ctx context.Context) (Websocket, error) {
-	conn, _, err := c.wsClient.Dial(ctx, c.URL, nil)
+	conn, _, err := c.wsClient.Dial(ctx, c.URL, &ws.DialOptions{
+		Subprotocols: []string{"funcie"},
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("error dialing Websocket: %w", err)
 	}

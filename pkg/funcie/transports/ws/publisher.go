@@ -3,20 +3,135 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/redis/go-redis/v9"
+	"log"
+	"net"
+	"net/http"
+	"nhooyr.io/websocket"
+	"os"
+	"os/signal"
 	"time"
 )
 
+func Listen(port int32) error {
+	if len(os.Args) < 2 {
+		return errors.New("please provide an address to listen on as the first argument")
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		return err
+	}
+	log.Printf("listening on http://%v", l.Addr())
+
+	s := &http.Server{
+		Handler:      NewClientManager(),
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+	}
+	errorChan := make(chan error, 1)
+	go func() {
+		errorChan <- s.Serve(l)
+	}()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt)
+	select {
+	case err := <-errorChan:
+		log.Printf("failed to serve: %v", err)
+	case sig := <-sigs:
+		log.Printf("terminating: %v", sig)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	return s.Shutdown(ctx)
+}
+
+type ClientManager struct {
+	clientMap map[string]Websocket
+	logf      func(f string, v ...interface{})
+}
+
+func NewClientManager() *ClientManager {
+	return &ClientManager{
+		clientMap: make(map[string]Websocket),
+		logf:      log.Printf,
+	}
+}
+
+func (c *ClientManager) AddClient(id string, conn Websocket) {
+	c.clientMap[id] = conn
+}
+
+func (c *ClientManager) RemoveClient(id string) {
+	delete(c.clientMap, id)
+}
+
+func (c *ClientManager) GetClient(id string) Websocket {
+	return c.clientMap[id]
+}
+
+func (c *ClientManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+		Subprotocols: []string{"funcie"},
+	})
+	if err != nil {
+		c.logf("%v", err)
+		return
+	}
+	defer conn.Close(websocket.StatusInternalError, "the sky is falling")
+
+	if conn.Subprotocol() != "funcie" {
+		conn.Close(websocket.StatusPolicyViolation, "client must speak the echo subprotocol")
+		return
+	}
+
+	err = c.RegisterClient(ctx, conn)
+	if err != nil {
+		c.logf("%v", err)
+		return
+	}
+}
+
+// RegisterClient waits for a subscribe message from the client (required) and then registers a client to the client manager.
+func (c *ClientManager) RegisterClient(ctx context.Context, conn *websocket.Conn) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+
+	for {
+		typ, p, err := conn.Read(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to read: %w", err)
+		}
+		if typ != websocket.MessageText {
+			return fmt.Errorf("unexpected message type: %v", typ)
+		}
+
+		var message ClientToServerMessage
+		if err := json.Unmarshal(p, &message); err != nil {
+			return fmt.Errorf("failed to unmarshal message: %w", err)
+		}
+
+		switch message.RequestType {
+		case ClientToServerMessageRequestTypeSubscribe:
+			c.AddClient(message.Channel, conn)
+		}
+	}
+}
+
 type PublishClient interface {
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
-	BRPop(ctx context.Context, timeout time.Duration, keys ...string) *redis.StringSliceCmd
 }
 
 type Publisher struct {
-	redisClient PublishClient
-	channelName string
+	clientManager ClientManager
 }
 
 // NewPublisher creates a new RedisPublisher that publishes messages to the given channel.
