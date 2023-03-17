@@ -22,6 +22,7 @@ var (
 )
 
 func main() {
+	isLocal := runtimeApi == ""
 	ctx, cancel := context.WithCancel(context.Background())
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
@@ -32,7 +33,11 @@ func main() {
 	}()
 
 	extensionClient := lambdaext.NewClient(runtimeApi)
-	registerExtension(ctx, extensionClient)
+	if !isLocal {
+		registerExtension(ctx, extensionClient)
+	} else {
+		slog.Info("Running locally; not registering extension")
+	}
 
 	bastionServer := createBastion()
 	go func() {
@@ -42,10 +47,15 @@ func main() {
 		}
 	}()
 
-	// Will block until shutdown event is received or cancelled via the context.
-	if err := processEvents(ctx, extensionClient); err != nil {
-		slog.Info("Error; exiting", "error", err)
-		panic(err)
+	if !isLocal {
+		// Will block until shutdown event is received or cancelled via the context.
+		if err := processEvents(ctx, extensionClient); err != nil {
+			slog.Info("Error; exiting", "error", err)
+			panic(err)
+		}
+	} else {
+		slog.Info("Running locally; not processing events")
+		<-ctx.Done()
 	}
 }
 

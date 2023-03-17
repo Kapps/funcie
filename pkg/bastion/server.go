@@ -14,7 +14,7 @@ import (
 
 // Server is the interface for a bastion server that can filter and forward requests.
 type Server interface {
-	// Listen starts the server on the given port.
+	// Listen starts the server and begins processing requests.
 	// This function never returns unless an error occurs.
 	Listen() error
 }

@@ -44,6 +44,10 @@ func NewConfigFromEnvironment() *Config {
 	}
 }
 
+// There should be alternatives for specifying different transports,
+// and it should be configurable probably via something like a JSON config
+// passed in to a Register call (or config for the standalone bastion).
+
 func parseTimeDuration(value string) time.Duration {
 	duration, err := time.ParseDuration(value)
 	if err != nil {
