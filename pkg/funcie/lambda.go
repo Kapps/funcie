@@ -18,16 +18,18 @@ type Tunnel interface {
 }
 
 type lambdaTunnel struct {
-	handler   interface{}
-	publisher Publisher
-	consumer  Consumer
+	applicationId string
+	handler       interface{}
+	publisher     Publisher
+	consumer      Consumer
 }
 
-func NewLambdaTunnel(handler interface{}, publisher Publisher, consumer Consumer) Tunnel {
+func NewLambdaTunnel(applicationId string, handler interface{}, publisher Publisher, consumer Consumer) Tunnel {
 	return &lambdaTunnel{
-		handler:   handler,
-		publisher: publisher,
-		consumer:  consumer,
+		applicationId: applicationId,
+		handler:       handler,
+		publisher:     publisher,
+		consumer:      consumer,
 	}
 }
 
@@ -40,12 +42,12 @@ func (t *lambdaTunnel) Start() {
 	// If we are, then we need to wrap the handler in a LambdaHandler.
 	var wrappedHandler lambda.Handler
 	if IsRunningWithLambda() {
-		slog.Info("running in Lambda")
+		slog.Info("running in Lambda", "applicationId", t.applicationId)
 		wrappedHandler = t.lambdaHandler()
 		slog.Info("starting lambda")
 		lambda.Start(wrappedHandler)
 	} else {
-		slog.Info("running outside of Lambda")
+		slog.Info("running outside of Lambda", "applicationId", t.applicationId)
 		t.beginProxyConsume()
 
 		wrappedHandler = lambda.NewHandler(t.handler)
@@ -60,7 +62,7 @@ func (t *lambdaTunnel) beginProxyConsume() {
 	slog.Info("created proxy handler")
 
 	err := t.consumer.Consume(context.Background(), func(ctx context.Context, message *Message) (*Response, error) {
-		slog.Debug("received message from tunnel", "message", string(message.Data))
+		slog.Debug("received message from tunnel", "message", string(message.Data), "applicationId", t.applicationId)
 
 		// Invoke the handler.
 		resp, err := localHandler.Invoke(ctx, message.Data)
@@ -95,7 +97,7 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 
 		var rawResp *json.RawMessage
 
-		msg := NewMessage(bytes, 10*time.Minute)
+		msg := NewMessage(t.applicationId, bytes, 10*time.Minute)
 		res, err := t.publisher.Publish(ctx, msg)
 		if err == nil {
 			// If we got a response, then we can return it immediately.

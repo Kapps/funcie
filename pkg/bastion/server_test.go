@@ -17,12 +17,11 @@ import (
 const testAddress = "http://127.0.0.1:8080/dispatch"
 
 func TestServer_Listen_Shutdown(t *testing.T) {
-	stubs := makeServerAndListen(t)
-	stubs.shutdown(t)
+	_ = makeServerAndListen(t)
 }
 
 func TestServer_Request_InvalidMethod(t *testing.T) {
-	stubs := makeServerAndListen(t)
+	_ = makeServerAndListen(t)
 
 	req, err := http.NewRequest("GET", testAddress, nil)
 	require.NoError(t, err)
@@ -30,12 +29,10 @@ func TestServer_Request_InvalidMethod(t *testing.T) {
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-
-	stubs.shutdown(t)
 }
 
 func TestServer_Request_InvalidPath(t *testing.T) {
-	stubs := makeServerAndListen(t)
+	_ = makeServerAndListen(t)
 
 	req, err := http.NewRequest("POST", "http://127.0.0.1:8080/invalid", nil)
 	require.NoError(t, err)
@@ -43,13 +40,11 @@ func TestServer_Request_InvalidPath(t *testing.T) {
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusNotFound, resp.StatusCode)
-
-	stubs.shutdown(t)
 }
 
 func TestServer_Request_InternalError(t *testing.T) {
 	// Currently, an invalid request gives an internal error, so can test via that.
-	stubs := makeServerAndListen(t)
+	_ = makeServerAndListen(t)
 
 	req, err := http.NewRequest("POST", testAddress, bytes.NewBufferString("invalid body"))
 	require.NoError(t, err)
@@ -58,7 +53,6 @@ func TestServer_Request_InternalError(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	stubs.shutdown(t)
 }
 
 func TestServer_Request_Valid(t *testing.T) {
@@ -87,8 +81,6 @@ func TestServer_Request_Valid(t *testing.T) {
 	var response bastion.Response
 	err = json.Unmarshal(respBytes, &response)
 	require.NoError(t, err)
-
-	stubs.shutdown(t)
 }
 
 func makeServerAndListen(t *testing.T) *stubs {
@@ -106,13 +98,17 @@ func makeServerAndListen(t *testing.T) *stubs {
 		close(done)
 	}()
 
-	return &stubs{
+	s := &stubs{
 		ctx:        ctx,
 		handler:    handler,
 		server:     server,
 		httpServer: httpServer,
 		done:       done,
 	}
+
+	t.Cleanup(func() { s.shutdown(t) })
+
+	return s
 }
 
 type stubs struct {
