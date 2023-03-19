@@ -25,6 +25,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 		payload := json.RawMessage(`{"foo": "bar"}`)
 		request := &Request{
 			RequestId:         uuid.New().String(),
+			Application:       "application",
 			Payload:           &payload,
 			RequestParameters: nil,
 		}
@@ -32,7 +33,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 		messagePayload, err := request.Payload.MarshalJSON()
 		require.NoError(t, err)
 
-		message := funcie.NewMessage(messagePayload, ttl)
+		message := funcie.NewMessage("application", messagePayload, ttl)
 
 		responsePayload := []byte("response")
 		response := funcie.NewResponse(message.ID, responsePayload, nil)

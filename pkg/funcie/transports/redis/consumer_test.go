@@ -42,8 +42,8 @@ func TestRedisConsumer_Consume(t *testing.T) {
 			require.Equal(t, f.ErrPubSubChannelClosed, err)
 		}()
 
-		msg1 := f.NewMessage([]byte("msg1"), time.Minute)
-		msg2 := f.NewMessage([]byte("msg2"), time.Minute)
+		msg1 := f.NewMessage("app", []byte("msg1"), time.Minute)
+		msg2 := f.NewMessage("app", []byte("msg2"), time.Minute)
 
 		redisClient.EXPECT().RPush(
 			consumerCtx,
