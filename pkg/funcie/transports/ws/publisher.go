@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"net"
 	"net/http"
@@ -52,31 +51,38 @@ func Listen(port int32) error {
 	return s.Shutdown(ctx)
 }
 
-type ClientManager struct {
+type ClientManager interface {
+	AddClient(id string, conn Websocket)
+	RemoveClient(id string)
+	GetClient(id string) Websocket
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+}
+
+type WebsocketClientManager struct {
 	clientMap map[string]Websocket
 	logf      func(f string, v ...interface{})
 }
 
-func NewClientManager() *ClientManager {
-	return &ClientManager{
+func NewWebsocketClientManager() *WebsocketClientManager {
+	return &WebsocketClientManager{
 		clientMap: make(map[string]Websocket),
 		logf:      log.Printf,
 	}
 }
 
-func (c *ClientManager) AddClient(id string, conn Websocket) {
+func (c *WebsocketClientManager) AddClient(id string, conn Websocket) {
 	c.clientMap[id] = conn
 }
 
-func (c *ClientManager) RemoveClient(id string) {
+func (c *WebsocketClientManager) RemoveClient(id string) {
 	delete(c.clientMap, id)
 }
 
-func (c *ClientManager) GetClient(id string) Websocket {
+func (c *WebsocketClientManager) GetClient(id string) Websocket {
 	return c.clientMap[id]
 }
 
-func (c *ClientManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *WebsocketClientManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
@@ -101,7 +107,7 @@ func (c *ClientManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // RegisterClient waits for a subscribe message from the client (required) and then registers a client to the client manager.
-func (c *ClientManager) RegisterClient(ctx context.Context, conn *websocket.Conn) error {
+func (c *WebsocketClientManager) RegisterClient(ctx context.Context, conn *websocket.Conn) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
@@ -126,12 +132,12 @@ func (c *ClientManager) RegisterClient(ctx context.Context, conn *websocket.Conn
 	}
 }
 
-type PublishClient interface {
-	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
-}
+//type PublishClient interface {
+//	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
+//}
 
 type Publisher struct {
-	clientManager ClientManager
+	clientManager WebsocketClientManager
 }
 
 // NewPublisher creates a new RedisPublisher that publishes messages to the given channel.

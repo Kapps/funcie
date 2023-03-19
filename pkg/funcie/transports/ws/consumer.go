@@ -41,38 +41,36 @@ func (c *Consumer) Subscribe(ctx context.Context, conn Websocket, channel string
 
 // Consumer represents a consumer that consumes messages from a Redis channel.
 type Consumer struct {
-	channelName string
-	URL         string
-	wsClient    WebsocketClient
+	URL       string
+	wsClient  WebsocketClient
+	connected bool
 }
 
 // NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
-func NewConsumer(url string, channelName string) funcie.Consumer {
+func NewConsumer(url string) funcie.Consumer {
 	return &Consumer{
-		URL:         url,
-		channelName: channelName,
-		wsClient:    &WebsocketClientWrapper{},
+		URL:      url,
+		wsClient: &WebsocketClientWrapper{},
 	}
 }
 
 // NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
-func NewConsumerWithWS(wsClient WebsocketClient, url string, channelName string) *Consumer {
+func NewConsumerWithWS(wsClient WebsocketClient, url string) *Consumer {
 	return &Consumer{
-		wsClient:    wsClient,
-		channelName: channelName,
-		URL:         url,
+		wsClient: wsClient,
+		URL:      url,
 	}
 }
 
 // Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
-func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
+func (c *Consumer) Consume(ctx context.Context, handlerType string, handler funcie.Handler) error {
 	conn, err := c.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("error connecting to Websocket: %w", err)
 	}
 	defer conn.Close(ws.StatusNormalClosure, "exiting consumer")
 
-	err = c.Subscribe(ctx, conn, c.channelName)
+	err = c.Subscribe(ctx, conn, handlerType)
 	if err != nil {
 		return fmt.Errorf("error subscribing to channel: %w", err)
 	}
