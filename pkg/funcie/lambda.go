@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
 	"golang.org/x/exp/slog"
-	"os"
 	"time"
 )
 
@@ -57,27 +56,29 @@ func (t *lambdaTunnel) Start() {
 // proxyHandler is the consumer-level wrapper around the handler.
 // It is responsible for receiving messages from the tunnel, invoking the handler, and returning the response.
 func (t *lambdaTunnel) beginProxyConsume() {
-	slog.Info("creating proxy handler")
-	localHandler := lambda.NewHandler(t.handler)
-	slog.Info("created proxy handler")
+	//TODO -- FIX ME -- Doesn't yet follow the new Consume/Subscribe pattern.
 
-	err := t.consumer.Consume(context.Background(), func(ctx context.Context, message *Message) (*Response, error) {
-		slog.Debug("received message from tunnel", "message", string(message.Data), "applicationId", t.applicationId)
-
-		// Invoke the handler.
-		resp, err := localHandler.Invoke(ctx, message.Data)
-		response := NewResponse(message.ID, resp, err)
-
-		// Publish the response to the tunnel.
-		slog.Debug("returning response to tunnel", "response", response, "err", err)
-
-		return response, nil
-	})
-	if err != nil {
-		slog.Error("failed to consume from tunnel", err)
-		// TODO: Figure out how to handle this error.
-		os.Exit(1)
-	}
+	//slog.Info("creating proxy handler")
+	//localHandler := lambda.NewHandler(t.handler)
+	//slog.Info("created proxy handler")
+	//
+	//err := t.consumer.Consume(context.Background(), func(ctx context.Context, message *Message) (*Response, error) {
+	//	slog.Debug("received message from tunnel", "message", string(message.Data), "applicationId", t.applicationId)
+	//
+	//	// Invoke the handler.
+	//	resp, err := localHandler.Invoke(ctx, message.Data)
+	//	response := NewResponse(message.ID, resp, err)
+	//
+	//	// Publish the response to the tunnel.
+	//	slog.Debug("returning response to tunnel", "response", response, "err", err)
+	//
+	//	return response, nil
+	//})
+	//if err != nil {
+	//	slog.Error("failed to consume from tunnel", err)
+	//	// TODO: Figure out how to handle this error.
+	//	os.Exit(1)
+	//}
 }
 
 // lambdaHandler is the Lambda-level wrapper around the handler.
