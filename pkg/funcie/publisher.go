@@ -14,6 +14,8 @@ var ErrNoActiveConsumer = errors.New("no consumer is active on this tunnel")
 type Message struct {
 	// ID is the unique identifier for this message.
 	ID string `json:"id"`
+	// Application is the name of the application that this message is for.
+	Application string `json:"application"`
 	// Data is the actual message payload.
 	Data []byte `json:"data"`
 	// Created is the time the message was created.
@@ -23,12 +25,13 @@ type Message struct {
 	Ttl time.Duration `json:"ttl"`
 }
 
-func NewMessage(data []byte, ttl time.Duration) *Message {
+func NewMessage(application string, data []byte, ttl time.Duration) *Message {
 	return &Message{
-		ID:      newId(),
-		Data:    data,
-		Created: time.Now().Truncate(time.Millisecond),
-		Ttl:     ttl,
+		ID:          newId(),
+		Application: application,
+		Data:        data,
+		Created:     time.Now().Truncate(time.Millisecond),
+		Ttl:         ttl,
 	}
 }
 

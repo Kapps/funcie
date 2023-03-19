@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
@@ -59,6 +60,8 @@ func NewServerWithHTTPServer(httpServer *http.Server, handler RequestHandler) Se
 type Request struct {
 	// RequestId is a caller-specified unique ID for this request (for example, the request ID of a Lambda invocation).
 	RequestId string `json:"requestId"`
+	// Application is the name of the application that is making the request.
+	Application string `json:"application"`
 	// Payload is the JSON payload that is potentially being forwarded.
 	Payload *json.RawMessage `json:"payload"`
 	// RequestParameters are any specific parameters that the caller wants to pass to the bastion server.
@@ -67,11 +70,12 @@ type Request struct {
 }
 
 // NewRequest creates a new Request.
-func NewRequest(requestId string, payload *json.RawMessage, requestParameters map[string]string) *Request {
+func NewRequest(application string, payload *json.RawMessage, requestParameters map[string]string) *Request {
 	return &Request{
-		RequestId:         requestId,
+		RequestId:         uuid.New().String(),
 		Payload:           payload,
 		RequestParameters: requestParameters,
+		Application:       application,
 	}
 }
 

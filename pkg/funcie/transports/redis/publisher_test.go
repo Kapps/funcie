@@ -23,7 +23,7 @@ func TestRedisPublisher_Publish(t *testing.T) {
 	t.Run("should publish a message to the channel", func(t *testing.T) {
 		t.Parallel()
 
-		message := f.NewMessage([]byte("hello"), time.Second)
+		message := f.NewMessage("app", []byte("hello"), time.Second)
 		serializedMessage, err := json.Marshal(message)
 		require.NoError(t, err)
 

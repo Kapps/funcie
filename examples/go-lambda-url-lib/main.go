@@ -44,6 +44,6 @@ func main() {
 	})
 	publisher := redistransport.NewPublisher(redisClient, "funcie:requests")
 	consumer := redistransport.NewConsumer(redisClient, "funcie:requests")
-	tunnel := funcie.NewLambdaTunnel(HandleRequest, publisher, consumer)
+	tunnel := funcie.NewLambdaTunnel("lambda-url-lib", HandleRequest, publisher, consumer)
 	tunnel.Start()
 }
