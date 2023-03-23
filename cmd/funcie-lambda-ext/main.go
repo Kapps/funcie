@@ -25,6 +25,7 @@ func main() {
 	isLocal := runtimeApi == ""
 	ctx, cancel := context.WithCancel(context.Background())
 	sigs := make(chan os.Signal, 1)
+
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		s := <-sigs

@@ -22,13 +22,13 @@ func (_m *Consumer) EXPECT() *Consumer_Expecter {
 	return &Consumer_Expecter{mock: &_m.Mock}
 }
 
-// Consume provides a mock function with given fields: ctx, handler
-func (_m *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
-	ret := _m.Called(ctx, handler)
+// Consume provides a mock function with given fields: ctx, handlerType, handler
+func (_m *Consumer) Consume(ctx context.Context, handlerType string, handler funcie.Handler) error {
+	ret := _m.Called(ctx, handlerType, handler)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, funcie.Handler) error); ok {
-		r0 = rf(ctx, handler)
+	if rf, ok := ret.Get(0).(func(context.Context, string, funcie.Handler) error); ok {
+		r0 = rf(ctx, handlerType, handler)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -43,14 +43,15 @@ type Consumer_Consume_Call struct {
 
 // Consume is a helper method to define mock.On call
 //   - ctx context.Context
+//   - handlerType string
 //   - handler funcie.Handler
-func (_e *Consumer_Expecter) Consume(ctx interface{}, handler interface{}) *Consumer_Consume_Call {
-	return &Consumer_Consume_Call{Call: _e.mock.On("Consume", ctx, handler)}
+func (_e *Consumer_Expecter) Consume(ctx interface{}, handlerType interface{}, handler interface{}) *Consumer_Consume_Call {
+	return &Consumer_Consume_Call{Call: _e.mock.On("Consume", ctx, handlerType, handler)}
 }
 
-func (_c *Consumer_Consume_Call) Run(run func(ctx context.Context, handler funcie.Handler)) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) Run(run func(ctx context.Context, handlerType string, handler funcie.Handler)) *Consumer_Consume_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(funcie.Handler))
+		run(args[0].(context.Context), args[1].(string), args[2].(funcie.Handler))
 	})
 	return _c
 }
@@ -60,7 +61,7 @@ func (_c *Consumer_Consume_Call) Return(_a0 error) *Consumer_Consume_Call {
 	return _c
 }
 
-func (_c *Consumer_Consume_Call) RunAndReturn(run func(context.Context, funcie.Handler) error) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) RunAndReturn(run func(context.Context, string, funcie.Handler) error) *Consumer_Consume_Call {
 	_c.Call.Return(run)
 	return _c
 }

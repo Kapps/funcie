@@ -56,9 +56,9 @@ func NewConsumerWithClient(redisClient ConsumeClient, channelName string) funcie
 }
 
 // Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
-func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
+func (c *Consumer) Consume(ctx context.Context, handlerType string, handler funcie.Handler) error {
 	pubSub := c.redisClient.Subscribe(ctx, c.channelName)
-	defer funcie.CloseOrLog(fmt.Sprintf("pubsub channel %v", c.channelName), pubSub)
+	defer funcie.CloseOrLog(fmt.Sprintf("pubsub channel %v for type %v", c.channelName, handlerType), pubSub)
 
 	for {
 		select {
@@ -78,7 +78,7 @@ func (c *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
 
 			response, err := handler(ctx, message)
 			if err != nil {
-				return fmt.Errorf("error handling message: %w", err)
+				return fmt.Errorf("error handling message of type %v: %w", handlerType, err)
 			}
 
 			responseKey := funcie.GetResponseKeyForMessage(message.ID)

@@ -48,7 +48,7 @@ func TestIntegration(t *testing.T) {
 	done := false
 
 	go func() {
-		err := consumer.Consume(consumerCtx, func(ctx context.Context, message *Message) (*Response, error) {
+		err := consumer.Consume(consumerCtx, "type", func(ctx context.Context, message *Message) (*Response, error) {
 			return NewResponse(message.ID, []byte("resp"), nil), nil
 		})
 		require.True(t, done)
