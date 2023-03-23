@@ -5,11 +5,62 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"golang.org/x/exp/slog"
+	"log"
 	ws "nhooyr.io/websocket"
 )
 
-func (c *Consumer) Connect(ctx context.Context) (Websocket, error) {
+// Consumer represents a consumer that consumes messages from a Redis channel.
+type Consumer struct {
+	URL       string
+	wsClient  WebsocketClient
+	websocket Websocket
+	connected bool
+	router    utils.HandlerRouter
+}
+
+// NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
+func NewConsumer(url string) funcie.Consumer {
+	return &Consumer{
+		URL:      url,
+		wsClient: &WebsocketClientWrapper{},
+		router:   utils.NewHandlerRouter(),
+	}
+}
+
+// NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
+func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.HandlerRouter) *Consumer {
+	return &Consumer{
+		wsClient: wsClient,
+		URL:      url,
+		router:   router,
+	}
+}
+
+func (c *Consumer) Connect(ctx context.Context) error {
+	var err error
+	c.websocket, err = c.connectSocket(ctx)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			err := c.websocket.Close(ws.StatusNormalClosure, "exiting consumer")
+			c.connected = false
+			if err != nil {
+				log.Fatalf("error closing Websocket, was probably shutting down anyhow: %v", err)
+			}
+		}
+	}()
+
+	c.connected = true
+	return nil
+}
+
+func (c *Consumer) connectSocket(ctx context.Context) (Websocket, error) {
 	conn, _, err := c.wsClient.Dial(ctx, c.URL, &ws.DialOptions{
 		Subprotocols: []string{"funcie"},
 	})
@@ -21,7 +72,11 @@ func (c *Consumer) Connect(ctx context.Context) (Websocket, error) {
 	return conn, nil
 }
 
-func (c *Consumer) Subscribe(ctx context.Context, conn Websocket, channel string) error {
+func (c *Consumer) Subscribe(ctx context.Context, channel string, handler funcie.Handler) error {
+	if !c.connected {
+		return fmt.Errorf("not connected")
+	}
+
 	r := ClientToServerMessage{
 		Channel:     channel,
 		RequestType: ClientToServerMessageRequestTypeSubscribe,
@@ -32,61 +87,61 @@ func (c *Consumer) Subscribe(ctx context.Context, conn Websocket, channel string
 		return fmt.Errorf("error marshalling JSON: %w", err)
 	}
 
-	err = conn.Write(ctx, ws.MessageText, jsonValue)
+	err = c.websocket.Write(ctx, ws.MessageText, jsonValue)
 	if err != nil {
 		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
+
+	err = c.router.AddHandler(channel, handler)
+	if err != nil {
+		return fmt.Errorf("error adding handler: %w", err)
+	}
+
 	return nil
 }
 
-// Consumer represents a consumer that consumes messages from a Redis channel.
-type Consumer struct {
-	URL       string
-	wsClient  WebsocketClient
-	connected bool
-}
-
-// NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
-func NewConsumer(url string) funcie.Consumer {
-	return &Consumer{
-		URL:      url,
-		wsClient: &WebsocketClientWrapper{},
+func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
+	if !c.connected {
+		return fmt.Errorf("not connected")
 	}
-}
 
-// NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
-func NewConsumerWithWS(wsClient WebsocketClient, url string) *Consumer {
-	return &Consumer{
-		wsClient: wsClient,
-		URL:      url,
+	r := ClientToServerMessage{
+		Channel:     channel,
+		RequestType: ClientToServerMessageRequestTypeUnsubscribe,
 	}
-}
 
-// Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
-func (c *Consumer) Consume(ctx context.Context, handlerType string, handler funcie.Handler) error {
-	conn, err := c.Connect(ctx)
+	jsonValue, err := json.Marshal(r)
 	if err != nil {
-		return fmt.Errorf("error connecting to Websocket: %w", err)
+		return fmt.Errorf("error marshalling JSON: %w", err)
 	}
-	defer conn.Close(ws.StatusNormalClosure, "exiting consumer")
 
-	err = c.Subscribe(ctx, conn, handlerType)
+	err = c.websocket.Write(ctx, ws.MessageText, jsonValue)
 	if err != nil {
-		return fmt.Errorf("error subscribing to channel: %w", err)
+		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
 
+	err = c.router.RemoveHandler(channel)
+	if err != nil {
+		return fmt.Errorf("error removing handler: %w", err)
+	}
+
+	return nil
+}
+
+// Consume starts the consume loop, reading from the Websocket and passing it to the router for handling.
+func (c *Consumer) Consume(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
 			slog.Warn("context cancelled", "err", ctx.Err())
 			return ctx.Err()
 		default:
-			message, err := readMessage(ctx, conn)
+			message, err := readMessage(ctx, c.websocket)
 			if err != nil {
 				return fmt.Errorf("error reading message: %w", err)
 			}
 
-			response, err := handler(ctx, message)
+			response, err := c.router.Handle(ctx, message)
 			if err != nil {
 				return fmt.Errorf("error handling message: %w", err)
 			}
@@ -96,7 +151,7 @@ func (c *Consumer) Consume(ctx context.Context, handlerType string, handler func
 				return fmt.Errorf("error formatting response: %w", err)
 			}
 
-			if err := conn.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
+			if err := c.websocket.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
 				return fmt.Errorf("error writing message: %w", err)
 			}
 		}

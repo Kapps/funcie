@@ -33,6 +33,7 @@ type ServerToClientMessage struct {
 	RequestType string `json:"requestType"`
 }
 
-const ClientToServerMessageRequestTypeSubscribe = "subscribe"
+const ClientToServerMessageRequestTypeSubscribe = "s"
+const ClientToServerMessageRequestTypeUnsubscribe = "u"
 
 //const ServerToClientMessageRequestTypeInvoke = "invoke"

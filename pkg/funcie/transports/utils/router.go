@@ -45,3 +45,11 @@ func (h *handlerRouter) Handle(ctx context.Context, message *funcie.Message) (*f
 	}
 	return handler(ctx, message)
 }
+
+func (h *handlerRouter) ListHandlers() []string {
+	var handlers = make([]string, 0, len(h.handlers))
+	for handler := range h.handlers {
+		handlers = append(handlers, handler)
+	}
+	return handlers
+}

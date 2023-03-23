@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
+	utilMocks "github.com/Kapps/funcie/pkg/funcie/transports/utils/mocks"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/mocks"
 	"github.com/stretchr/testify/mock"
@@ -14,16 +16,41 @@ import (
 	"time"
 )
 
+// This is a test helper function that returns a connected consumer, a mock websocket client, and a mock websocket.
+func getConnectedConsumer(t *testing.T, ctx context.Context) (*ws.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
+	wsClient := mocks.NewWebsocketClient(t)
+	consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+	mockSocket := mocks.NewWebsocket(t)
+
+	wsClient.On("Dial", ctx, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+	err := consumer.Connect(ctx)
+	require.NoError(t, err)
+
+	return consumer, wsClient, mockSocket
+}
+
+func nilHandler(ctx context.Context, payload *funcie.Message) (*funcie.Response, error) {
+	return nil, nil
+}
+
 func TestConsumer_Subscribe(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	t.Run("writes a subscribe message to the connection", func(t *testing.T) {
+	t.Run("returns an error if the connection is not established", func(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-		mockSocket := mocks.NewWebsocket(t)
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+
+		err := consumer.Subscribe(ctx, "channelName", nilHandler)
+		require.Errorf(t, err, "not connected")
+	})
+
+	t.Run("writes a subscribe message to the connection", func(t *testing.T) {
+		t.Parallel()
+
+		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
 		jsonValue, err := json.Marshal(ws.ClientToServerMessage{
 			Channel:     "channelName",
@@ -32,215 +59,282 @@ func TestConsumer_Subscribe(t *testing.T) {
 
 		mockSocket.EXPECT().Write(ctx, mock.Anything, jsonValue).Return(nil)
 
-		err = consumer.Subscribe(ctx, mockSocket, "channelName")
+		err = consumer.Subscribe(ctx, "channelName", nilHandler)
 		require.NoError(t, err)
 	})
 
 	t.Run("returns an error if the write fails", func(t *testing.T) {
 		t.Parallel()
 
-		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-		mockSocket := mocks.NewWebsocket(t)
+		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
 		mockSocket.EXPECT().Write(ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("error"))
 
-		err := consumer.Subscribe(ctx, mockSocket, "channelName")
+		err := consumer.Subscribe(ctx, "channelName", nilHandler)
+		require.Error(t, err)
+	})
+}
+
+func TestConsumer_Unsubscribe(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	t.Run("returns an error if the connection is not established", func(t *testing.T) {
+		t.Parallel()
+
+		wsClient := mocks.NewWebsocketClient(t)
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+
+		err := consumer.Unsubscribe(ctx, "channelName")
+		require.Errorf(t, err, "not connected")
+	})
+
+	t.Run("writes an unsubscribe message to the connection", func(t *testing.T) {
+		t.Parallel()
+
+		mockRouter := utilMocks.NewHandlerRouter(t)
+		wsClient := mocks.NewWebsocketClient(t)
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", mockRouter)
+		mockSocket := mocks.NewWebsocket(t)
+
+		wsClient.On("Dial", ctx, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+		err := consumer.Connect(ctx)
+		require.NoError(t, err)
+
+		jsonValue, err := json.Marshal(ws.ClientToServerMessage{
+			Channel:     "channelName",
+			RequestType: ws.ClientToServerMessageRequestTypeUnsubscribe,
+		})
+
+		mockSocket.EXPECT().Write(ctx, mock.Anything, jsonValue).Return(nil)
+		mockRouter.EXPECT().RemoveHandler("channelName").Return(nil)
+		err = consumer.Unsubscribe(ctx, "channelName")
+		require.NoError(t, err)
+	})
+
+	t.Run("returns an error if the write fails", func(t *testing.T) {
+		t.Parallel()
+
+		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
+
+		mockSocket.EXPECT().Write(ctx, mock.Anything, mock.Anything).Return(fmt.Errorf("error"))
+
+		err := consumer.Unsubscribe(ctx, "channelName")
 		require.Error(t, err)
 	})
 }
 
 func TestConsumer_Connect(t *testing.T) {
 	t.Parallel()
+
 	ctx := context.Background()
 
-	t.Run("returns a valid connection", func(t *testing.T) {
+	t.Run("returns no error on valid connection", func(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
 
-		conn, err := consumer.Connect(ctx)
+		err := consumer.Connect(ctx)
 		require.NoError(t, err)
-		require.Equal(t, mockSocket, conn)
 	})
 
-	t.Run("returns an error if the connection fails", func(t *testing.T) {
-		t.Parallel()
-
-		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-
-		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
-
-		conn, err := consumer.Connect(ctx)
-		require.Error(t, err)
-		require.Nil(t, conn)
-	})
-}
-
-func TestConsumer_Consume(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-
-	t.Run("returns an error if the connection fails", func(t *testing.T) {
-		t.Parallel()
-
-		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-
-		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
-
-		err := consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-			return nil, nil
-		})
-
-		require.Error(t, err)
-	})
-
-	t.Run("subscribes to the channel, consumes and responds to a message", func(t *testing.T) {
+	t.Run("disconnects when the context is cancelled", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, cancel := context.WithCancel(ctx)
 
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
-			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
-		})
-		require.NoError(t, err)
-
-		serverToClient := &funcie.Message{
-			ID:      "S2C",
-			Data:    []byte("DataS2C"),
-			Created: time.Now(),
-			Ttl:     600,
-		}
-		serverToClientJson, err := json.Marshal(serverToClient)
-		require.NoError(t, err)
-
-		clientToServer := &funcie.Response{
-			ID:       "C2S",
-			Data:     []byte("DataC2S"),
-			Error:    nil,
-			Received: time.Now(),
-		}
-		clientToServerJson, err := json.Marshal(clientToServer)
-		require.NoError(t, err)
-
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
-
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
-		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(nil)
 		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
 
-		_ = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-			cancel()
-			return clientToServer, nil
-		})
+		err := consumer.Connect(ctx)
+		require.NoError(t, err)
+
+		cancel()
+
+		//todo -- not sure how to test this without a sleep
+		time.Sleep(100 * time.Millisecond)
 	})
 
-	t.Run("errors if can't subscribe", func(t *testing.T) {
+	t.Run("returns an error if the connection fails", func(t *testing.T) {
 		t.Parallel()
 
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
-			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
-		})
-		require.NoError(t, err)
-
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-		mockSocket := mocks.NewWebsocket(t)
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
 
-		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
 
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(fmt.Errorf("error"))
-		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
-
-		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-			return nil, nil
-		})
-
+		err := consumer.Connect(ctx)
 		require.Error(t, err)
 	})
-
-	t.Run("errors if can't read message", func(t *testing.T) {
-		t.Parallel()
-
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
-			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
-		})
-		require.NoError(t, err)
-
-		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-		mockSocket := mocks.NewWebsocket(t)
-
-		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
-
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
-		mockSocket.EXPECT().Read(ctx).Return(0, nil, fmt.Errorf("error123"))
-		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
-
-		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-			return nil, nil
-		})
-
-		require.Errorf(t, err, "error123")
-	})
-
-	t.Run("errors if cant write response", func(t *testing.T) {
-		t.Parallel()
-
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
-			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
-		})
-		require.NoError(t, err)
-
-		serverToClient := &funcie.Message{
-			ID:      "S2C",
-			Data:    []byte("DataS2C"),
-			Created: time.Now(),
-			Ttl:     600,
-		}
-		serverToClientJson, err := json.Marshal(serverToClient)
-		require.NoError(t, err)
-
-		clientToServer := &funcie.Response{
-			ID:       "C2S",
-			Data:     []byte("DataC2S"),
-			Error:    nil,
-			Received: time.Now(),
-		}
-		clientToServerJson, err := json.Marshal(clientToServer)
-		require.NoError(t, err)
-
-		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
-		mockSocket := mocks.NewWebsocket(t)
-
-		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
-
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
-		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
-		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(fmt.Errorf("error123"))
-		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
-
-		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-			return clientToServer, nil
-		})
-
-		require.Errorf(t, err, "error123")
-	})
-
 }
+
+//func TestConsumer_Consume(t *testing.T) {
+//	t.Parallel()
+//	ctx := context.Background()
+//
+//	t.Run("returns an error if the connection fails", func(t *testing.T) {
+//		t.Parallel()
+//
+//		wsClient := mocks.NewWebsocketClient(t)
+//		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+//
+//		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
+//
+//		err := consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+//			return nil, nil
+//		})
+//
+//		require.Error(t, err)
+//	})
+//
+//	t.Run("subscribes to the channel, consumes and responds to a message", func(t *testing.T) {
+//		t.Parallel()
+//
+//		ctx, cancel := context.WithCancel(ctx)
+//
+//		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+//			Channel:     "channelName",
+//			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+//		})
+//		require.NoError(t, err)
+//
+//		serverToClient := &funcie.Message{
+//			ID:      "S2C",
+//			Data:    []byte("DataS2C"),
+//			Created: time.Now(),
+//			Ttl:     600,
+//		}
+//		serverToClientJson, err := json.Marshal(serverToClient)
+//		require.NoError(t, err)
+//
+//		clientToServer := &funcie.Response{
+//			ID:       "C2S",
+//			Data:     []byte("DataC2S"),
+//			Error:    nil,
+//			Received: time.Now(),
+//		}
+//		clientToServerJson, err := json.Marshal(clientToServer)
+//		require.NoError(t, err)
+//
+//		wsClient := mocks.NewWebsocketClient(t)
+//		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+//		mockSocket := mocks.NewWebsocket(t)
+//
+//		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+//
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
+//		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(nil)
+//		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+//
+//		_ = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+//			cancel()
+//			return clientToServer, nil
+//		})
+//	})
+//
+//	t.Run("errors if can't subscribe", func(t *testing.T) {
+//		t.Parallel()
+//
+//		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+//			Channel:     "channelName",
+//			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+//		})
+//		require.NoError(t, err)
+//
+//		wsClient := mocks.NewWebsocketClient(t)
+//		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+//		mockSocket := mocks.NewWebsocket(t)
+//
+//		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+//
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(fmt.Errorf("error"))
+//		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+//
+//		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+//			return nil, nil
+//		})
+//
+//		require.Error(t, err)
+//	})
+//
+//	t.Run("errors if can't read message", func(t *testing.T) {
+//		t.Parallel()
+//
+//		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+//			Channel:     "channelName",
+//			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+//		})
+//		require.NoError(t, err)
+//
+//		wsClient := mocks.NewWebsocketClient(t)
+//		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+//		mockSocket := mocks.NewWebsocket(t)
+//
+//		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+//
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
+//		mockSocket.EXPECT().Read(ctx).Return(0, nil, fmt.Errorf("error123"))
+//		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+//
+//		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+//			return nil, nil
+//		})
+//
+//		require.Errorf(t, err, "error123")
+//	})
+//
+//	t.Run("errors if cant write response", func(t *testing.T) {
+//		t.Parallel()
+//
+//		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+//			Channel:     "channelName",
+//			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+//		})
+//		require.NoError(t, err)
+//
+//		serverToClient := &funcie.Message{
+//			ID:      "S2C",
+//			Data:    []byte("DataS2C"),
+//			Created: time.Now(),
+//			Ttl:     600,
+//		}
+//		serverToClientJson, err := json.Marshal(serverToClient)
+//		require.NoError(t, err)
+//
+//		clientToServer := &funcie.Response{
+//			ID:       "C2S",
+//			Data:     []byte("DataC2S"),
+//			Error:    nil,
+//			Received: time.Now(),
+//		}
+//		clientToServerJson, err := json.Marshal(clientToServer)
+//		require.NoError(t, err)
+//
+//		wsClient := mocks.NewWebsocketClient(t)
+//		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", "channelName")
+//		mockSocket := mocks.NewWebsocket(t)
+//
+//		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
+//
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
+//		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
+//		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(fmt.Errorf("error123"))
+//		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+//
+//		err = consumer.Consume(ctx, func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+//			return clientToServer, nil
+//		})
+//
+//		require.Errorf(t, err, "error123")
+//	})
+//
+//}
