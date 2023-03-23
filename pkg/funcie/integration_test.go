@@ -31,8 +31,8 @@ func TestIntegration(t *testing.T) {
 	producer := redistransport.NewPublisher(producerClient, "test-channel")
 	consumer := redistransport.NewConsumer(consumerClient, "test-channel")
 
-	first := NewMessage([]byte("first"), time.Minute)
-	second := NewMessage([]byte("second"), time.Minute)
+	first := NewMessage("app", []byte("first"), time.Minute)
+	second := NewMessage("app", []byte("second"), time.Minute)
 
 	expectedFirstResponse := NewResponse(first.ID, []byte("resp"), nil)
 	expectedSecondResponse := NewResponse(second.ID, []byte("resp"), nil)
