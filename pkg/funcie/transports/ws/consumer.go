@@ -132,6 +132,8 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 func (c *Consumer) Consume(ctx context.Context) error {
 	messageChannel := make(chan *funcie.Message, 10)
 
+	var readError error = nil
+
 	go func() {
 		for {
 			select {
@@ -143,7 +145,9 @@ func (c *Consumer) Consume(ctx context.Context) error {
 				message, err := readMessage(ctx, c.websocket)
 				if err != nil {
 					slog.Error("error reading message", err)
-					continue
+					readError = err
+					close(messageChannel)
+					return
 				}
 
 				messageChannel <- message
@@ -167,8 +171,7 @@ func (c *Consumer) Consume(ctx context.Context) error {
 		}
 	}
 
-	return nil
-	//return errors.New("message channel closed")
+	return readError
 }
 
 func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {
