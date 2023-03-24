@@ -130,32 +130,45 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 
 // Consume starts the consume loop, reading from the Websocket and passing it to the router for handling.
 func (c *Consumer) Consume(ctx context.Context) error {
-	for {
-		select {
-		case <-ctx.Done():
-			slog.Warn("context cancelled", "err", ctx.Err())
-			return ctx.Err()
-		default:
-			message, err := readMessage(ctx, c.websocket)
-			if err != nil {
-				return fmt.Errorf("error reading message: %w", err)
-			}
+	messageChannel := make(chan *funcie.Message, 10)
 
-			response, err := c.router.Handle(ctx, message)
-			if err != nil {
-				return fmt.Errorf("error handling message: %w", err)
-			}
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				slog.Warn("context cancelled", "err", ctx.Err())
+				close(messageChannel)
+				return
+			default:
+				message, err := readMessage(ctx, c.websocket)
+				if err != nil {
+					slog.Error("error reading message", err)
+					continue
+				}
 
-			responseData, err := formatResponse(response)
-			if err != nil {
-				return fmt.Errorf("error formatting response: %w", err)
-			}
-
-			if err := c.websocket.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
-				return fmt.Errorf("error writing message: %w", err)
+				messageChannel <- message
 			}
 		}
+	}()
+
+	for message := range messageChannel {
+		response, err := c.router.Handle(ctx, message)
+		if err != nil {
+			return fmt.Errorf("error handling message: %w", err)
+		}
+
+		responseData, err := formatResponse(response)
+		if err != nil {
+			return fmt.Errorf("error formatting response: %w", err)
+		}
+
+		if err := c.websocket.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
+			return fmt.Errorf("error writing message: %w", err)
+		}
 	}
+
+	return nil
+	//return errors.New("message channel closed")
 }
 
 func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {

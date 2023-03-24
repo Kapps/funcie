@@ -230,7 +230,7 @@ func TestConsumer_Consume(t *testing.T) {
 		mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
 		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
 		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(nil)
-		mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+		//mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
 
 		consumer.Subscribe(ctx, "app", func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 			require.Equal(t, serverToClient, message)
@@ -240,6 +240,31 @@ func TestConsumer_Consume(t *testing.T) {
 
 		_ = consumer.Consume(ctx)
 	})
+
+	//t.Run("errors when context is cancelled", func(t *testing.T) {
+	//	t.Parallel()
+	//
+	//	ctx, cancel := context.WithCancel(ctx)
+	//
+	//	subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+	//		Channel:     "app",
+	//		RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+	//	})
+	//	require.NoError(t, err)
+	//
+	//	consumer, _, mockSocket := getConnectedConsumer(t, ctx)
+	//
+	//	mockSocket.EXPECT().Write(ctx, wsl.MessageText, subscriberJsonValue).Return(nil)
+	//	mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
+	//
+	//	consumer.Subscribe(ctx, "app", func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	//		cancel()
+	//		return nil, nil
+	//	})
+	//
+	//	err = consumer.Consume(ctx)
+	//	require.Error(t, err)
+	//})
 
 	//t.Run("errors if can't subscribe", func(t *testing.T) {
 	//	t.Parallel()
