@@ -23,7 +23,7 @@ func (_m *HandlerRouter) EXPECT() *HandlerRouter_Expecter {
 }
 
 // AddHandler provides a mock function with given fields: handlerType, handler
-func (_m *HandlerRouter) AddHandler(handlerType string, handler funcie.Handler) error {
+func (_m *HandlerRouter) AddClientHandler(handlerType string, handler funcie.Handler) error {
 	ret := _m.Called(handlerType, handler)
 
 	var r0 error
@@ -36,7 +36,7 @@ func (_m *HandlerRouter) AddHandler(handlerType string, handler funcie.Handler) 
 	return r0
 }
 
-// HandlerRouter_AddHandler_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddHandler'
+// HandlerRouter_AddHandler_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddClientHandler'
 type HandlerRouter_AddHandler_Call struct {
 	*mock.Call
 }
@@ -45,7 +45,7 @@ type HandlerRouter_AddHandler_Call struct {
 //   - handlerType string
 //   - handler funcie.Handler
 func (_e *HandlerRouter_Expecter) AddHandler(handlerType interface{}, handler interface{}) *HandlerRouter_AddHandler_Call {
-	return &HandlerRouter_AddHandler_Call{Call: _e.mock.On("AddHandler", handlerType, handler)}
+	return &HandlerRouter_AddHandler_Call{Call: _e.mock.On("AddClientHandler", handlerType, handler)}
 }
 
 func (_c *HandlerRouter_AddHandler_Call) Run(run func(handlerType string, handler funcie.Handler)) *HandlerRouter_AddHandler_Call {
@@ -121,7 +121,7 @@ func (_c *HandlerRouter_Handle_Call) RunAndReturn(run func(context.Context, *fun
 }
 
 // RemoveHandler provides a mock function with given fields: handlerType
-func (_m *HandlerRouter) RemoveHandler(handlerType string) error {
+func (_m *HandlerRouter) RemoveClientHandler(handlerType string) error {
 	ret := _m.Called(handlerType)
 
 	var r0 error
@@ -134,7 +134,7 @@ func (_m *HandlerRouter) RemoveHandler(handlerType string) error {
 	return r0
 }
 
-// HandlerRouter_RemoveHandler_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveHandler'
+// HandlerRouter_RemoveHandler_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RemoveClientHandler'
 type HandlerRouter_RemoveHandler_Call struct {
 	*mock.Call
 }
@@ -142,7 +142,7 @@ type HandlerRouter_RemoveHandler_Call struct {
 // RemoveHandler is a helper method to define mock.On call
 //   - handlerType string
 func (_e *HandlerRouter_Expecter) RemoveHandler(handlerType interface{}) *HandlerRouter_RemoveHandler_Call {
-	return &HandlerRouter_RemoveHandler_Call{Call: _e.mock.On("RemoveHandler", handlerType)}
+	return &HandlerRouter_RemoveHandler_Call{Call: _e.mock.On("RemoveClientHandler", handlerType)}
 }
 
 func (_c *HandlerRouter_RemoveHandler_Call) Run(run func(handlerType string)) *HandlerRouter_RemoveHandler_Call {

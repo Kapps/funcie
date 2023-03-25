@@ -28,9 +28,9 @@ func TestHandlerRouter_TestHandler(t *testing.T) {
 			Received: time.Time{},
 		}, nil
 	})
-	router := NewHandlerRouter()
+	router := NewClientHandlerRouter()
 
-	err := router.AddHandler(application, handler)
+	err := router.AddClientHandler(application, handler)
 	assert.NoError(t, err)
 
 	response, err := router.Handle(context.Background(), &funcie.Message{
@@ -40,7 +40,7 @@ func TestHandlerRouter_TestHandler(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equalf(t, id1, response.ID, "response id was not returned from handler")
 
-	err = router.RemoveHandler(application)
+	err = router.RemoveClientHandler(application)
 	assert.NoError(t, err)
 
 	response, err = router.Handle(context.Background(), &funcie.Message{

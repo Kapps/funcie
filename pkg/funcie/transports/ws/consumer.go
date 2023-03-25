@@ -17,7 +17,7 @@ type Consumer struct {
 	wsClient  WebsocketClient
 	websocket Websocket
 	connected bool
-	router    utils.HandlerRouter
+	router    utils.ClientHandlerRouter
 }
 
 // NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
@@ -25,12 +25,12 @@ func NewConsumer(url string) funcie.Consumer {
 	return &Consumer{
 		URL:      url,
 		wsClient: &WebsocketClientWrapper{},
-		router:   utils.NewHandlerRouter(),
+		router:   utils.NewClientHandlerRouter(),
 	}
 }
 
 // NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
-func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.HandlerRouter) *Consumer {
+func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.ClientHandlerRouter) *Consumer {
 	return &Consumer{
 		wsClient: wsClient,
 		URL:      url,
@@ -92,7 +92,7 @@ func (c *Consumer) Subscribe(ctx context.Context, channel string, handler funcie
 		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
 
-	err = c.router.AddHandler(channel, handler)
+	err = c.router.AddClientHandler(channel, handler)
 	if err != nil {
 		return fmt.Errorf("error adding handler: %w", err)
 	}
@@ -120,7 +120,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
 
-	err = c.router.RemoveHandler(channel)
+	err = c.router.RemoveClientHandler(channel)
 	if err != nil {
 		return fmt.Errorf("error removing handler: %w", err)
 	}

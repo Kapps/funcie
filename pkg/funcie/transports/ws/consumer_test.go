@@ -19,7 +19,7 @@ import (
 // This is a test helper function that returns a connected consumer, a mock websocket client, and a mock websocket.
 func getConnectedConsumer(t *testing.T, ctx context.Context) (*ws.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
 	wsClient := mocks.NewWebsocketClient(t)
-	consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+	consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 	mockSocket := mocks.NewWebsocket(t)
 	mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil).Maybe()
 
@@ -42,7 +42,7 @@ func TestConsumer_Subscribe(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		err := consumer.Subscribe(ctx, "channelName", nilHandler)
 		require.Errorf(t, err, "not connected")
@@ -84,7 +84,7 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		err := consumer.Unsubscribe(ctx, "channelName")
 		require.Errorf(t, err, "not connected")
@@ -134,7 +134,7 @@ func TestConsumer_Connect(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
@@ -149,7 +149,7 @@ func TestConsumer_Connect(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
@@ -168,7 +168,7 @@ func TestConsumer_Connect(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewHandlerRouter())
+		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
 
