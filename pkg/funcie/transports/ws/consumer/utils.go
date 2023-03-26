@@ -1,4 +1,4 @@
-package ws
+package consumer
 
 import (
 	"context"
@@ -21,19 +21,3 @@ type WebsocketClientWrapper struct{}
 func (w *WebsocketClientWrapper) Dial(ctx context.Context, u string, opts *ws.DialOptions) (Websocket, *http.Response, error) {
 	return ws.Dial(ctx, u, opts)
 }
-
-type ClientToServerMessage struct {
-	Channel     string `json:"channel"`
-	RequestType string `json:"requestType"`
-}
-
-type ServerToClientMessage struct {
-	Channel     string `json:"channel"`
-	Payload     string `json:"payload"`
-	RequestType string `json:"requestType"`
-}
-
-const ClientToServerMessageRequestTypeSubscribe = "s"
-const ClientToServerMessageRequestTypeUnsubscribe = "u"
-
-//const ServerToClientMessageRequestTypeInvoke = "invoke"

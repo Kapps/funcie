@@ -1,4 +1,4 @@
-package ws
+package consumer
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
+	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
 	"golang.org/x/exp/slog"
 	"log"
 	ws "nhooyr.io/websocket"
@@ -77,9 +78,9 @@ func (c *Consumer) Subscribe(ctx context.Context, channel string, handler funcie
 		return fmt.Errorf("not connected")
 	}
 
-	r := ClientToServerMessage{
+	r := common.ClientToServerMessage{
 		Channel:     channel,
-		RequestType: ClientToServerMessageRequestTypeSubscribe,
+		RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 	}
 
 	jsonValue, err := json.Marshal(r)
@@ -105,9 +106,9 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 		return fmt.Errorf("not connected")
 	}
 
-	r := ClientToServerMessage{
+	r := common.ClientToServerMessage{
 		Channel:     channel,
-		RequestType: ClientToServerMessageRequestTypeUnsubscribe,
+		RequestType: common.ClientToServerMessageRequestTypeUnsubscribe,
 	}
 
 	jsonValue, err := json.Marshal(r)

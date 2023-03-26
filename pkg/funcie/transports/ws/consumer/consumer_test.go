@@ -1,4 +1,4 @@
-package ws_test
+package consumer_test
 
 import (
 	"context"
@@ -7,8 +7,9 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	utilMocks "github.com/Kapps/funcie/pkg/funcie/transports/utils/mocks"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws/mocks"
+	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
+	c "github.com/Kapps/funcie/pkg/funcie/transports/ws/consumer"
+	"github.com/Kapps/funcie/pkg/funcie/transports/ws/consumer/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	wsl "nhooyr.io/websocket"
@@ -16,10 +17,10 @@ import (
 	"time"
 )
 
-// This is a test helper function that returns a connected consumer, a mock websocket client, and a mock websocket.
-func getConnectedConsumer(t *testing.T, ctx context.Context) (*ws.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
+// This is a test helper function that returns a connected c, a mock websocket client, and a mock websocket.
+func getConnectedConsumer(t *testing.T, ctx context.Context) (*c.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
 	wsClient := mocks.NewWebsocketClient(t)
-	consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+	consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 	mockSocket := mocks.NewWebsocket(t)
 	mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil).Maybe()
 
@@ -42,7 +43,7 @@ func TestConsumer_Subscribe(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		err := consumer.Subscribe(ctx, "channelName", nilHandler)
 		require.Errorf(t, err, "not connected")
@@ -53,9 +54,9 @@ func TestConsumer_Subscribe(t *testing.T) {
 
 		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
-		jsonValue, err := json.Marshal(ws.ClientToServerMessage{
+		jsonValue, err := json.Marshal(common.ClientToServerMessage{
 			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 
 		mockSocket.EXPECT().Write(ctx, mock.Anything, jsonValue).Return(nil)
@@ -84,7 +85,7 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		err := consumer.Unsubscribe(ctx, "channelName")
 		require.Errorf(t, err, "not connected")
@@ -95,16 +96,16 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 
 		mockRouter := utilMocks.NewHandlerRouter(t)
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", mockRouter)
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", mockRouter)
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", ctx, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
 		err := consumer.Connect(ctx)
 		require.NoError(t, err)
 
-		jsonValue, err := json.Marshal(ws.ClientToServerMessage{
+		jsonValue, err := json.Marshal(common.ClientToServerMessage{
 			Channel:     "channelName",
-			RequestType: ws.ClientToServerMessageRequestTypeUnsubscribe,
+			RequestType: common.ClientToServerMessageRequestTypeUnsubscribe,
 		})
 
 		mockSocket.EXPECT().Write(ctx, mock.Anything, jsonValue).Return(nil)
@@ -134,7 +135,7 @@ func TestConsumer_Connect(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
@@ -149,7 +150,7 @@ func TestConsumer_Connect(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 		mockSocket := mocks.NewWebsocket(t)
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(mockSocket, nil, nil)
@@ -168,7 +169,7 @@ func TestConsumer_Connect(t *testing.T) {
 		t.Parallel()
 
 		wsClient := mocks.NewWebsocketClient(t)
-		consumer := ws.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
+		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 
 		wsClient.On("Dial", mock.Anything, "ws://localhost:8080", mock.Anything).Return(nil, nil, fmt.Errorf("error"))
 
@@ -186,9 +187,9 @@ func TestConsumer_Consume(t *testing.T) {
 
 		ctx, cancel := context.WithCancel(ctx)
 
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+		subscriberJsonValue, err := json.Marshal(common.ClientToServerMessage{
 			Channel:     "app",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 		require.NoError(t, err)
 
@@ -245,9 +246,9 @@ func TestConsumer_Consume(t *testing.T) {
 
 		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
-		subscriberJsonValue, err := json.Marshal(ws.ClientToServerMessage{
+		subscriberJsonValue, err := json.Marshal(common.ClientToServerMessage{
 			Channel:     "app",
-			RequestType: ws.ClientToServerMessageRequestTypeSubscribe,
+			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 		require.NoError(t, err)
 
