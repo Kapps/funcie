@@ -1,17 +1,20 @@
 package common
 
+import "github.com/Kapps/funcie/pkg/funcie"
+
 type ClientToServerMessage struct {
-	Channel     string `json:"channel"`
-	RequestType string `json:"requestType"`
+	RequestType string           `json:"requestType"`
+	Application string           `json:"channel"`
+	Response    *funcie.Response `json:"response"`
 }
 
 type ServerToClientMessage struct {
-	Channel     string `json:"channel"`
-	Payload     string `json:"payload"`
-	RequestType string `json:"requestType"`
+	RequestType string          `json:"requestType"`
+	Message     *funcie.Message `json:"message"`
 }
 
 const ClientToServerMessageRequestTypeSubscribe = "s"
 const ClientToServerMessageRequestTypeUnsubscribe = "u"
+const ClientToServerMessageRequestTypeResponse = "rs"
 
-//const ServerToClientMessageRequestTypeInvoke = "invoke"
+const ServerToClientMessageRequestTypeRequest = "rq"

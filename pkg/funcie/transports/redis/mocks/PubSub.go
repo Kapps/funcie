@@ -42,7 +42,7 @@ func (_m *PubSub) Channel(opts ...redis.ChannelOption) <-chan *redis.Message {
 	return r0
 }
 
-// PubSub_Channel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Channel'
+// PubSub_Channel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Application'
 type PubSub_Channel_Call struct {
 	*mock.Call
 }
@@ -50,7 +50,7 @@ type PubSub_Channel_Call struct {
 // Channel is a helper method to define mock.On call
 //   - opts ...redis.ChannelOption
 func (_e *PubSub_Expecter) Channel(opts ...interface{}) *PubSub_Channel_Call {
-	return &PubSub_Channel_Call{Call: _e.mock.On("Channel",
+	return &PubSub_Channel_Call{Call: _e.mock.On("Application",
 		append([]interface{}{}, opts...)...)}
 }
 

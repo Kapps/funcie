@@ -55,7 +55,7 @@ func TestConsumer_Subscribe(t *testing.T) {
 		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
 		jsonValue, err := json.Marshal(common.ClientToServerMessage{
-			Channel:     "channelName",
+			Application: "channelName",
 			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 
@@ -104,7 +104,7 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 		require.NoError(t, err)
 
 		jsonValue, err := json.Marshal(common.ClientToServerMessage{
-			Channel:     "channelName",
+			Application: "channelName",
 			RequestType: common.ClientToServerMessageRequestTypeUnsubscribe,
 		})
 
@@ -188,7 +188,7 @@ func TestConsumer_Consume(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 
 		subscriberJsonValue, err := json.Marshal(common.ClientToServerMessage{
-			Channel:     "app",
+			Application: "app",
 			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 		require.NoError(t, err)
@@ -247,7 +247,7 @@ func TestConsumer_Consume(t *testing.T) {
 		consumer, _, mockSocket := getConnectedConsumer(t, ctx)
 
 		subscriberJsonValue, err := json.Marshal(common.ClientToServerMessage{
-			Channel:     "app",
+			Application: "app",
 			RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 		})
 		require.NoError(t, err)

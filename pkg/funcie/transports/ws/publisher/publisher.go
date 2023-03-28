@@ -2,9 +2,11 @@ package publisher
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
 	"log"
 	"net"
 	"net/http"
@@ -100,12 +102,14 @@ func (c *WebsocketClientManager) CloseAllClients() {
 
 func (c *WebsocketClientManager) AddClientRouting(id string, conn Client) {
 	c.routeLock.Lock()
+	fmt.Printf("adding client routing for %s", id)
 	c.clientMap[id] = conn
 	c.routeLock.Unlock()
 }
 
 func (c *WebsocketClientManager) RemoveClientRouting(id string) {
 	c.routeLock.Lock()
+	fmt.Printf("removing client routing for %s", id)
 	delete(c.clientMap, id)
 	c.routeLock.Unlock()
 }
@@ -139,22 +143,56 @@ func (c *WebsocketClientManager) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = c.RegisterClient(ctx, conn)
-	if err != nil {
-		c.logf("%v", err)
-		return
-	}
+	c.Process(ctx, conn)
 }
 
 // RegisterClient waits for a subscribe message from the client (required) and then registers a client to the client manager.
-func (c *WebsocketClientManager) RegisterClient(ctx context.Context, conn Websocket) error {
+func (c *WebsocketClientManager) Process(ctx context.Context, conn Websocket) {
 	//TODO -- should do something with authentication here
 
 	client := NewWebsocketClient(conn)
 	c.AddClient(client)
 
+	for {
+		select {
+		case <-ctx.Done():
+			c.logf("context done")
+			return
+		default:
+			readWebsocketMessage(ctx, conn, c, client)
+		}
+	}
+}
+
+func readWebsocketMessage(ctx context.Context, conn Websocket, c *WebsocketClientManager, client *WebsocketClient) error {
+	_, msg, err := conn.Read(ctx)
+	if err != nil {
+		c.logf("failed to read message: %v", err)
+		return err
+	}
+
+	var message common.ClientToServerMessage
+	if err := json.Unmarshal(msg, &message); err != nil {
+		c.logf("failed to unmarshal message: %v", err)
+		return err
+	}
+
+	switch message.RequestType {
+	case common.ClientToServerMessageRequestTypeSubscribe:
+		c.AddClientRouting(message.Application, client)
+		break
+	case common.ClientToServerMessageRequestTypeUnsubscribe:
+		c.RemoveClientRouting(message.Application)
+		break
+	case common.ClientToServerMessageRequestTypeResponse:
+		//TODO -- handle a response from a client
+		break
+	default:
+		c.logf("unknown message type: %v", message.RequestType)
+		break
+	}
+
 	return nil
-	//return client.HandleMessages(ctx)
 }
 
 //type PublishClient interface {

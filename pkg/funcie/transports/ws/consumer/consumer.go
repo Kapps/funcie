@@ -73,13 +73,13 @@ func (c *Consumer) connectSocket(ctx context.Context) (Websocket, error) {
 	return conn, nil
 }
 
-func (c *Consumer) Subscribe(ctx context.Context, channel string, handler funcie.Handler) error {
+func (c *Consumer) Subscribe(ctx context.Context, application string, handler funcie.Handler) error {
 	if !c.connected {
 		return fmt.Errorf("not connected")
 	}
 
 	r := common.ClientToServerMessage{
-		Channel:     channel,
+		Application: application,
 		RequestType: common.ClientToServerMessageRequestTypeSubscribe,
 	}
 
@@ -93,7 +93,7 @@ func (c *Consumer) Subscribe(ctx context.Context, channel string, handler funcie
 		return fmt.Errorf("error writing to Websocket: %w", err)
 	}
 
-	err = c.router.AddClientHandler(channel, handler)
+	err = c.router.AddClientHandler(application, handler)
 	if err != nil {
 		return fmt.Errorf("error adding handler: %w", err)
 	}
@@ -107,7 +107,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 	}
 
 	r := common.ClientToServerMessage{
-		Channel:     channel,
+		Application: channel,
 		RequestType: common.ClientToServerMessageRequestTypeUnsubscribe,
 	}
 
@@ -194,15 +194,25 @@ func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {
 }
 
 func parseMessage(message string) (*funcie.Message, error) {
-	var msg funcie.Message
+	var msg common.ServerToClientMessage
 	if err := json.Unmarshal([]byte(message), &msg); err != nil {
 		return nil, err
 	}
-	return &msg, nil
+
+	if msg.RequestType == common.ServerToClientMessageRequestTypeRequest {
+		return msg.Message, nil
+	}
+
+	return nil, fmt.Errorf("unsupported server to client message type: %v", msg.RequestType)
 }
 
 func formatResponse(response *funcie.Response) (string, error) {
-	data, err := json.Marshal(response)
+	msg := &common.ClientToServerMessage{
+		RequestType: common.ClientToServerMessageRequestTypeResponse,
+		Response:    response,
+	}
+
+	data, err := json.Marshal(msg)
 	if err != nil {
 		return "", err
 	}
