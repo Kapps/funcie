@@ -37,6 +37,8 @@ type Handler func(ctx context.Context, message *Message) (*Response, error)
 
 // Consumer represents a consumer of a synchronous tunnel that can be used to receive messages from a publisher and send a response.
 type Consumer interface {
-	// Consume consumes a message from the tunnel, processes it, and sends the response to the other side.
-	Consume(ctx context.Context, handler Handler) error
+	Connect(ctx context.Context) error
+	Consume(ctx context.Context) error
+	Subscribe(ctx context.Context, applicationId string, handler Handler) error
+	Unsubscribe(ctx context.Context, applicationId string) error
 }
