@@ -29,7 +29,7 @@ func Listen(port int32) error {
 	log.Printf("listening on http://%v", l.Addr())
 
 	s := &http.Server{
-		Handler:      NewWebsocketClientManager(),
+		Handler:      NewWebsocketClientListener(&WebsocketServerWrapper{}, NewWebsocketClientManager()),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
 	}
@@ -53,13 +53,31 @@ func Listen(port int32) error {
 	return s.Shutdown(ctx)
 }
 
+type ClientListener interface {
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+}
+
+type WebsocketClientListener struct {
+	websocketServer WebsocketServer
+	clientManager   ClientManager
+	logf            func(f string, v ...interface{})
+}
+
+func NewWebsocketClientListener(websocketServer WebsocketServer, clientManager ClientManager) ClientListener {
+	return &WebsocketClientListener{
+		websocketServer: websocketServer,
+		clientManager:   clientManager,
+		logf:            log.Printf,
+	}
+}
+
 type ClientManager interface {
 	AddClient(conn Client)
 	CloseAllClients()
 	AddClientRouting(id string, conn Client)
 	RemoveClientRouting(id string)
-	GetClientRouting(id string) Client
-	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	GetClientRouting(id string) (Client, error)
+	Process(ctx context.Context, conn Websocket)
 }
 
 type Client interface {
@@ -126,10 +144,10 @@ func (c *WebsocketClientManager) GetClientRouting(id string) (Client, error) {
 	return v.(Client), nil
 }
 
-func (c *WebsocketClientManager) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c WebsocketClientListener) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
+	conn, err := c.websocketServer.Accept(rw, r, &websocket.AcceptOptions{
 		Subprotocols: []string{"funcie"},
 	})
 	if err != nil {
@@ -143,7 +161,7 @@ func (c *WebsocketClientManager) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	c.Process(ctx, conn)
+	c.clientManager.Process(ctx, conn)
 }
 
 // RegisterClient waits for a subscribe message from the client (required) and then registers a client to the client manager.
@@ -152,7 +170,7 @@ func (c *WebsocketClientManager) Process(ctx context.Context, conn Websocket) {
 
 	client := NewWebsocketClient(conn)
 	c.AddClient(client)
-
+	c.logf("client connected")
 	for {
 		select {
 		case <-ctx.Done():
@@ -164,7 +182,7 @@ func (c *WebsocketClientManager) Process(ctx context.Context, conn Websocket) {
 	}
 }
 
-func readWebsocketMessage(ctx context.Context, conn Websocket, c *WebsocketClientManager, client *WebsocketClient) error {
+func readWebsocketMessage(ctx context.Context, conn Websocket, c *WebsocketClientManager, client *WebsocketClientConnection) error {
 	_, msg, err := conn.Read(ctx)
 	if err != nil {
 		c.logf("failed to read message: %v", err)
