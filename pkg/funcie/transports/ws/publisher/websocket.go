@@ -6,19 +6,19 @@ import (
 	"nhooyr.io/websocket"
 )
 
-type WebsocketClient struct {
+type WebsocketClientConnection struct {
 	conn Websocket
 }
 
-func NewWebsocketClient(conn Websocket) *WebsocketClient {
-	return &WebsocketClient{conn: conn}
+func NewWebsocketClient(conn Websocket) *WebsocketClientConnection {
+	return &WebsocketClientConnection{conn: conn}
 }
 
-func (c *WebsocketClient) HandleMessage(ctx context.Context, msg funcie.Message) error {
+func (c *WebsocketClientConnection) HandleMessage(ctx context.Context, msg funcie.Message) error {
 	//todo
 	return nil
 }
 
-func (c *WebsocketClient) Close() error {
+func (c *WebsocketClientConnection) Close() error {
 	return c.conn.Close(websocket.StatusNormalClosure, "closing")
 }
