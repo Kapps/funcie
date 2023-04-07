@@ -1,5 +1,6 @@
 package redis
 
+/*
 import (
 	"context"
 	"encoding/json"
@@ -110,3 +111,4 @@ func formatResponse(response *funcie.Response) (string, error) {
 	}
 	return string(data), nil
 }
+*/

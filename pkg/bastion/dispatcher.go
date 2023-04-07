@@ -33,7 +33,7 @@ func (h *requestHandler) Dispatch(ctx context.Context, request *Request) (*funci
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	message := funcie.NewMessage(request.Application, contents, h.ttl)
+	message := funcie.NewMessage(request.Application, request.MessageKind, contents, h.ttl)
 
 	resp, err := h.publisher.Publish(ctx, message)
 	if err != nil {

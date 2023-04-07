@@ -1,5 +1,6 @@
 package redis
 
+/*
 import (
 	"context"
 	"encoding/json"
@@ -71,3 +72,4 @@ func (p *Publisher) Publish(ctx context.Context, message *funcie.Message) (*func
 
 	return response, nil
 }
+*/

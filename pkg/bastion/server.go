@@ -60,6 +60,8 @@ func NewServerWithHTTPServer(httpServer *http.Server, handler RequestHandler) Se
 type Request struct {
 	// RequestId is a caller-specified unique ID for this request (for example, the request ID of a Lambda invocation).
 	RequestId string `json:"requestId"`
+	// MessageKind is the kind of message that is being forwarded.
+	MessageKind funcie.MessageKind `json:"messageKind"`
 	// Application is the name of the application that is making the request.
 	Application string `json:"application"`
 	// Payload is the JSON payload that is potentially being forwarded.

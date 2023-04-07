@@ -27,13 +27,14 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 			RequestId:         uuid.New().String(),
 			Application:       "application",
 			Payload:           &payload,
+			MessageKind:       funcie.MessageKindDispatch,
 			RequestParameters: nil,
 		}
 
 		messagePayload, err := request.Payload.MarshalJSON()
 		require.NoError(t, err)
 
-		message := funcie.NewMessage("application", messagePayload, ttl)
+		message := funcie.NewMessage("application", request.MessageKind, messagePayload, ttl)
 
 		responsePayload := []byte("response")
 		response := funcie.NewResponse(message.ID, responsePayload, nil)
