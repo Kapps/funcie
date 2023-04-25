@@ -1,11 +1,12 @@
 package redis_test
 
-/*
 import (
 	"context"
 	f "github.com/Kapps/funcie/pkg/funcie"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/Kapps/funcie/pkg/funcie/transports/redis/mocks"
+	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
+	utilMocks "github.com/Kapps/funcie/pkg/funcie/transports/utils/mocks"
 	"github.com/go-faker/faker/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"
@@ -17,8 +18,11 @@ import (
 func TestRedisConsumer_Consume(t *testing.T) {
 	ctx := context.Background()
 	redisClient := mocks.NewConsumeClient(t)
-	channelName := faker.Word()
-	consumer := r.NewConsumerWithClient(redisClient, channelName)
+	baseChannelName := faker.Word()
+	appId := faker.Word()
+	channelName := r.GetChannelNameForApplication(baseChannelName, appId)
+	router := utilMocks.NewClientHandlerRouter(t)
+	consumer := r.NewConsumerWithClient(redisClient, baseChannelName, router)
 
 	t.Run("should consume a message from the channel", func(t *testing.T) {
 		t.Parallel()
@@ -30,27 +34,56 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		completedChannel := make(chan struct{})
 		pubSub := mocks.NewPubSub(t)
 
-		pubSub.EXPECT().Channel().Return(messageChannel).Times(3)
-		pubSub.EXPECT().Close().Return(nil).Once()
+		// First we connect, which is done by subbing to the base channel and waiting for a response.
+		redisClient.EXPECT().Subscribe(ctx, baseChannelName).Return(pubSub).Once()
+		pubSub.EXPECT().Receive(ctx).Return(&redis.Subscription{
+			Channel: "foo",
+			Count:   1,
+		}, nil).Once()
 
-		redisClient.EXPECT().Subscribe(consumerCtx, channelName).Return(pubSub).Once()
+		require.NoError(t, consumer.Connect(ctx))
+
+		// Then we connect, which will open the channel and start consuming.
+		pubSub.EXPECT().Channel().Return(messageChannel).Times(4)
+		pubSub.EXPECT().Close().Return(nil).Once()
 
 		go func() {
 			defer close(completedChannel)
-			err := consumer.Consume(consumerCtx, func(ctx context.Context, message *f.Message) (*f.Response, error) {
-				return f.NewResponse(message.ID, []byte("resp"), nil), nil
-			})
+			err := consumer.Consume(consumerCtx)
 			require.Equal(t, f.ErrPubSubChannelClosed, err)
 		}()
 
-		msg1 := f.NewMessage("app", f.MessageKindDispatch, []byte("msg1"), time.Minute)
-		msg2 := f.NewMessage("app", f.MessageKindDispatch, []byte("msg2"), time.Minute)
+		msg1 := f.NewMessage(appId, f.MessageKindDispatch, []byte("msg1"), time.Minute)
+		msg2 := f.NewMessage(appId, f.MessageKindDispatch, []byte("msg2"), time.Minute)
+
+		// If no handler, the message should be ignored.
+		router.EXPECT().Handle(consumerCtx, msg1).Return(nil, utils.ErrNoHandlerFound).Once()
+		ExpectSendToChannel(t, messageChannel, &redis.Message{
+			Payload: string(f.MustSerialize(msg1)),
+		})
+		time.Sleep(100 * time.Millisecond)
+
+		// Now subscribe, and then try again.
+
+		handler := func(ctx context.Context, msg *f.Message) (*f.Response, error) {
+			return f.NewResponse(msg.ID, []byte("resp"), nil), nil
+		}
+		router.EXPECT().AddClientHandler(appId, mock.Anything).Return(nil).Once()
+		pubSub.EXPECT().Subscribe(ctx, channelName).Return(nil).Once()
+
+		require.NoError(t, consumer.Subscribe(ctx, appId, handler))
 
 		redisClient.EXPECT().RPush(
 			consumerCtx,
-			f.GetResponseKeyForMessage(msg1.ID),
+			r.GetResponseKeyForMessage(baseChannelName, msg1.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg1.ID, []byte("resp"), nil))),
 		).Return(&redis.IntCmd{}).Once()
+
+		router.EXPECT().Handle(
+			//consumerCtx,
+			//mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg1.ID, []byte("resp"), nil))),
+			mock.Anything, mock.Anything,
+		).Return(f.NewResponse(msg1.ID, []byte("resp"), nil), nil).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg1)),
@@ -59,9 +92,16 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		redisClient.EXPECT().RPush(
 			consumerCtx,
-			f.GetResponseKeyForMessage(msg2.ID),
+			r.GetResponseKeyForMessage(baseChannelName, msg2.ID),
 			mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg2.ID, []byte("resp"), nil))),
 		).Return(&redis.IntCmd{}).Once()
+
+		router.EXPECT().Handle(
+			mock.Anything,
+			//consumerCtx,
+			mock.Anything,
+			//mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg2.ID, []byte("resp"), nil))),
+		).Return(f.NewResponse(msg2.ID, []byte("resp"), nil), nil).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg2)),
@@ -73,4 +113,3 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		ExpectReceiveFromChannel(t, completedChannel)
 	})
 }
-*/

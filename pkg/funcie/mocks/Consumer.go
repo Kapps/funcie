@@ -22,13 +22,55 @@ func (_m *Consumer) EXPECT() *Consumer_Expecter {
 	return &Consumer_Expecter{mock: &_m.Mock}
 }
 
-// Consume provides a mock function with given fields: ctx, handler
-func (_m *Consumer) Consume(ctx context.Context, handler funcie.Handler) error {
-	ret := _m.Called(ctx, handler)
+// Connect provides a mock function with given fields: ctx
+func (_m *Consumer) Connect(ctx context.Context) error {
+	ret := _m.Called(ctx)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, funcie.Handler) error); ok {
-		r0 = rf(ctx, handler)
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Consumer_Connect_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Connect'
+type Consumer_Connect_Call struct {
+	*mock.Call
+}
+
+// Connect is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Consumer_Expecter) Connect(ctx interface{}) *Consumer_Connect_Call {
+	return &Consumer_Connect_Call{Call: _e.mock.On("Connect", ctx)}
+}
+
+func (_c *Consumer_Connect_Call) Run(run func(ctx context.Context)) *Consumer_Connect_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Consumer_Connect_Call) Return(_a0 error) *Consumer_Connect_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Consumer_Connect_Call) RunAndReturn(run func(context.Context) error) *Consumer_Connect_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Consume provides a mock function with given fields: ctx
+func (_m *Consumer) Consume(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -43,14 +85,13 @@ type Consumer_Consume_Call struct {
 
 // Consume is a helper method to define mock.On call
 //   - ctx context.Context
-//   - handler funcie.Handler
-func (_e *Consumer_Expecter) Consume(ctx interface{}, handler interface{}) *Consumer_Consume_Call {
-	return &Consumer_Consume_Call{Call: _e.mock.On("Consume", ctx, handler)}
+func (_e *Consumer_Expecter) Consume(ctx interface{}) *Consumer_Consume_Call {
+	return &Consumer_Consume_Call{Call: _e.mock.On("Consume", ctx)}
 }
 
-func (_c *Consumer_Consume_Call) Run(run func(ctx context.Context, handler funcie.Handler)) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) Run(run func(ctx context.Context)) *Consumer_Consume_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(funcie.Handler))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -60,7 +101,94 @@ func (_c *Consumer_Consume_Call) Return(_a0 error) *Consumer_Consume_Call {
 	return _c
 }
 
-func (_c *Consumer_Consume_Call) RunAndReturn(run func(context.Context, funcie.Handler) error) *Consumer_Consume_Call {
+func (_c *Consumer_Consume_Call) RunAndReturn(run func(context.Context) error) *Consumer_Consume_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Subscribe provides a mock function with given fields: ctx, applicationId, handler
+func (_m *Consumer) Subscribe(ctx context.Context, applicationId string, handler funcie.Handler) error {
+	ret := _m.Called(ctx, applicationId, handler)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, funcie.Handler) error); ok {
+		r0 = rf(ctx, applicationId, handler)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Consumer_Subscribe_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Subscribe'
+type Consumer_Subscribe_Call struct {
+	*mock.Call
+}
+
+// Subscribe is a helper method to define mock.On call
+//   - ctx context.Context
+//   - applicationId string
+//   - handler funcie.Handler
+func (_e *Consumer_Expecter) Subscribe(ctx interface{}, applicationId interface{}, handler interface{}) *Consumer_Subscribe_Call {
+	return &Consumer_Subscribe_Call{Call: _e.mock.On("Subscribe", ctx, applicationId, handler)}
+}
+
+func (_c *Consumer_Subscribe_Call) Run(run func(ctx context.Context, applicationId string, handler funcie.Handler)) *Consumer_Subscribe_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(funcie.Handler))
+	})
+	return _c
+}
+
+func (_c *Consumer_Subscribe_Call) Return(_a0 error) *Consumer_Subscribe_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Consumer_Subscribe_Call) RunAndReturn(run func(context.Context, string, funcie.Handler) error) *Consumer_Subscribe_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Unsubscribe provides a mock function with given fields: ctx, applicationId
+func (_m *Consumer) Unsubscribe(ctx context.Context, applicationId string) error {
+	ret := _m.Called(ctx, applicationId)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, applicationId)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Consumer_Unsubscribe_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unsubscribe'
+type Consumer_Unsubscribe_Call struct {
+	*mock.Call
+}
+
+// Unsubscribe is a helper method to define mock.On call
+//   - ctx context.Context
+//   - applicationId string
+func (_e *Consumer_Expecter) Unsubscribe(ctx interface{}, applicationId interface{}) *Consumer_Unsubscribe_Call {
+	return &Consumer_Unsubscribe_Call{Call: _e.mock.On("Unsubscribe", ctx, applicationId)}
+}
+
+func (_c *Consumer_Unsubscribe_Call) Run(run func(ctx context.Context, applicationId string)) *Consumer_Unsubscribe_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Consumer_Unsubscribe_Call) Return(_a0 error) *Consumer_Unsubscribe_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Consumer_Unsubscribe_Call) RunAndReturn(run func(context.Context, string) error) *Consumer_Unsubscribe_Call {
 	_c.Call.Return(run)
 	return _c
 }

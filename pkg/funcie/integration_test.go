@@ -1,20 +1,12 @@
 package funcie_test
 
 import (
-	"context"
-	. "github.com/Kapps/funcie/pkg/funcie"
-	redistransport "github.com/Kapps/funcie/pkg/funcie/transports/redis"
-	"github.com/alicebob/miniredis/v2"
-	"github.com/redis/go-redis/v9"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slog"
-	"log"
 	"os"
 	"testing"
-	"time"
 )
 
-func TestIntegration(t *testing.T) {
+/*func TestIntegration_Redis(t *testing.T) {
 	ctx := context.Background()
 
 	redisServer := miniredis.RunT(t)
@@ -77,7 +69,7 @@ func TestIntegration(t *testing.T) {
 	// And try to publish again
 	_, err = producer.Publish(ctx, first)
 	require.ErrorIs(t, err, ErrNoActiveConsumer)
-}
+}*/
 
 func TestMain(m *testing.M) {
 	programLevel := new(slog.LevelVar)

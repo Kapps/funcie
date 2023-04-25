@@ -6,9 +6,11 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 )
 
+var ErrNoHandlerFound = fmt.Errorf("no handler exists for this application")
+
 type ClientHandlerRouter interface {
-	AddClientHandler(handlerType string, handler funcie.Handler) error
-	RemoveClientHandler(handlerType string) error
+	AddClientHandler(applicationId string, handler funcie.Handler) error
+	RemoveClientHandler(applicationId string) error
 	Handle(ctx context.Context, message *funcie.Message) (*funcie.Response, error)
 }
 
@@ -22,26 +24,26 @@ type clientHandlerRouter struct {
 	handlers map[string]funcie.Handler
 }
 
-func (h *clientHandlerRouter) AddClientHandler(handlerType string, handler funcie.Handler) error {
-	if _, ok := h.handlers[handlerType]; ok {
-		return fmt.Errorf("handler already exists for type %s", handlerType)
+func (h *clientHandlerRouter) AddClientHandler(applicationId string, handler funcie.Handler) error {
+	if _, ok := h.handlers[applicationId]; ok {
+		return fmt.Errorf("handler already exists for application %s", applicationId)
 	}
-	h.handlers[handlerType] = handler
+	h.handlers[applicationId] = handler
 	return nil
 }
 
-func (h *clientHandlerRouter) RemoveClientHandler(handlerType string) error {
-	if _, ok := h.handlers[handlerType]; !ok {
-		return fmt.Errorf("no handler exists for type %s", handlerType)
+func (h *clientHandlerRouter) RemoveClientHandler(applicationId string) error {
+	if _, ok := h.handlers[applicationId]; !ok {
+		return fmt.Errorf("no handler exists for application %s", applicationId)
 	}
-	delete(h.handlers, handlerType)
+	delete(h.handlers, applicationId)
 	return nil
 }
 
 func (h *clientHandlerRouter) Handle(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	handler, ok := h.handlers[message.Application]
 	if !ok {
-		return nil, fmt.Errorf("no handler exists for type %s", message.Application)
+		return nil, fmt.Errorf("application %s not registered: %w", message.Application, ErrNoHandlerFound)
 	}
 	return handler(ctx, message)
 }

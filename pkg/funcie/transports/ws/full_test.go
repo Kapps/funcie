@@ -14,7 +14,8 @@ func TestWS_End2End_Subscribe(t *testing.T) {
 	t.Parallel()
 
 	go func() {
-		publisher.Listen(8086)
+		err := publisher.Listen(8086)
+		require.NoError(t, err)
 	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -31,6 +32,6 @@ func TestWS_End2End_Subscribe(t *testing.T) {
 	err = client.Unsubscribe(ctx, "channelName")
 	require.NoError(t, err)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 	cancel()
 }

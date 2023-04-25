@@ -2,18 +2,9 @@ package funcie
 
 import (
 	"encoding/json"
-	"fmt"
 	"golang.org/x/exp/slog"
 	"os"
 )
-
-// GetResponseKeyForMessage returns the Redis key for the response of a message
-func GetResponseKeyForMessage(messageId string) string {
-	if messageId == "" {
-		panic("messageId cannot be empty")
-	}
-	return fmt.Sprintf("funcie:resp:%v", messageId)
-}
 
 // MustSerialize serializes the given value to JSON, or panics if it fails.
 func MustSerialize(v interface{}) []byte {

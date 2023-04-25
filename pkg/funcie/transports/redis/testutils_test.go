@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var defaultTimeout = 10 * time.Second
+var defaultTimeout = 1 * time.Second
 
 // RoughCompare compares the given object to the expected object using rough comparisons.
 // Some types, such as time.Time, will be checked for "roughly equal" as opposed to identity comparisons.
@@ -47,7 +47,7 @@ func ExpectSendToChannel[T any](t *testing.T, channel chan<- T, value T) {
 	select {
 	case channel <- value:
 	case <-time.After(defaultTimeout):
-		t.Errorf("Expected to send to channel, but timed out")
+		t.Fatal("Expected to send to channel, but timed out")
 	}
 }
 
