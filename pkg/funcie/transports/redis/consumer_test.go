@@ -65,25 +65,24 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		// Now subscribe, and then try again.
 
-		handler := func(ctx context.Context, msg *f.Message) (*f.Response, error) {
-			return f.NewResponse(msg.ID, []byte("resp"), nil), nil
-		}
+		resp1 := f.NewResponse(msg1.ID, []byte("resp1"), nil)
+		resp2 := f.NewResponse(msg2.ID, []byte("resp2"), nil)
+
 		router.EXPECT().AddClientHandler(appId, mock.Anything).Return(nil).Once()
 		pubSub.EXPECT().Subscribe(ctx, channelName).Return(nil).Once()
 
-		require.NoError(t, consumer.Subscribe(ctx, appId, handler))
+		require.NoError(t, consumer.Subscribe(ctx, appId, f.Handler(nil)))
 
 		redisClient.EXPECT().RPush(
 			consumerCtx,
 			r.GetResponseKeyForMessage(baseChannelName, msg1.ID),
-			mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg1.ID, []byte("resp"), nil))),
+			mock.MatchedBy(RoughCompareMatcherJson(resp1)),
 		).Return(&redis.IntCmd{}).Once()
 
 		router.EXPECT().Handle(
-			//consumerCtx,
-			//mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg1.ID, []byte("resp"), nil))),
-			mock.Anything, mock.Anything,
-		).Return(f.NewResponse(msg1.ID, []byte("resp"), nil), nil).Once()
+			consumerCtx,
+			msg1,
+		).Return(resp1, nil).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg1)),
@@ -93,15 +92,13 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		redisClient.EXPECT().RPush(
 			consumerCtx,
 			r.GetResponseKeyForMessage(baseChannelName, msg2.ID),
-			mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg2.ID, []byte("resp"), nil))),
+			mock.MatchedBy(RoughCompareMatcherJson(resp2)),
 		).Return(&redis.IntCmd{}).Once()
 
 		router.EXPECT().Handle(
-			mock.Anything,
-			//consumerCtx,
-			mock.Anything,
-			//mock.MatchedBy(RoughCompareMatcherJson(f.NewResponse(msg2.ID, []byte("resp"), nil))),
-		).Return(f.NewResponse(msg2.ID, []byte("resp"), nil), nil).Once()
+			consumerCtx,
+			msg2,
+		).Return(resp2, nil).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg2)),
