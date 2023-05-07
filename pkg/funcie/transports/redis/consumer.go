@@ -157,7 +157,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, applicationId string) error 
 func parseMessage(message string) (*funcie.Message, error) {
 	var msg funcie.Message
 	if err := json.Unmarshal([]byte(message), &msg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshalling message: %w", err)
 	}
 	return &msg, nil
 }
@@ -165,7 +165,7 @@ func parseMessage(message string) (*funcie.Message, error) {
 func formatResponse(response *funcie.Response) (string, error) {
 	data, err := json.Marshal(response)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("marshalling response: %w", err)
 	}
 	return string(data), nil
 }
