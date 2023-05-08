@@ -10,6 +10,8 @@ type Config struct {
 	RedisAddress string `json:"redisAddress"`
 	// ListenAddress is the address to listen on for client requests.
 	ListenAddress string `json:"listenAddress"`
+	// BaseChannelName is the base name of the Redis channel keys to use.
+	BaseChannelName string `json:"baseChannelName"`
 }
 
 // NewConfig creates a new Config with no values set.
@@ -22,10 +24,12 @@ func NewConfig() *Config {
 //
 //	FUNCIE_REDIS_ADDRESS (required)
 //	FUNCIE_LISTEN_ADDRESS (required)
+//	FUNCIE_BASE_CHANNEL_NAME (optional)
 func NewConfigFromEnvironment() *Config {
 	return &Config{
-		RedisAddress:  requiredEnv("FUNCIE_REDIS_ADDRESS"),
-		ListenAddress: requiredEnv("FUNCIE_LISTEN_ADDRESS"),
+		RedisAddress:    requiredEnv("FUNCIE_REDIS_ADDRESS"),
+		ListenAddress:   requiredEnv("FUNCIE_LISTEN_ADDRESS"),
+		BaseChannelName: optionalEnv("FUNCIE_BASE_CHANNEL_NAME", "funcie"),
 	}
 }
 
@@ -33,6 +37,14 @@ func requiredEnv(name string) string {
 	value := os.Getenv(name)
 	if value == "" {
 		panic(fmt.Sprintf("required environment variable %s not set", name))
+	}
+	return value
+}
+
+func optionalEnv(name string, defaultValue string) string {
+	value := os.Getenv(name)
+	if value == "" {
+		return defaultValue
 	}
 	return value
 }
