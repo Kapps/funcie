@@ -1,12 +1,12 @@
 package redis_test
 
-/*
 import (
 	"context"
 	"encoding/json"
-	f "github.com/Kapps/funcie/pkg/funcie"
-	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
+	"github.com/Kapps/funcie/pkg/funcie"
+	. "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/Kapps/funcie/pkg/funcie/transports/redis/mocks"
+	"github.com/go-faker/faker/v4"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -17,18 +17,20 @@ func TestRedisPublisher_Publish(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	channel := "test-channel"
+	baseChannelName := faker.Word()
+	appId := faker.Word()
+	channel := GetChannelNameForApplication(baseChannelName, appId)
 	redisClient := mocks.NewPublishClient(t)
-	publisher := r.NewPublisher(redisClient, channel)
+	publisher := NewPublisher(redisClient, baseChannelName)
 
 	t.Run("should publish a message to the channel", func(t *testing.T) {
 		t.Parallel()
 
-		message := f.NewMessage("app", f.MessageKindDispatch, []byte("hello"), time.Second)
+		message := funcie.NewMessage(appId, funcie.MessageKindDispatch, []byte("hello"), time.Second)
 		serializedMessage, err := json.Marshal(message)
 		require.NoError(t, err)
 
-		response := f.NewResponse(message.ID, []byte("hello"), nil)
+		response := funcie.NewResponse(message.ID, []byte("hello"), nil)
 		serializedResponse, err := json.Marshal(response)
 		require.NoError(t, err)
 
@@ -36,9 +38,10 @@ func TestRedisPublisher_Publish(t *testing.T) {
 		publishResult.SetVal(1)
 		redisClient.On("Publish", ctx, channel, serializedMessage).Return(publishResult)
 
+		responseKey := GetResponseKeyForMessage(baseChannelName, message.ID)
 		popResult := redis.NewStringSliceCmd(ctx)
-		popResult.SetVal([]string{f.GetResponseKeyForMessage(message.ID), string(serializedResponse)})
-		redisClient.On("BRPop", ctx, time.Second, f.GetResponseKeyForMessage(message.ID)).Return(popResult)
+		popResult.SetVal([]string{responseKey, string(serializedResponse)})
+		redisClient.On("BRPop", ctx, time.Second, responseKey).Return(popResult)
 
 		resp, err := publisher.Publish(ctx, message)
 		require.NoError(t, err)
@@ -46,4 +49,3 @@ func TestRedisPublisher_Publish(t *testing.T) {
 		require.Equal(t, response, resp)
 	})
 }
-*/

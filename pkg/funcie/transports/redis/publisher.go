@@ -1,6 +1,5 @@
 package redis
 
-/*
 import (
 	"context"
 	"encoding/json"
@@ -15,26 +14,30 @@ type PublishClient interface {
 	BRPop(ctx context.Context, timeout time.Duration, keys ...string) *redis.StringSliceCmd
 }
 
-type Publisher struct {
-	redisClient PublishClient
-	channelName string
+type redisPublisher struct {
+	redisClient     PublishClient
+	baseChannelName string
 }
 
 // NewPublisher creates a new RedisPublisher that publishes messages to the given channel.
-func NewPublisher(redisClient PublishClient, channelName string) *Publisher {
-	return &Publisher{redisClient: redisClient, channelName: channelName}
+func NewPublisher(redisClient PublishClient, baseChannelName string) funcie.Publisher {
+	return &redisPublisher{
+		redisClient:     redisClient,
+		baseChannelName: baseChannelName,
+	}
 }
 
-func (p *Publisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-	// Publish the message to the channel.
+func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	channelName := GetChannelNameForApplication(p.baseChannelName, message.Application)
+
 	messageContents, err := json.Marshal(message)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	pub := p.redisClient.Publish(ctx, p.channelName, messageContents)
+	pub := p.redisClient.Publish(ctx, channelName, messageContents)
 	if err := pub.Err(); err != nil {
-		return nil, fmt.Errorf("failed to publish message to channel %s: %w", p.channelName, err)
+		return nil, fmt.Errorf("failed to publish message to channel %s: %w", message.Application, err)
 	}
 
 	consumers, err := pub.Result()
@@ -47,15 +50,14 @@ func (p *Publisher) Publish(ctx context.Context, message *funcie.Message) (*func
 	}
 
 	// Wait for a response from the consumer.
-	responseKey := funcie.GetResponseKeyForMessage(message.ID)
+	responseKey := GetResponseKeyForMessage(p.baseChannelName, message.ID)
 	resp, err := p.redisClient.BRPop(ctx, message.Ttl, responseKey).Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get response within ttl: %w", err)
+		return nil, fmt.Errorf("failed to get response from consumer: %w", err)
 	}
 
-	// The response should be a list of two items, the first being the key and the second being the value.
 	if len(resp) == 0 {
-		return nil, fmt.Errorf("no response received within ttl of %s", message.Ttl)
+		return nil, funcie.ErrNoActiveConsumer
 	}
 
 	if len(resp) != 2 {
@@ -63,13 +65,12 @@ func (p *Publisher) Publish(ctx context.Context, message *funcie.Message) (*func
 	}
 
 	// First entry is key; value should be the serialized response data.
-	data := []byte(resp[1])
+	responseContents := []byte(resp[1])
 
-	var response *funcie.Response
-	if err := json.Unmarshal(data, &response); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	var response funcie.Response
+	if err := json.Unmarshal(responseContents, &response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response from consumer: %w", err)
 	}
 
-	return response, nil
+	return &response, nil
 }
-*/
