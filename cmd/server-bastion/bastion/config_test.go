@@ -1,7 +1,7 @@
 package bastion_test
 
 import (
-	. "github.com/Kapps/funcie/pkg/bastion"
+	. "github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

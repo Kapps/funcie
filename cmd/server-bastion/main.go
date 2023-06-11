@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Kapps/funcie/pkg/bastion"
+	"github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/redis/go-redis/v9"
 )

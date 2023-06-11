@@ -3,7 +3,7 @@ package bastion_test
 import (
 	"context"
 	"encoding/json"
-	. "github.com/Kapps/funcie/pkg/bastion"
+	. "github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/google/uuid"

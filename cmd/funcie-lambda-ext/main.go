@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/funcie-lambda-ext/lambdaext"
-	"github.com/Kapps/funcie/pkg/bastion"
+	bastion2 "github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/slog"
@@ -59,15 +59,15 @@ func main() {
 	}
 }
 
-func createBastion() bastion.Server {
-	config := bastion.NewConfigFromEnvironment()
+func createBastion() bastion2.Server {
+	config := bastion2.NewConfigFromEnvironment()
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:       config.RedisAddress,
 		ClientName: "Funcie Bastion",
 	})
 	publisher := r.NewPublisher(redisClient, config.RequestChannel)
-	handler := bastion.NewRequestHandler(publisher, config.RequestTtl)
-	server := bastion.NewServer(config.ListenAddress, handler)
+	handler := bastion2.NewRequestHandler(publisher, config.RequestTtl)
+	server := bastion2.NewServer(config.ListenAddress, handler)
 	return server
 }
 

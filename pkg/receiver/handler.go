@@ -2,7 +2,6 @@ package receiver
 
 import (
 	"context"
-	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 )
 
@@ -26,16 +25,16 @@ func (h *clientHandler) RegisterApplication(ctx context.Context, application *fu
 	return h.registry.Register(ctx, application)
 }
 
-
 func (h *clientHandler) UnregisterApplication(ctx context.Context, applicationName string) error {
 	return h.registry.Unregister(ctx, applicationName)
 }
 
 func (h *clientHandler) DispatchRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error) {
-	application, err := h.registry.GetApplication(ctx, request.)
+	/*application, err := h.registry.GetApplication(ctx, request.Application)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get application %s: %w", request.ApplicationName, err)
-	}
+		return nil, fmt.Errorf("failed to get application %s: %w", request.Application, err)
+	}*/
 
-	return application.Endpoint.Dispatch(ctx, request)
+	panic("implement me")
+	//return application.Endpoint.Dispatch(ctx, request)
 }

@@ -15,6 +15,15 @@ func MustSerialize(v interface{}) []byte {
 	return b
 }
 
+// MustDeserialize deserializes the given JSON to the given type, or panics if it fails.
+func MustDeserialize[T any](b []byte) T {
+	var v T
+	if err := json.Unmarshal(b, &v); err != nil {
+		panic(err)
+	}
+	return v
+}
+
 type Closable interface {
 	Close() error
 }

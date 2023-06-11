@@ -4,8 +4,7 @@ package mocks
 
 import (
 	context "context"
-
-	bastion "github.com/Kapps/funcie/pkg/bastion"
+	"github.com/Kapps/funcie/cmd/server-bastion/bastion"
 
 	funcie "github.com/Kapps/funcie/pkg/funcie"
 
