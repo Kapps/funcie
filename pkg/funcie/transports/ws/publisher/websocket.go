@@ -2,7 +2,7 @@ package publisher
 
 import (
 	"context"
-	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"nhooyr.io/websocket"
 )
 
@@ -14,7 +14,7 @@ func NewWebsocketClient(conn Websocket) *WebsocketClientConnection {
 	return &WebsocketClientConnection{conn: conn}
 }
 
-func (c *WebsocketClientConnection) HandleMessage(ctx context.Context, msg funcie.Message) error {
+func (c *WebsocketClientConnection) HandleMessage(ctx context.Context, msg messages.Message) error {
 	//todo
 	return nil
 }

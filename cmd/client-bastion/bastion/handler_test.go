@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -58,14 +59,14 @@ func TestHandler_ForwardRequest(t *testing.T) {
 	registry := mocks.NewApplicationRegistry(t)
 	ctx := context.Background()
 
-	request := funcie.NewMessage("app", funcie.MessageKindDispatch, []byte("payload"), time.Minute*5)
+	request := messages.NewMessage("app", messages.MessageKindDispatch, []byte("payload"), time.Minute*5)
 	response := funcie.NewResponse("id", []byte("response"), nil)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestBytes, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 
-		received := funcie.MustDeserialize[*funcie.Message](requestBytes)
+		received := funcie.MustDeserialize[*messages.Message](requestBytes)
 		require.Equal(t, request, received)
 
 		respBytes := funcie.MustSerialize(response)

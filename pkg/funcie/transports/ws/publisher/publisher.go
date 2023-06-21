@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
 	"log"
 	"net"
@@ -77,7 +77,7 @@ type ClientManager interface {
 }
 
 type Client interface {
-	HandleMessage(ctx context.Context, msg funcie.Message) error
+	HandleMessage(ctx context.Context, msg messages.Message) error
 	Close() error
 }
 

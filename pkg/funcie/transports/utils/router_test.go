@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -16,7 +17,7 @@ func TestHandlerRouter_TestHandler(t *testing.T) {
 	application := faker.Word()
 
 	called := false
-	handler := funcie.Handler(func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	handler := funcie.Handler(func(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
 		assert.Equalf(t, id2, message.ID, "message id was not passed to handler")
 
 		called = true
@@ -33,7 +34,7 @@ func TestHandlerRouter_TestHandler(t *testing.T) {
 	err := router.AddClientHandler(application, handler)
 	assert.NoError(t, err)
 
-	response, err := router.Handle(context.Background(), &funcie.Message{
+	response, err := router.Handle(context.Background(), &messages.Message{
 		ID:          id2,
 		Application: application,
 	})
@@ -43,7 +44,7 @@ func TestHandlerRouter_TestHandler(t *testing.T) {
 	err = router.RemoveClientHandler(application)
 	assert.NoError(t, err)
 
-	response, err = router.Handle(context.Background(), &funcie.Message{
+	response, err = router.Handle(context.Background(), &messages.Message{
 		ID:          id2,
 		Application: application,
 	})

@@ -1,6 +1,10 @@
-package funcie
+package messages
 
-import "time"
+import (
+	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/google/uuid"
+	"time"
+)
 
 // MessageKind is the type of message that is being sent.
 type MessageKind int
@@ -10,8 +14,6 @@ const (
 	MessageKindUnknown MessageKind = 0
 	// MessageKindDispatch is a request to forward a message to a consumer.
 	MessageKindDispatch MessageKind = 1
-	// MessageKindRegistration is a registration request to a server bastion.
-	MessageKindRegistration MessageKind = 2
 )
 
 // Message represents a message to be sent through a tunnel.
@@ -31,13 +33,19 @@ type Message struct {
 	Ttl time.Duration `json:"ttl"`
 }
 
+// NewMessage creates a new message with the given data.
 func NewMessage(application string, kind MessageKind, data []byte, ttl time.Duration) *Message {
 	return &Message{
-		ID:          newId(),
+		ID:          uuid.New().String(),
 		Application: application,
 		Kind:        kind,
 		Data:        data,
 		Created:     time.Now().Truncate(time.Millisecond),
 		Ttl:         ttl,
 	}
+}
+
+// NewMessageWithPayload creates a new message with the given payload, which is serialized using funcie.MustSerialize.
+func NewMessageWithPayload[T any](application string, kind MessageKind, payload T, ttl time.Duration) *Message {
+	return NewMessage(application, kind, funcie.MustSerialize(payload), ttl)
 }

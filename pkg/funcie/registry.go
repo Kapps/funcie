@@ -13,11 +13,11 @@ type Application struct {
 	// Name is the name of the application.
 	Name string `json:"name"`
 	// Endpoint is the address to send requests to.
-	Endpoint string `json:"endpoint"`
+	Endpoint Endpoint `json:"endpoint"`
 }
 
 // NewApplication creates a new Application with the given name and endpoint.
-func NewApplication(name string, endpoint string) *Application {
+func NewApplication(name string, endpoint Endpoint) *Application {
 	return &Application{
 		Name:     name,
 		Endpoint: endpoint,

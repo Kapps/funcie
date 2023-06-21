@@ -1,7 +1,7 @@
 package funcie_test
 
 import (
-	. "github.com/Kapps/funcie/pkg/funcie"
+	. "github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

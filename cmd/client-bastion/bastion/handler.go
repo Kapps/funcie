@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"io"
 	"net/http"
 )
@@ -17,15 +18,16 @@ type Handler interface {
 	// Unregister unregisters the application with the given name.
 	Unregister(ctx context.Context, applicationName string) error
 	// ForwardRequest forwards the given request to the application specified in the request.
-	ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error)
+	ForwardRequest(ctx context.Context, request *messages.Message) (*funcie.Response, error)
 }
 
 type handler struct {
-	registry funcie.ApplicationRegistry
+	registry  funcie.ApplicationRegistry
+	publisher funcie.Publisher
 }
 
 // NewHandler creates a new Handler that can register and unregister applications and forward requests.
-func NewHandler(registry funcie.ApplicationRegistry) Handler {
+func NewHandler(registry funcie.ApplicationRegistry, publisher funcie.Publisher) Handler {
 	return &handler{
 		registry: registry,
 	}
@@ -49,7 +51,7 @@ func (h *handler) Unregister(ctx context.Context, applicationName string) error 
 	return nil
 }
 
-func (h *handler) ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error) {
+func (h *handler) ForwardRequest(ctx context.Context, request *messages.Message) (*funcie.Response, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
 	if err != nil {
 		return nil, fmt.Errorf("getting application %v: %w", request.Application, err)

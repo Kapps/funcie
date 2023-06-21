@@ -1,4 +1,4 @@
-package receiver
+package bastion
 
 import "net/http"
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	utilMocks "github.com/Kapps/funcie/pkg/funcie/transports/utils/mocks"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
@@ -31,7 +32,7 @@ func getConnectedConsumer(t *testing.T, ctx context.Context) (*c.Consumer, *mock
 	return consumer, wsClient, mockSocket
 }
 
-func nilHandler(_ context.Context, _ *funcie.Message) (*funcie.Response, error) {
+func nilHandler(_ context.Context, _ *messages.Message) (*funcie.Response, error) {
 	return nil, nil
 }
 
@@ -193,7 +194,7 @@ func TestConsumer_Consume(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		serverToClient := &funcie.Message{
+		serverToClient := &messages.Message{
 			Application: "app",
 			ID:          "S2C",
 			Data:        []byte("DataS2C"),
@@ -219,7 +220,7 @@ func TestConsumer_Consume(t *testing.T) {
 		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(nil)
 		//mockSocket.EXPECT().Close(wsl.StatusNormalClosure, mock.Anything).Return(nil)
 
-		_ = consumer.Subscribe(ctx, "app", func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+		_ = consumer.Subscribe(ctx, "app", func(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
 			require.Equal(t, serverToClient, message)
 			cancel()
 			return clientToServer, nil
@@ -252,7 +253,7 @@ func TestConsumer_Consume(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		serverToClient := &funcie.Message{
+		serverToClient := &messages.Message{
 			Application: "app",
 			ID:          "S2C",
 			Data:        []byte("DataS2C"),
@@ -275,7 +276,7 @@ func TestConsumer_Consume(t *testing.T) {
 		mockSocket.EXPECT().Read(ctx).Return(wsl.MessageText, serverToClientJson, nil)
 		mockSocket.EXPECT().Write(ctx, wsl.MessageText, clientToServerJson).Return(fmt.Errorf("error123"))
 
-		_ = consumer.Subscribe(ctx, "app", func(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+		_ = consumer.Subscribe(ctx, "app", func(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
 			require.Equal(t, serverToClient, message)
 			cancel()
 			return clientToServer, nil

@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 
 	funcie "github.com/Kapps/funcie/pkg/funcie"
 	mock "github.com/stretchr/testify/mock"
@@ -23,15 +24,15 @@ func (_m *Publisher) EXPECT() *Publisher_Expecter {
 }
 
 // Publish provides a mock function with given fields: ctx, message
-func (_m *Publisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+func (_m *Publisher) Publish(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
 	ret := _m.Called(ctx, message)
 
 	var r0 *funcie.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) (*funcie.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *messages.Message) (*funcie.Response, error)); ok {
 		return rf(ctx, message)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) *funcie.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *messages.Message) *funcie.Response); ok {
 		r0 = rf(ctx, message)
 	} else {
 		if ret.Get(0) != nil {
@@ -39,7 +40,7 @@ func (_m *Publisher) Publish(ctx context.Context, message *funcie.Message) (*fun
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *funcie.Message) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *messages.Message) error); ok {
 		r1 = rf(ctx, message)
 	} else {
 		r1 = ret.Error(1)
@@ -60,9 +61,9 @@ func (_e *Publisher_Expecter) Publish(ctx interface{}, message interface{}) *Pub
 	return &Publisher_Publish_Call{Call: _e.mock.On("Publish", ctx, message)}
 }
 
-func (_c *Publisher_Publish_Call) Run(run func(ctx context.Context, message *funcie.Message)) *Publisher_Publish_Call {
+func (_c *Publisher_Publish_Call) Run(run func(ctx context.Context, message *messages.Message)) *Publisher_Publish_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*funcie.Message))
+		run(args[0].(context.Context), args[1].(*messages.Message))
 	})
 	return _c
 }
@@ -72,7 +73,7 @@ func (_c *Publisher_Publish_Call) Return(_a0 *funcie.Response, _a1 error) *Publi
 	return _c
 }
 
-func (_c *Publisher_Publish_Call) RunAndReturn(run func(context.Context, *funcie.Message) (*funcie.Response, error)) *Publisher_Publish_Call {
+func (_c *Publisher_Publish_Call) RunAndReturn(run func(context.Context, *messages.Message) (*funcie.Response, error)) *Publisher_Publish_Call {
 	_c.Call.Return(run)
 	return _c
 }
