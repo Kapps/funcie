@@ -32,6 +32,11 @@ func NewResponse(id string, data []byte, error error) *Response {
 	}
 }
 
+// NewResponseWithPayload creates a new response with the given payload, which is serialized using funcie.MustSerialize, and the current time as the received time.
+func NewResponseWithPayload[T any](id string, payload T, error error) *Response {
+	return NewResponse(id, MustSerialize(payload), error)
+}
+
 // Handler is a function that handles a message from a tunnel.
 type Handler func(ctx context.Context, message *Message) (*Response, error)
 

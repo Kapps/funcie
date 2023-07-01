@@ -2,6 +2,7 @@ package bastion
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
@@ -28,7 +29,11 @@ func (f *forwardingApplicationRegistry) Register(ctx context.Context, applicatio
 	}
 
 	payload := messages.NewRegistrationRequestPayload(application.Name, application.Endpoint)
-	payloadBytes := funcie.MustSerialize(payload)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshalling payload: %w", err)
+	}
+
 	message := funcie.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes, time.Minute*2)
 
 	resp, err := f.publisher.Publish(ctx, message)
@@ -50,7 +55,11 @@ func (f *forwardingApplicationRegistry) Unregister(ctx context.Context, applicat
 	}
 
 	payload := messages.NewDeregistrationRequestPayload(applicationName)
-	payloadBytes := funcie.MustSerialize(payload)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshalling payload: %w", err)
+	}
+
 	message := funcie.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes, time.Minute*2)
 
 	resp, err := f.publisher.Publish(ctx, message)
