@@ -1,14 +1,11 @@
 package bastion
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
-	"io"
-	"net/http"
+	"golang.org/x/exp/slog"
 )
 
 // Handler allows the handling of incoming valid Bastion requests.
@@ -53,27 +50,16 @@ func (h *handler) Unregister(ctx context.Context, applicationName string) error 
 
 func (h *handler) ForwardRequest(ctx context.Context, request *messages.Message) (*funcie.Response, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
+	if err == funcie.ErrApplicationNotFound {
+		slog.WarnCtx(ctx, "application not found in client registry", "application", request.Application)
+		// TODO: What should we return here?
+		return nil, err
+	}
 	if err != nil {
 		return nil, fmt.Errorf("getting application %v: %w", request.Application, err)
 	}
 
-	contents, err := json.Marshal(request)
-	if err != nil {
-		return nil, fmt.Errorf("marshaling request: %w", err)
-	}
+	// Server is forwarding us a request -- forward it as a simple http call to the process.
 
-	postResponse, err := http.Post(app.Endpoint, "application/json", bytes.NewBuffer(contents))
-	if err != nil {
-		return nil, fmt.Errorf("posting request to app %v endpoint %v: %w", app.Name, app.Endpoint, err)
-	}
-
-	responseData, err := io.ReadAll(postResponse.Body)
-
-	var response funcie.Response
-	err = json.Unmarshal(responseData, &response)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshaling response %v: %w", responseData, err)
-	}
-
-	return &response, nil
+	return resp, nil
 }

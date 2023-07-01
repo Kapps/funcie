@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
+	"time"
 )
 
 type forwardingApplicationRegistry struct {
@@ -26,19 +27,49 @@ func (f *forwardingApplicationRegistry) Register(ctx context.Context, applicatio
 		return fmt.Errorf("failed to register application: %w", err)
 	}
 
-	message := messages.NewMessage(application.Name, funcie.MessageKindRegistration, Register)
-	err = f.publisher.Publish(ctx, funcie.NewApplicationRegisteredEvent(application))
+	payload := messages.NewRegistrationRequestPayload(application.Name, application.Endpoint)
+	payloadBytes := funcie.MustSerialize(payload)
+	message := messages.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes, time.Minute*2)
+
+	resp, err := f.publisher.Publish(ctx, message)
 	if err != nil {
 		return fmt.Errorf("failed to publish application registered event: %w", err)
 	}
+
+	if err := resp.Error; err != nil {
+		return fmt.Errorf("failed to register application %v: %w", application.Name, err)
+	}
+
+	return nil
 }
 
 func (f *forwardingApplicationRegistry) Unregister(ctx context.Context, applicationName string) error {
-	//TODO implement me
-	panic("implement me")
+	err := f.underlying.Unregister(ctx, applicationName)
+	if err != nil {
+		return fmt.Errorf("failed to unregister application: %w", err)
+	}
+
+	payload := messages.NewDeregistrationRequestPayload(applicationName)
+	payloadBytes := funcie.MustSerialize(payload)
+	message := messages.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes, time.Minute*2)
+
+	resp, err := f.publisher.Publish(ctx, message)
+	if err != nil {
+		return fmt.Errorf("failed to publish application unregistered event: %w", err)
+	}
+
+	if err := resp.Error; err != nil {
+		return fmt.Errorf("failed to unregister application %v: %w", applicationName, err)
+	}
+
+	return nil
 }
 
 func (f *forwardingApplicationRegistry) GetApplication(ctx context.Context, applicationName string) (*funcie.Application, error) {
-	//TODO implement me
-	panic("implement me")
+	app, err := f.underlying.GetApplication(ctx, applicationName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get application: %w", err)
+	}
+
+	return app, nil
 }

@@ -9,6 +9,7 @@ import (
 // Endpoint represents a target destination for funcie requests or bastions.
 type Endpoint struct {
 	// Host is the host name or IP address of the endpoint.
+	// This does not include the protocol or port.
 	Host string `json:"host"`
 	// Port is the port number of the endpoint.
 	Port int `json:"port"`
@@ -20,6 +21,11 @@ func NewEndpoint(host string, port int) Endpoint {
 		Host: host,
 		Port: port,
 	}
+}
+
+// String returns a string representation of the endpoint.
+func (e Endpoint) String() string {
+	return fmt.Sprintf("%v:%v", e.Host, e.Port)
 }
 
 // NewEndpointFromAddress creates a new funcie Endpoint from parsing the given address.

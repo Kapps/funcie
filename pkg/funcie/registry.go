@@ -3,6 +3,7 @@ package funcie
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
 // ErrApplicationNotFound is returned when an application is not found.
@@ -14,6 +15,11 @@ type Application struct {
 	Name string `json:"name"`
 	// Endpoint is the address to send requests to.
 	Endpoint Endpoint `json:"endpoint"`
+}
+
+// String returns a string representation of the application.
+func (a *Application) String() string {
+	return fmt.Sprintf("%v (%v)", a.Name, a.Endpoint)
 }
 
 // NewApplication creates a new Application with the given name and endpoint.
