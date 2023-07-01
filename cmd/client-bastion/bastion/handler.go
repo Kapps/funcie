@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"golang.org/x/exp/slog"
 )
 
@@ -15,18 +14,19 @@ type Handler interface {
 	// Unregister unregisters the application with the given name.
 	Unregister(ctx context.Context, applicationName string) error
 	// ForwardRequest forwards the given request to the application specified in the request.
-	ForwardRequest(ctx context.Context, request *messages.Message) (*funcie.Response, error)
+	ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error)
 }
 
 type handler struct {
 	registry  funcie.ApplicationRegistry
-	publisher funcie.Publisher
+	appClient ApplicationClient
 }
 
 // NewHandler creates a new Handler that can register and unregister applications and forward requests.
-func NewHandler(registry funcie.ApplicationRegistry, publisher funcie.Publisher) Handler {
+func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient) Handler {
 	return &handler{
-		registry: registry,
+		registry:  registry,
+		appClient: appClient,
 	}
 }
 
@@ -48,7 +48,7 @@ func (h *handler) Unregister(ctx context.Context, applicationName string) error 
 	return nil
 }
 
-func (h *handler) ForwardRequest(ctx context.Context, request *messages.Message) (*funcie.Response, error) {
+func (h *handler) ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
 	if err == funcie.ErrApplicationNotFound {
 		slog.WarnCtx(ctx, "application not found in client registry", "application", request.Application)
@@ -59,7 +59,10 @@ func (h *handler) ForwardRequest(ctx context.Context, request *messages.Message)
 		return nil, fmt.Errorf("getting application %v: %w", request.Application, err)
 	}
 
-	// Server is forwarding us a request -- forward it as a simple http call to the process.
+	resp, err := h.appClient.ProcessRequest(ctx, *app, request)
+	if err != nil {
+		return nil, fmt.Errorf("process request %v: %w", request.ID, err)
+	}
 
 	return resp, nil
 }

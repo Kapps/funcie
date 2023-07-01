@@ -1,7 +1,9 @@
 package messages
 
+import "github.com/Kapps/funcie/pkg/funcie"
+
 // MessageKindDeregister is a deregistration request to a server bastion.
-const MessageKindDeregister MessageKind = 3
+const MessageKindDeregister funcie.MessageKind = 3
 
 // DeregistrationRequestPayload is a deregistration request.
 type DeregistrationRequestPayload struct {

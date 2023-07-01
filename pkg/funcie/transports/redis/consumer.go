@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/slog"
@@ -155,8 +154,8 @@ func (c *Consumer) Unsubscribe(ctx context.Context, applicationId string) error 
 	return nil
 }
 
-func parseMessage(message string) (*messages.Message, error) {
-	var msg messages.Message
+func parseMessage(message string) (*funcie.Message, error) {
+	var msg funcie.Message
 	if err := json.Unmarshal([]byte(message), &msg); err != nil {
 		return nil, fmt.Errorf("unmarshalling message: %w", err)
 	}

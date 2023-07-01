@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
@@ -28,7 +27,7 @@ func NewPublisher(redisClient PublishClient, baseChannelName string) funcie.Publ
 	}
 }
 
-func (p *redisPublisher) Publish(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
+func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	channelName := GetChannelNameForApplication(p.baseChannelName, message.Application)
 
 	messageContents, err := json.Marshal(message)

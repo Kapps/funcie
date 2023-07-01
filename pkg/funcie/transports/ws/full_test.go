@@ -3,7 +3,6 @@ package ws_test
 import (
 	"context"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/consumer"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/publisher"
 	"github.com/stretchr/testify/require"
@@ -25,7 +24,7 @@ func TestWS_End2End_Subscribe(t *testing.T) {
 	err := client.Connect(ctx)
 	require.NoError(t, err)
 
-	err = client.Subscribe(ctx, "channelName", func(ctx context.Context, msg *messages.Message) (*funcie.Response, error) {
+	err = client.Subscribe(ctx, "channelName", func(ctx context.Context, msg *funcie.Message) (*funcie.Response, error) {
 		return nil, nil
 	})
 	require.NoError(t, err)

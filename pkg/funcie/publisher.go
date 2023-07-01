@@ -3,7 +3,6 @@ package funcie
 import (
 	"context"
 	"errors"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
 
 // ErrNoActiveConsumer is returned when a consumer is not active on a tunnel.
@@ -13,5 +12,5 @@ var ErrNoActiveConsumer = errors.New("no consumer is active on this tunnel")
 type Publisher interface {
 	// Publish publishes a message to the tunnel, synchronously waiting for a response from the other side.
 	// If no consumer is active, ErrNoConsumerActive is returned.
-	Publish(ctx context.Context, message *messages.Message) (*Response, error)
+	Publish(ctx context.Context, message *Message) (*Response, error)
 }

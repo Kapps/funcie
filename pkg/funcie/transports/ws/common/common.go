@@ -2,7 +2,6 @@ package common
 
 import (
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
 
 type ClientToServerMessage struct {
@@ -12,8 +11,8 @@ type ClientToServerMessage struct {
 }
 
 type ServerToClientMessage struct {
-	RequestType string            `json:"requestType"`
-	Message     *messages.Message `json:"message"`
+	RequestType string          `json:"requestType"`
+	Message     *funcie.Message `json:"message"`
 }
 
 const ClientToServerMessageRequestTypeSubscribe = "s"

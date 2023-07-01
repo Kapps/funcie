@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
 	"golang.org/x/exp/slog"
@@ -132,7 +131,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 
 // Consume starts the consume loop, reading from the Websocket and passing it to the router for handling.
 func (c *Consumer) Consume(ctx context.Context) error {
-	messageChannel := make(chan *messages.Message, 10)
+	messageChannel := make(chan *funcie.Message, 10)
 
 	var readError error = nil
 
@@ -176,7 +175,7 @@ func (c *Consumer) Consume(ctx context.Context) error {
 	return readError
 }
 
-func readMessage(ctx context.Context, conn Websocket) (*messages.Message, error) {
+func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {
 	messageType, message, err := conn.Read(ctx)
 	if err != nil {
 		return nil, err
@@ -194,7 +193,7 @@ func readMessage(ctx context.Context, conn Websocket) (*messages.Message, error)
 	return msg, nil
 }
 
-func parseMessage(message string) (*messages.Message, error) {
+func parseMessage(message string) (*funcie.Message, error) {
 	var msg common.ServerToClientMessage
 	if err := json.Unmarshal([]byte(message), &msg); err != nil {
 		return nil, err

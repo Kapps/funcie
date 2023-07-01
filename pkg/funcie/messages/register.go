@@ -6,7 +6,7 @@ import (
 )
 
 // MessageKindRegister is a registration request to a server bastion.
-const MessageKindRegister MessageKind = 2
+const MessageKindRegister funcie.MessageKind = 2
 
 type RegistrationRequestPayload struct {
 	// Name is the name of the application.

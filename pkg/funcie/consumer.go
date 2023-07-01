@@ -3,7 +3,6 @@ package funcie
 import (
 	"context"
 	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"time"
 )
 
@@ -34,7 +33,7 @@ func NewResponse(id string, data []byte, error error) *Response {
 }
 
 // Handler is a function that handles a message from a tunnel.
-type Handler func(ctx context.Context, message *messages.Message) (*Response, error)
+type Handler func(ctx context.Context, message *Message) (*Response, error)
 
 // Consumer represents a consumer of a synchronous tunnel that can be used to receive messages from a publisher and send a response.
 type Consumer interface {

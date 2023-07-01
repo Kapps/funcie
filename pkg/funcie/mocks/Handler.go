@@ -4,8 +4,6 @@ package mocks
 
 import (
 	context "context"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
-
 	funcie "github.com/Kapps/funcie/pkg/funcie"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -24,15 +22,15 @@ func (_m *Handler) EXPECT() *Handler_Expecter {
 }
 
 // Execute provides a mock function with given fields: ctx, message
-func (_m *Handler) Execute(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
+func (_m *Handler) Execute(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	ret := _m.Called(ctx, message)
 
 	var r0 *funcie.Response
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *messages.Message) (*funcie.Response, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) (*funcie.Response, error)); ok {
 		return rf(ctx, message)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *messages.Message) *funcie.Response); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) *funcie.Response); ok {
 		r0 = rf(ctx, message)
 	} else {
 		if ret.Get(0) != nil {
@@ -40,7 +38,7 @@ func (_m *Handler) Execute(ctx context.Context, message *messages.Message) (*fun
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *messages.Message) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *funcie.Message) error); ok {
 		r1 = rf(ctx, message)
 	} else {
 		r1 = ret.Error(1)
@@ -61,9 +59,9 @@ func (_e *Handler_Expecter) Execute(ctx interface{}, message interface{}) *Handl
 	return &Handler_Execute_Call{Call: _e.mock.On("Execute", ctx, message)}
 }
 
-func (_c *Handler_Execute_Call) Run(run func(ctx context.Context, message *messages.Message)) *Handler_Execute_Call {
+func (_c *Handler_Execute_Call) Run(run func(ctx context.Context, message *funcie.Message)) *Handler_Execute_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*messages.Message))
+		run(args[0].(context.Context), args[1].(*funcie.Message))
 	})
 	return _c
 }
@@ -73,7 +71,7 @@ func (_c *Handler_Execute_Call) Return(_a0 *funcie.Response, _a1 error) *Handler
 	return _c
 }
 
-func (_c *Handler_Execute_Call) RunAndReturn(run func(context.Context, *messages.Message) (*funcie.Response, error)) *Handler_Execute_Call {
+func (_c *Handler_Execute_Call) RunAndReturn(run func(context.Context, *funcie.Message) (*funcie.Response, error)) *Handler_Execute_Call {
 	_c.Call.Return(run)
 	return _c
 }

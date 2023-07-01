@@ -12,11 +12,11 @@ type ClientBastion interface {
 
 type clientBastion struct {
 	server  *http.Server
-	handler ClientHandler
+	handler Handler
 }
 
 // NewClientBastion creates a new ClientBastion listening on the given address.
-func NewClientBastion(address string, handler ClientHandler) ClientBastion {
+func NewClientBastion(address string, handler Handler) ClientBastion {
 	server := &http.Server{
 		Addr: address,
 	}
@@ -24,7 +24,7 @@ func NewClientBastion(address string, handler ClientHandler) ClientBastion {
 }
 
 // NewClientBastionWithHTTPServer creates a new ClientBastion with the given HTTP server.
-func NewClientBastionWithHTTPServer(server *http.Server, handler ClientHandler) ClientBastion {
+func NewClientBastionWithHTTPServer(server *http.Server, handler Handler) ClientBastion {
 	return &clientBastion{
 		server:  server,
 		handler: handler,

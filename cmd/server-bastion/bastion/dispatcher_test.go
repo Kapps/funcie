@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	. "github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -28,19 +27,19 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 			RequestId:         uuid.New().String(),
 			Application:       "application",
 			Payload:           &payload,
-			MessageKind:       messages.MessageKindDispatch,
+			MessageKind:       funcie.MessageKindDispatch,
 			RequestParameters: nil,
 		}
 
 		messagePayload, err := request.Payload.MarshalJSON()
 		require.NoError(t, err)
 
-		message := messages.NewMessage("application", request.MessageKind, messagePayload, ttl)
+		message := funcie.NewMessage("application", request.MessageKind, messagePayload, ttl)
 
 		responsePayload := []byte("response")
 		response := funcie.NewResponse(message.ID, responsePayload, nil)
 
-		publisher.EXPECT().Publish(ctx, mock.MatchedBy(func(actual *messages.Message) bool {
+		publisher.EXPECT().Publish(ctx, mock.MatchedBy(func(actual *funcie.Message) bool {
 			return message.Ttl == actual.Ttl && string(message.Data) == string(actual.Data)
 		})).Return(response, nil).Once()
 

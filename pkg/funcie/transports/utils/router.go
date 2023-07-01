@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
 
 var ErrNoHandlerFound = fmt.Errorf("no handler exists for this application")
@@ -12,7 +11,7 @@ var ErrNoHandlerFound = fmt.Errorf("no handler exists for this application")
 type ClientHandlerRouter interface {
 	AddClientHandler(applicationId string, handler funcie.Handler) error
 	RemoveClientHandler(applicationId string) error
-	Handle(ctx context.Context, message *messages.Message) (*funcie.Response, error)
+	Handle(ctx context.Context, message *funcie.Message) (*funcie.Response, error)
 }
 
 func NewClientHandlerRouter() ClientHandlerRouter {
@@ -41,7 +40,7 @@ func (h *clientHandlerRouter) RemoveClientHandler(applicationId string) error {
 	return nil
 }
 
-func (h *clientHandlerRouter) Handle(ctx context.Context, message *messages.Message) (*funcie.Response, error) {
+func (h *clientHandlerRouter) Handle(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	handler, ok := h.handlers[message.Application]
 	if !ok {
 		return nil, fmt.Errorf("application %s not registered: %w", message.Application, ErrNoHandlerFound)

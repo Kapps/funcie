@@ -3,7 +3,6 @@ package redis_test
 import (
 	"context"
 	f "github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/Kapps/funcie/pkg/funcie/transports/redis/mocks"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
@@ -54,8 +53,8 @@ func TestRedisConsumer_Consume(t *testing.T) {
 			require.Equal(t, f.ErrPubSubChannelClosed, err)
 		}()
 
-		msg1 := messages.NewMessage(appId, messages.MessageKindDispatch, []byte("msg1"), time.Minute)
-		msg2 := messages.NewMessage(appId, messages.MessageKindDispatch, []byte("msg2"), time.Minute)
+		msg1 := f.NewMessage(appId, f.MessageKindDispatch, []byte("msg1"), time.Minute)
+		msg2 := f.NewMessage(appId, f.MessageKindDispatch, []byte("msg2"), time.Minute)
 
 		// If no handler, the message should be ignored.
 		router.EXPECT().Handle(consumerCtx, msg1).Return(nil, utils.ErrNoHandlerFound).Once()

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	. "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/Kapps/funcie/pkg/funcie/transports/redis/mocks"
 	"github.com/go-faker/faker/v4"
@@ -27,7 +26,7 @@ func TestRedisPublisher_Publish(t *testing.T) {
 	t.Run("should publish a message to the channel", func(t *testing.T) {
 		t.Parallel()
 
-		message := messages.NewMessage(appId, messages.MessageKindDispatch, []byte("hello"), time.Second)
+		message := funcie.NewMessage(appId, funcie.MessageKindDispatch, []byte("hello"), time.Second)
 		serializedMessage, err := json.Marshal(message)
 		require.NoError(t, err)
 

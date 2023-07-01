@@ -29,7 +29,7 @@ func (f *forwardingApplicationRegistry) Register(ctx context.Context, applicatio
 
 	payload := messages.NewRegistrationRequestPayload(application.Name, application.Endpoint)
 	payloadBytes := funcie.MustSerialize(payload)
-	message := messages.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes, time.Minute*2)
+	message := funcie.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes, time.Minute*2)
 
 	resp, err := f.publisher.Publish(ctx, message)
 	if err != nil {
@@ -51,7 +51,7 @@ func (f *forwardingApplicationRegistry) Unregister(ctx context.Context, applicat
 
 	payload := messages.NewDeregistrationRequestPayload(applicationName)
 	payloadBytes := funcie.MustSerialize(payload)
-	message := messages.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes, time.Minute*2)
+	message := funcie.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes, time.Minute*2)
 
 	resp, err := f.publisher.Publish(ctx, message)
 	if err != nil {

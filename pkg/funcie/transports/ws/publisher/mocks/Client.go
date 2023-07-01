@@ -4,8 +4,7 @@ package mocks
 
 import (
 	context "context"
-	funcie "github.com/Kapps/funcie/pkg/funcie/messages"
-
+	"github.com/Kapps/funcie/pkg/funcie"
 	mock "github.com/stretchr/testify/mock"
 )
 
