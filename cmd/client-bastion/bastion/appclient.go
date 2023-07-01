@@ -3,6 +3,7 @@ package bastion
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"golang.org/x/exp/slog"
@@ -17,24 +18,18 @@ type ApplicationClient interface {
 }
 
 type httpApplicationClient struct {
-	protocol string
-	client   *http.Client
+	client *http.Client
 }
 
-// NewHTTPApplicationClient creates a new ApplicationClient that uses the given protocol to communicate with the client application.
-func NewHTTPApplicationClient(protocol string, client *http.Client) ApplicationClient {
-	if protocol != "http" && protocol != "https" {
-		panic(fmt.Errorf("invalid protocol %v", protocol))
-	}
-
+// NewHTTPApplicationClient creates a new ApplicationClient that uses the given HttpClient to communicate with the client application.
+func NewHTTPApplicationClient(client *http.Client) ApplicationClient {
 	return &httpApplicationClient{
-		protocol: protocol,
-		client:   client,
+		client: client,
 	}
 }
 
 func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application funcie.Application, request *funcie.Message) (*funcie.Response, error) {
-	url := makeUrl(h.protocol, application.Endpoint, "process")
+	url := makeUrl(application.Endpoint, "process")
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(request.Data))
 	if err != nil {
 		return nil, fmt.Errorf("create request to %v: %w", url, err)
@@ -57,11 +52,16 @@ func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application 
 		return nil, fmt.Errorf("reading response from %v: %w", url, err)
 	}
 
-	// TODO: Forwarding an application error when processing the request.
-	resp := funcie.NewResponse(request.ID, responsePayload, nil)
-	return resp, nil
+	var response funcie.Response
+	if err := json.Unmarshal(responsePayload, &response); err != nil {
+		slog.WarnCtx(ctx, "failed to deserialize response from client application",
+			"error", err, "payload", string(responsePayload))
+		return nil, fmt.Errorf("deserialize response from %v: %w", url, err)
+	}
+
+	return &response, nil
 }
 
-func makeUrl(protocol string, endpoint funcie.Endpoint, path string) string {
-	return fmt.Sprintf("%v://%v/%v", protocol, endpoint, path)
+func makeUrl(endpoint funcie.Endpoint, path string) string {
+	return fmt.Sprintf("%v/%v", endpoint.String(), path)
 }

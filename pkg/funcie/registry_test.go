@@ -9,7 +9,7 @@ import (
 func TestNewApplication(t *testing.T) {
 	t.Parallel()
 
-	endpoint := funcie.NewEndpoint("host", 1234)
+	endpoint := funcie.NewEndpoint("http", "host", 1234)
 	application := funcie.NewApplication("name", endpoint)
 	require.Equal(t, "name", application.Name)
 	require.Equal(t, endpoint, application.Endpoint)
