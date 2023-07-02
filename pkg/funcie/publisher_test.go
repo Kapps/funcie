@@ -1,6 +1,7 @@
 package funcie_test
 
 import (
+	"encoding/json"
 	. "github.com/Kapps/funcie/pkg/funcie"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -24,6 +25,6 @@ func TestNewMessage(t *testing.T) {
 
 		m := NewMessage("foo", MessageKindDispatch, []byte("hello"), time.Second)
 
-		require.Equal(t, m.Data, []byte("hello"))
+		require.Equal(t, *m.Payload, json.RawMessage("hello"))
 	})
 }

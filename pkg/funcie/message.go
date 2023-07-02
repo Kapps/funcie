@@ -1,6 +1,7 @@
 package funcie
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"time"
 )
@@ -23,8 +24,8 @@ type Message struct {
 	Kind MessageKind `json:"kind"`
 	// Application is the name of the application that this message is for.
 	Application string `json:"application"`
-	// Data is the actual message payload.
-	Data []byte `json:"data"`
+	// Payload is the actual message payload.
+	Payload json.RawMessage `json:"payload"`
 	// Created is the time the message was created.
 	Created time.Time `json:"created"`
 	// Ttl is the time to live for this message.
@@ -32,13 +33,14 @@ type Message struct {
 	Ttl time.Duration `json:"ttl"`
 }
 
-// NewMessage creates a new message with the given data.
-func NewMessage(application string, kind MessageKind, data []byte, ttl time.Duration) *Message {
+// NewMessage creates a new message with the given payload.
+func NewMessage(application string, kind MessageKind, payload []byte, ttl time.Duration) *Message {
+	serialized := json.RawMessage(payload)
 	return &Message{
 		ID:          uuid.New().String(),
 		Application: application,
 		Kind:        kind,
-		Data:        data,
+		Payload:     serialized,
 		Created:     time.Now().Truncate(time.Millisecond),
 		Ttl:         ttl,
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"io"
 	"net/http"
 )
@@ -37,7 +36,7 @@ func NewHost(address string, handler Handler) Host {
 
 func (h *bastionHost) setHandlers() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/process", h.processMessage)
+	mux.HandleFunc("/dispatch", h.processMessage)
 	h.httpServer.Handler = mux
 }
 
@@ -63,9 +62,6 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var registerPayload messages.RegistrationRequestPayload
-
-	err = h.handler.Register(r.Context(), message)
 }
 
 func wrapRequest()

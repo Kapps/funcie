@@ -2,6 +2,7 @@ package bastion_test
 
 import (
 	"context"
+	"encoding/json"
 	. "github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 
 	payload := "foo"
 
-	req := funcie.NewMessage("test-app", funcie.MessageKindDispatch, []byte(payload), time.Minute)
+	req := funcie.NewMessage("test-app", funcie.MessageKindDispatch, json.RawMessage(payload), time.Minute)
 
 	returned, err := client.ProcessRequest(ctx, app, req)
 	require.NoError(t, err)

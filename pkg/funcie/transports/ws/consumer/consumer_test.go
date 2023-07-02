@@ -196,7 +196,7 @@ func TestConsumer_Consume(t *testing.T) {
 		serverToClient := &funcie.Message{
 			Application: "app",
 			ID:          "S2C",
-			Data:        []byte("DataS2C"),
+			Payload:     []byte("DataS2C"),
 			Created:     time.Now().Truncate(0),
 			Ttl:         600,
 		}
@@ -255,7 +255,7 @@ func TestConsumer_Consume(t *testing.T) {
 		serverToClient := &funcie.Message{
 			Application: "app",
 			ID:          "S2C",
-			Data:        []byte("DataS2C"),
+			Payload:     []byte("DataS2C"),
 			Created:     time.Now().Truncate(0),
 			Ttl:         600,
 		}

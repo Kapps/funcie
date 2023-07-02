@@ -63,10 +63,10 @@ func (t *lambdaTunnel) beginProxyConsume() {
 	//slog.Info("created proxy handler")
 	//
 	//err := t.consumer.Consume(context.Background(), func(ctx context.Context, message *Message) (*Response, error) {
-	//	slog.Debug("received message from tunnel", "message", string(message.Data), "applicationId", t.applicationId)
+	//	slog.Debug("received message from tunnel", "message", string(message.Payload), "applicationId", t.applicationId)
 	//
 	//	// Invoke the handler.
-	//	resp, err := localHandler.Invoke(ctx, message.Data)
+	//	resp, err := localHandler.Invoke(ctx, message.Payload)
 	//	response := NewResponse(message.ID, resp, err)
 	//
 	//	// Publish the response to the tunnel.
