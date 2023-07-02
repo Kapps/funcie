@@ -38,7 +38,7 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			nil,
 		)
 		underlying.EXPECT().Register(ctx, app).Return(nil).Once()
-		publisher.EXPECT().Publish(ctx, MessageComparer(t, message)).Return(response, nil).Once()
+		publisher.EXPECT().Publish(ctx, MessageComparer(message)).Return(response, nil).Once()
 
 		err := registry.Register(ctx, app)
 		require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			nil,
 		)
 		underlying.EXPECT().Unregister(ctx, app.Name).Return(nil).Once()
-		publisher.EXPECT().Publish(ctx, MessageComparer(t, message)).Return(response, nil).Once()
+		publisher.EXPECT().Publish(ctx, MessageComparer(message)).Return(response, nil).Once()
 
 		err := registry.Unregister(ctx, app.Name)
 		require.NoError(t, err)

@@ -4,10 +4,9 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/stretchr/testify/mock"
 	"reflect"
-	"testing"
 )
 
-func MessageComparer(t *testing.T, message *funcie.Message) interface{} {
+func MessageComparer(message *funcie.Message) interface{} {
 	return mock.MatchedBy(func(m *funcie.Message) bool {
 		cp := *m
 		cp.ID = message.ID

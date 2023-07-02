@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"io"
 	"net/http"
 )
@@ -25,26 +26,30 @@ func NewHost(address string, handler Handler) Host {
 	httpServer := &http.Server{
 		Addr: address,
 	}
-	return &bastionHost{
+	host := &bastionHost{
 		httpServer: httpServer,
 		handler:    handler,
 	}
+	host.setHandlers()
+
+	return host
 }
 
 func (h *bastionHost) setHandlers() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/register", h.register)
-	mux.HandleFunc("/unregister", h.unregister)
-	mux.HandleFunc("/dispatch", h.forwardRequest)
+	mux.HandleFunc("/process", h.processMessage)
+	h.httpServer.Handler = mux
 }
 
 func (h *bastionHost) Listen() error {
 	if err := h.httpServer.ListenAndServe(); err != nil {
 		return fmt.Errorf("listen and serve: %w", err)
 	}
+
+	return nil
 }
 
-func (h *bastionHost) register(w http.ResponseWriter, r *http.Request) {
+func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 	payloadBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -58,5 +63,9 @@ func (h *bastionHost) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var registerPayload messages.RegistrationRequestPayload
+
 	err = h.handler.Register(r.Context(), message)
 }
+
+func wrapRequest()
