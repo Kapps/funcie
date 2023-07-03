@@ -7,14 +7,7 @@ import (
 )
 
 // MessageKind is the type of message that is being sent.
-type MessageKind int
-
-const (
-	// MessageKindUnknown is an unknown message kind; generally indicates uninitialized data.
-	MessageKindUnknown MessageKind = 0
-	// MessageKindDispatch is a request to forward a message to a consumer.
-	MessageKindDispatch MessageKind = 1
-)
+type MessageKind string
 
 // Message represents a message to be sent through a tunnel.
 type Message struct {

@@ -63,5 +63,3 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
-
-func wrapRequest()
