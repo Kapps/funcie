@@ -5,7 +5,12 @@ import "encoding/json"
 // MessageKindForwardRequest is the kind of a message that is used to forward an application request.
 const MessageKindForwardRequest = "FORWARD_REQUEST"
 
-// InvokeRequestPayload is the payload for an invoke message.
-type InvokeRequestPayload struct {
+// ForwardRequestPayload is the payload for an invocation message.
+type ForwardRequestPayload struct {
+	Body json.RawMessage `json:"body"`
+}
+
+// ForwardRequestResponsePayload is the payload for an invocation response.
+type ForwardRequestResponsePayload struct {
 	Body json.RawMessage `json:"body"`
 }

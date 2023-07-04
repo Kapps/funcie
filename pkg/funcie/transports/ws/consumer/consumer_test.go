@@ -94,7 +94,7 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 	t.Run("writes an unsubscribe message to the connection", func(t *testing.T) {
 		t.Parallel()
 
-		mockRouter := utilMocks.NewHandlerRouter(t)
+		mockRouter := utilMocks.NewClientHandlerRouter(t)
 		wsClient := mocks.NewWebsocketClient(t)
 		consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", mockRouter)
 		mockSocket := mocks.NewWebsocket(t)
@@ -109,7 +109,7 @@ func TestConsumer_Unsubscribe(t *testing.T) {
 		})
 
 		mockSocket.EXPECT().Write(ctx, mock.Anything, jsonValue).Return(nil)
-		mockRouter.EXPECT().RemoveHandler("channelName").Return(nil)
+		mockRouter.EXPECT().RemoveClientHandler("channelName").Return(nil)
 		err = consumer.Unsubscribe(ctx, "channelName")
 		require.NoError(t, err)
 	})

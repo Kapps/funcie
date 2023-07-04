@@ -9,8 +9,11 @@ import (
 // MessageKind is the type of message that is being sent.
 type MessageKind string
 
-// Message represents a message to be sent through a tunnel.
-type Message struct {
+type Message MessageBase[json.RawMessage]
+
+// MessageBase represents a message to be sent through a tunnel, typed to a specific payload kind.
+// The generic message is aliased as Message, to allow for untyped use.
+type MessageBase[T any] struct {
 	// ID is the unique identifier for this message.
 	ID string `json:"id"`
 	// Kind is the type of message that is being sent.
@@ -18,7 +21,7 @@ type Message struct {
 	// Application is the name of the application that this message is for.
 	Application string `json:"application"`
 	// Payload is the actual message payload.
-	Payload json.RawMessage `json:"payload"`
+	Payload T `json:"payload"`
 	// Created is the time the message was created.
 	Created time.Time `json:"created"`
 	// Ttl is the time to live for this message.
@@ -40,6 +43,13 @@ func NewMessage(application string, kind MessageKind, payload []byte, ttl time.D
 }
 
 // NewMessageWithPayload creates a new message with the given payload, which is serialized using funcie.MustSerialize.
-func NewMessageWithPayload[T any](application string, kind MessageKind, payload T, ttl time.Duration) *Message {
-	return NewMessage(application, kind, MustSerialize(payload), ttl)
+func NewMessageWithPayload[T any](application string, kind MessageKind, payload T, ttl time.Duration) *MessageBase[T] {
+	return &MessageBase[T]{
+		ID:          uuid.New().String(),
+		Application: application,
+		Kind:        kind,
+		Payload:     payload,
+		Created:     time.Now().Truncate(time.Millisecond),
+		Ttl:         ttl,
+	}
 }
