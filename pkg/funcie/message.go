@@ -2,6 +2,7 @@ package funcie
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"time"
 )
@@ -52,4 +53,22 @@ func NewMessageWithPayload[T any](application string, kind MessageKind, payload 
 		Created:     time.Now().Truncate(time.Millisecond),
 		Ttl:         ttl,
 	}
+}
+
+// UnmarshalPayload unmarshals the payload of the given message into the given payload type.
+func UnmarshalPayload[T any](message *Message) (*MessageBase[T], error) {
+	var payload T
+	err := json.Unmarshal(message.Payload, &payload)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal payload: %w", err)
+	}
+
+	return &MessageBase[T]{
+		ID:          message.ID,
+		Application: message.Application,
+		Kind:        message.Kind,
+		Payload:     payload,
+		Created:     message.Created,
+		Ttl:         message.Ttl,
+	}, nil
 }

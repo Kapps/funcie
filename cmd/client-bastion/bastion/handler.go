@@ -12,11 +12,11 @@ import (
 // Handler allows the handling of incoming valid Bastion requests.
 type Handler interface {
 	// Register registers the given application.
-	Register(ctx context.Context, application *funcie.Application) (messages.RegistrationResponsePayload, error)
+	Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error)
 	// Unregister unregisters the application with the given name.
-	Unregister(ctx context.Context, applicationName string) (messages.DeregistrationResponsePayload, error)
+	Unregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error)
 	// ForwardRequest forwards the given request to the application specified in the request.
-	ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error)
+	ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error)
 }
 
 type handler struct {
@@ -32,7 +32,8 @@ func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient
 	}
 }
 
-func (h *handler) Register(ctx context.Context, application *funcie.Application) (*funcie.Response, error) {
+func (h *handler) Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error) {
+	application := funcie.NewApplication(message.Payload.Name, message.Payload.Endpoint)
 	err := h.registry.Register(ctx, application)
 	if err != nil {
 		return nil, fmt.Errorf("register application %v: %w", application, err)
@@ -42,10 +43,11 @@ func (h *handler) Register(ctx context.Context, application *funcie.Application)
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
 	payload := messages.NewRegistrationResponsePayload(registrationId)
-	return funcie.NewResponseWithPayload()
+	return (*messages.RegistrationResponse)(funcie.NewResponseWithPayload(message.ID, *payload, nil)), nil
 }
 
-func (h *handler) Unregister(ctx context.Context, applicationName string) error {
+func (h *handler) Unregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
+	message.Payload.
 	err := h.registry.Unregister(ctx, applicationName)
 	if err != nil {
 		return fmt.Errorf("unregister application %v: %w", applicationName, err)
