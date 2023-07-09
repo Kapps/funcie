@@ -42,21 +42,23 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 	registrationId := uuid.New()
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
-	payload := messages.NewRegistrationResponsePayload(registrationId)
-	return (*messages.RegistrationResponse)(funcie.NewResponseWithPayload(message.ID, *payload, nil)), nil
+	responsePayload := messages.NewRegistrationResponsePayload(registrationId)
+	return messages.NewRegistrationResponse(message.ID, *responsePayload, nil), nil
 }
 
 func (h *handler) Unregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
-	message.Payload.
+	applicationName := message.Payload.Name
 	err := h.registry.Unregister(ctx, applicationName)
 	if err != nil {
-		return fmt.Errorf("unregister application %v: %w", applicationName, err)
+		return nil, fmt.Errorf("unregister application %v: %w", applicationName, err)
 	}
 
-	return nil
+	responsePayload := messages.DeregistrationResponsePayload{}
+	resp := messages.NewDeregistrationResponse(message.ID, responsePayload, nil)
+	return resp, nil
 }
 
-func (h *handler) ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error) {
+func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
 	if err == funcie.ErrApplicationNotFound {
 		slog.WarnCtx(ctx, "application not found in client registry", "application", request.Application)
