@@ -10,7 +10,7 @@ import (
 // MessageKind is the type of message that is being sent.
 type MessageKind string
 
-type Message MessageBase[json.RawMessage]
+type Message = MessageBase[json.RawMessage]
 
 // MessageBase represents a message to be sent through a tunnel, typed to a specific payload kind.
 // The generic message is aliased as Message, to allow for untyped use.

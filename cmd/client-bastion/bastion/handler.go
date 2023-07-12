@@ -43,7 +43,7 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
 	responsePayload := messages.NewRegistrationResponsePayload(registrationId)
-	return funcie.NewResponseWithPayload(message.ID, *responsePayload, nil), nil
+	return funcie.NewResponseWithPayload(message.ID, responsePayload, nil), nil
 }
 
 func (h *handler) Deregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
@@ -53,7 +53,7 @@ func (h *handler) Deregister(ctx context.Context, message messages.Deregistratio
 		return nil, fmt.Errorf("unregister application %v: %w", applicationName, err)
 	}
 
-	responsePayload := messages.DeregistrationResponsePayload{}
+	responsePayload := messages.NewDeregistrationResponsePayload()
 	return funcie.NewResponseWithPayload(message.ID, responsePayload, nil), nil
 }
 

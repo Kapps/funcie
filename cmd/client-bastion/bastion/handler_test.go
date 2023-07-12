@@ -8,7 +8,6 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -46,7 +45,7 @@ func TestHandler_Unregister(t *testing.T) {
 	payload := messages.NewDeregistrationRequestPayload(app.Name)
 	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload, time.Minute*5)
 	handler := bastion.NewHandler(registry, appClient)
-	responsePayload := messages.NewDeregistrationRequestPayload(uuid.New().String())
+	responsePayload := messages.NewDeregistrationResponsePayload()
 	expectedResponse := funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 
 	t.Run("should unregister the handler", func(t *testing.T) {
@@ -57,7 +56,7 @@ func TestHandler_Unregister(t *testing.T) {
 		resp, err := handler.Deregister(ctx, *message)
 		require.NoError(t, err)
 
-		require.Equal(t, expectedResponse, resp)
+		RequireEqualResponse(t, expectedResponse, resp)
 	})
 
 	t.Run("should wrap an ApplicationNotFound error if the application is not registered", func(t *testing.T) {
@@ -81,17 +80,22 @@ func TestHandler_ForwardRequest(t *testing.T) {
 
 	request := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *payload, time.Minute*5)
 	require.NoError(t, err)
+	marshaledRequest, err := funcie.MarshalMessagePayload(*request)
+	require.NoError(t, err)
 
-	response := funcie.NewResponse("id", []byte("response"), nil)
+	responsePayload := messages.NewForwardRequestResponsePayload(json.RawMessage("{}"))
+	response := funcie.NewResponseWithPayload("id", responsePayload, nil)
+	marshaledResponse, err := funcie.MarshalResponsePayload(response)
+	require.NoError(t, err)
 
 	app := funcie.NewApplication("app", endpoint)
 	handler := bastion.NewHandler(registry, appClient)
 
 	registry.EXPECT().GetApplication(ctx, app.Name).Return(app, nil).Once()
-	appClient.EXPECT().ProcessRequest(ctx, *app, request).Return(response, nil).Once()
+	appClient.EXPECT().ProcessRequest(ctx, *app, marshaledRequest).Return(marshaledResponse, nil).Once()
 
 	receivedResponse, err := handler.ForwardRequest(ctx, *request)
 	require.NoError(t, err)
 
-	require.Equal(t, response, receivedResponse)
+	RequireEqualResponse(t, response, receivedResponse)
 }

@@ -38,10 +38,10 @@ func NewResponse(id string, data []byte, error error) *Response {
 }
 
 // NewResponseWithPayload creates a new response with the given payload, which is serialized using funcie.MustSerialize, and the current time as the received time.
-func NewResponseWithPayload[T any](id string, payload T, error error) *ResponseBase[T] {
+func NewResponseWithPayload[T any](id string, payload *T, error error) *ResponseBase[T] {
 	return &ResponseBase[T]{
 		ID:       id,
-		Data:     &payload,
+		Data:     payload,
 		Received: time.Now().Truncate(time.Millisecond),
 		Error:    NewProxyErrorFromError(error),
 	}

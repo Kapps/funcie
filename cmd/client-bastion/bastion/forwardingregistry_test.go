@@ -25,10 +25,10 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 	t.Run("should forward registration requests", func(t *testing.T) {
 		t.Parallel()
 
-		message := funcie.NewMessageWithPayload(
+		message := funcie.NewMessage(
 			app.Name,
 			messages.MessageKindRegister,
-			messages.NewRegistrationRequestPayload(app.Name, app.Endpoint),
+			funcie.MustSerialize(messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)),
 			time.Minute*2,
 		)
 
@@ -47,10 +47,10 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 	t.Run("should forward deregistration requests", func(t *testing.T) {
 		t.Parallel()
 
-		message := funcie.NewMessageWithPayload(
+		message := funcie.NewMessage(
 			app.Name,
 			messages.MessageKindDeregister,
-			messages.NewDeregistrationRequestPayload(app.Name),
+			funcie.MustSerialize(messages.NewDeregistrationRequestPayload(app.Name)),
 			time.Minute*2,
 		)
 		response := funcie.NewResponse(

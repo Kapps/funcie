@@ -29,3 +29,8 @@ func NewDeregistrationRequestPayload(name string) *DeregistrationRequestPayload 
 // DeregistrationResponsePayload is a response to a deregistration request.
 type DeregistrationResponsePayload struct {
 }
+
+// NewDeregistrationResponsePayload creates a new DeregistrationResponsePayload.
+func NewDeregistrationResponsePayload() *DeregistrationResponsePayload {
+	return &DeregistrationResponsePayload{}
+}
