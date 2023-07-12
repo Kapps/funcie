@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	. "github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 	ctx := context.Background()
-	resp := funcie.NewResponse("id", []byte("hello"), nil)
+	resp := funcie.NewResponse("id", []byte("\"hello\""), nil)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
@@ -35,7 +36,7 @@ func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 
 	payload := "foo"
 
-	req := funcie.NewMessage("test-app", funcie.MessageKindDispatch, json.RawMessage(payload), time.Minute)
+	req := funcie.NewMessage("test-app", messages.MessageKindForwardRequest, json.RawMessage(payload), time.Minute)
 
 	returned, err := client.ProcessRequest(ctx, app, req)
 	require.NoError(t, err)

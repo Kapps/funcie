@@ -13,8 +13,8 @@ import (
 type Handler interface {
 	// Register registers the given application.
 	Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error)
-	// Unregister unregisters the application with the given name.
-	Unregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error)
+	// Deregister removes the registration of the application with the given name.
+	Deregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error)
 	// ForwardRequest forwards the given request to the application specified in the request.
 	ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error)
 }
@@ -43,10 +43,10 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
 	responsePayload := messages.NewRegistrationResponsePayload(registrationId)
-	return messages.NewRegistrationResponse(message.ID, *responsePayload, nil), nil
+	return funcie.NewResponseWithPayload(message.ID, *responsePayload, nil), nil
 }
 
-func (h *handler) Unregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
+func (h *handler) Deregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
 	applicationName := message.Payload.Name
 	err := h.registry.Unregister(ctx, applicationName)
 	if err != nil {
@@ -54,8 +54,7 @@ func (h *handler) Unregister(ctx context.Context, message messages.Deregistratio
 	}
 
 	responsePayload := messages.DeregistrationResponsePayload{}
-	resp := messages.NewDeregistrationResponse(message.ID, responsePayload, nil)
-	return resp, nil
+	return funcie.NewResponseWithPayload(message.ID, responsePayload, nil), nil
 }
 
 func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
@@ -69,10 +68,16 @@ func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRe
 		return nil, fmt.Errorf("getting application %v: %w", request.Application, err)
 	}
 
-	resp, err := h.appClient.ProcessRequest(ctx, *app, request)
+	marshaled, err := funcie.MarshalMessagePayload[messages.ForwardRequestMessage](request)
+	resp, err := h.appClient.ProcessRequest(ctx, *app, marshaled)
 	if err != nil {
 		return nil, fmt.Errorf("process request %v: %w", request.ID, err)
 	}
 
-	return resp, nil
+	unmarshaled, err := funcie.UnmarshalResponsePayload[messages.ForwardRequestResponse](resp)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal response payload: %w", err)
+	}
+
+	return unmarshaled, nil
 }

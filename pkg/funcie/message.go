@@ -55,20 +55,31 @@ func NewMessageWithPayload[T any](application string, kind MessageKind, payload 
 	}
 }
 
-// UnmarshalPayload unmarshals the payload of the given message into the given payload type.
-func UnmarshalPayload[T any](message *Message) (*MessageBase[T], error) {
+// UnmarshalMessagePayload unmarshals the payload of the given message into the given payload type.
+func UnmarshalMessagePayload[MessageType MessageBase[T], T any](message *Message) (*MessageType, error) {
 	var payload T
 	err := json.Unmarshal(message.Payload, &payload)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal payload: %w", err)
 	}
 
-	return &MessageBase[T]{
-		ID:          message.ID,
-		Application: message.Application,
-		Kind:        message.Kind,
-		Payload:     payload,
-		Created:     message.Created,
-		Ttl:         message.Ttl,
+	return &MessageType{
+		ID: message.ID, Kind: message.Kind, Application: message.Application, Payload: payload, Created: message.Created, Ttl: message.Ttl,
 	}, nil
+}
+
+// MarshalMessagePayload marshals the given payload into a message with a serialized raw payload.
+func MarshalMessagePayload[MessageType MessageBase[T], T any](message MessageType) (*Message, error) {
+	serialized, err := json.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("marshal payload: %w", err)
+	}
+
+	var res Message
+	err = json.Unmarshal(serialized, &res)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal payload: %w", err)
+	}
+
+	return &res, nil
 }

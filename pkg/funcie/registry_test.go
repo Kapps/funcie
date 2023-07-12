@@ -14,3 +14,11 @@ func TestNewApplication(t *testing.T) {
 	require.Equal(t, "name", application.Name)
 	require.Equal(t, endpoint, application.Endpoint)
 }
+
+func TestApplication_String(t *testing.T) {
+	t.Parallel()
+
+	endpoint := funcie.NewEndpoint("http", "host", 1234)
+	application := funcie.NewApplication("name", endpoint)
+	require.Equal(t, "name (http://host:1234)", application.String())
+}

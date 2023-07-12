@@ -2,6 +2,7 @@ package funcie
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -24,9 +25,13 @@ type ResponseBase[T any] struct {
 
 // NewResponse creates a new response with the given data and the current time as the received time.
 func NewResponse(id string, data []byte, error error) *Response {
+	var formatted *json.RawMessage
+	if len(data) > 0 {
+		formatted = (*json.RawMessage)(&data)
+	}
 	return &Response{
 		ID:       id,
-		Data:     (*json.RawMessage)(&data),
+		Data:     formatted,
 		Received: time.Now().Truncate(time.Millisecond),
 		Error:    NewProxyErrorFromError(error),
 	}
@@ -40,4 +45,41 @@ func NewResponseWithPayload[T any](id string, payload T, error error) *ResponseB
 		Received: time.Now().Truncate(time.Millisecond),
 		Error:    NewProxyErrorFromError(error),
 	}
+}
+
+// UnmarshalResponsePayload unmarshals the payload of the given response into the given payload type.
+func UnmarshalResponsePayload[ResponseType ResponseBase[T], T any](response *Response) (*ResponseType, error) {
+	var data T
+	if response.Data != nil {
+		err := json.Unmarshal(*response.Data, &data)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &ResponseType{
+		ID:       response.ID,
+		Data:     &data,
+		Received: response.Received,
+		Error:    response.Error,
+	}, nil
+}
+
+// MarshalResponsePayload marshals the payload of the given response into a JSON byte array.
+func MarshalResponsePayload[T any](response *ResponseBase[T]) (*Response, error) {
+	var raw *json.RawMessage
+
+	if response.Data != nil {
+		serialized, err := json.Marshal(response.Data)
+		if err != nil {
+			return nil, fmt.Errorf("marshalling response data: %w", err)
+		}
+		raw = (*json.RawMessage)(&serialized)
+	}
+
+	return &Response{
+		ID:       response.ID,
+		Data:     raw,
+		Error:    response.Error,
+		Received: response.Received,
+	}, nil
 }

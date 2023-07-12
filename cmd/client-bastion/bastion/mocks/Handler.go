@@ -6,6 +6,8 @@ import (
 	context "context"
 
 	funcie "github.com/Kapps/funcie/pkg/funcie"
+	messages "github.com/Kapps/funcie/pkg/funcie/messages"
+
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -22,25 +24,80 @@ func (_m *Handler) EXPECT() *Handler_Expecter {
 	return &Handler_Expecter{mock: &_m.Mock}
 }
 
-// ForwardRequest provides a mock function with given fields: ctx, request
-func (_m *Handler) ForwardRequest(ctx context.Context, request *funcie.Message) (*funcie.Response, error) {
-	ret := _m.Called(ctx, request)
+// Deregister provides a mock function with given fields: ctx, message
+func (_m *Handler) Deregister(ctx context.Context, message funcie.MessageBase[messages.DeregistrationRequestPayload]) (*funcie.ResponseBase[messages.DeregistrationResponsePayload], error) {
+	ret := _m.Called(ctx, message)
 
-	var r0 *funcie.Response
+	var r0 *funcie.ResponseBase[messages.DeregistrationResponsePayload]
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) (*funcie.Response, error)); ok {
-		return rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.DeregistrationRequestPayload]) (*funcie.ResponseBase[messages.DeregistrationResponsePayload], error)); ok {
+		return rf(ctx, message)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Message) *funcie.Response); ok {
-		r0 = rf(ctx, request)
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.DeregistrationRequestPayload]) *funcie.ResponseBase[messages.DeregistrationResponsePayload]); ok {
+		r0 = rf(ctx, message)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*funcie.Response)
+			r0 = ret.Get(0).(*funcie.ResponseBase[messages.DeregistrationResponsePayload])
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *funcie.Message) error); ok {
-		r1 = rf(ctx, request)
+	if rf, ok := ret.Get(1).(func(context.Context, funcie.MessageBase[messages.DeregistrationRequestPayload]) error); ok {
+		r1 = rf(ctx, message)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Handler_Deregister_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Deregister'
+type Handler_Deregister_Call struct {
+	*mock.Call
+}
+
+// Deregister is a helper method to define mock.On call
+//   - ctx context.Context
+//   - message funcie.MessageBase[messages.DeregistrationRequestPayload]
+func (_e *Handler_Expecter) Deregister(ctx interface{}, message interface{}) *Handler_Deregister_Call {
+	return &Handler_Deregister_Call{Call: _e.mock.On("Deregister", ctx, message)}
+}
+
+func (_c *Handler_Deregister_Call) Run(run func(ctx context.Context, message funcie.MessageBase[messages.DeregistrationRequestPayload])) *Handler_Deregister_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(funcie.MessageBase[messages.DeregistrationRequestPayload]))
+	})
+	return _c
+}
+
+func (_c *Handler_Deregister_Call) Return(_a0 *funcie.ResponseBase[messages.DeregistrationResponsePayload], _a1 error) *Handler_Deregister_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Handler_Deregister_Call) RunAndReturn(run func(context.Context, funcie.MessageBase[messages.DeregistrationRequestPayload]) (*funcie.ResponseBase[messages.DeregistrationResponsePayload], error)) *Handler_Deregister_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ForwardRequest provides a mock function with given fields: ctx, message
+func (_m *Handler) ForwardRequest(ctx context.Context, message funcie.MessageBase[messages.ForwardRequestPayload]) (*funcie.ResponseBase[messages.ForwardRequestResponsePayload], error) {
+	ret := _m.Called(ctx, message)
+
+	var r0 *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.ForwardRequestPayload]) (*funcie.ResponseBase[messages.ForwardRequestResponsePayload], error)); ok {
+		return rf(ctx, message)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.ForwardRequestPayload]) *funcie.ResponseBase[messages.ForwardRequestResponsePayload]); ok {
+		r0 = rf(ctx, message)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*funcie.ResponseBase[messages.ForwardRequestResponsePayload])
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, funcie.MessageBase[messages.ForwardRequestPayload]) error); ok {
+		r1 = rf(ctx, message)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -55,40 +112,52 @@ type Handler_ForwardRequest_Call struct {
 
 // ForwardRequest is a helper method to define mock.On call
 //   - ctx context.Context
-//   - request *funcie.Message
-func (_e *Handler_Expecter) ForwardRequest(ctx interface{}, request interface{}) *Handler_ForwardRequest_Call {
-	return &Handler_ForwardRequest_Call{Call: _e.mock.On("ForwardRequest", ctx, request)}
+//   - message funcie.MessageBase[messages.ForwardRequestPayload]
+func (_e *Handler_Expecter) ForwardRequest(ctx interface{}, message interface{}) *Handler_ForwardRequest_Call {
+	return &Handler_ForwardRequest_Call{Call: _e.mock.On("ForwardRequest", ctx, message)}
 }
 
-func (_c *Handler_ForwardRequest_Call) Run(run func(ctx context.Context, request *funcie.Message)) *Handler_ForwardRequest_Call {
+func (_c *Handler_ForwardRequest_Call) Run(run func(ctx context.Context, message funcie.MessageBase[messages.ForwardRequestPayload])) *Handler_ForwardRequest_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*funcie.Message))
+		run(args[0].(context.Context), args[1].(funcie.MessageBase[messages.ForwardRequestPayload]))
 	})
 	return _c
 }
 
-func (_c *Handler_ForwardRequest_Call) Return(_a0 *funcie.Response, _a1 error) *Handler_ForwardRequest_Call {
+func (_c *Handler_ForwardRequest_Call) Return(_a0 *funcie.ResponseBase[messages.ForwardRequestResponsePayload], _a1 error) *Handler_ForwardRequest_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Handler_ForwardRequest_Call) RunAndReturn(run func(context.Context, *funcie.Message) (*funcie.Response, error)) *Handler_ForwardRequest_Call {
+func (_c *Handler_ForwardRequest_Call) RunAndReturn(run func(context.Context, funcie.MessageBase[messages.ForwardRequestPayload]) (*funcie.ResponseBase[messages.ForwardRequestResponsePayload], error)) *Handler_ForwardRequest_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Register provides a mock function with given fields: ctx, application
-func (_m *Handler) Register(ctx context.Context, application *funcie.Application) error {
-	ret := _m.Called(ctx, application)
+// Register provides a mock function with given fields: ctx, message
+func (_m *Handler) Register(ctx context.Context, message funcie.MessageBase[messages.RegistrationRequestPayload]) (*funcie.ResponseBase[messages.RegistrationResponsePayload], error) {
+	ret := _m.Called(ctx, message)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.Application) error); ok {
-		r0 = rf(ctx, application)
+	var r0 *funcie.ResponseBase[messages.RegistrationResponsePayload]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.RegistrationRequestPayload]) (*funcie.ResponseBase[messages.RegistrationResponsePayload], error)); ok {
+		return rf(ctx, message)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, funcie.MessageBase[messages.RegistrationRequestPayload]) *funcie.ResponseBase[messages.RegistrationResponsePayload]); ok {
+		r0 = rf(ctx, message)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*funcie.ResponseBase[messages.RegistrationResponsePayload])
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, funcie.MessageBase[messages.RegistrationRequestPayload]) error); ok {
+		r1 = rf(ctx, message)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Handler_Register_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Register'
@@ -98,67 +167,24 @@ type Handler_Register_Call struct {
 
 // Register is a helper method to define mock.On call
 //   - ctx context.Context
-//   - application *funcie.Application
-func (_e *Handler_Expecter) Register(ctx interface{}, application interface{}) *Handler_Register_Call {
-	return &Handler_Register_Call{Call: _e.mock.On("Register", ctx, application)}
+//   - message funcie.MessageBase[messages.RegistrationRequestPayload]
+func (_e *Handler_Expecter) Register(ctx interface{}, message interface{}) *Handler_Register_Call {
+	return &Handler_Register_Call{Call: _e.mock.On("Register", ctx, message)}
 }
 
-func (_c *Handler_Register_Call) Run(run func(ctx context.Context, application *funcie.Application)) *Handler_Register_Call {
+func (_c *Handler_Register_Call) Run(run func(ctx context.Context, message funcie.MessageBase[messages.RegistrationRequestPayload])) *Handler_Register_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*funcie.Application))
+		run(args[0].(context.Context), args[1].(funcie.MessageBase[messages.RegistrationRequestPayload]))
 	})
 	return _c
 }
 
-func (_c *Handler_Register_Call) Return(_a0 error) *Handler_Register_Call {
-	_c.Call.Return(_a0)
+func (_c *Handler_Register_Call) Return(_a0 *funcie.ResponseBase[messages.RegistrationResponsePayload], _a1 error) *Handler_Register_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Handler_Register_Call) RunAndReturn(run func(context.Context, *funcie.Application) error) *Handler_Register_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Unregister provides a mock function with given fields: ctx, applicationName
-func (_m *Handler) Unregister(ctx context.Context, applicationName string) error {
-	ret := _m.Called(ctx, applicationName)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, applicationName)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Handler_Unregister_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unregister'
-type Handler_Unregister_Call struct {
-	*mock.Call
-}
-
-// Unregister is a helper method to define mock.On call
-//   - ctx context.Context
-//   - applicationName string
-func (_e *Handler_Expecter) Unregister(ctx interface{}, applicationName interface{}) *Handler_Unregister_Call {
-	return &Handler_Unregister_Call{Call: _e.mock.On("Unregister", ctx, applicationName)}
-}
-
-func (_c *Handler_Unregister_Call) Run(run func(ctx context.Context, applicationName string)) *Handler_Unregister_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *Handler_Unregister_Call) Return(_a0 error) *Handler_Unregister_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Handler_Unregister_Call) RunAndReturn(run func(context.Context, string) error) *Handler_Unregister_Call {
+func (_c *Handler_Register_Call) RunAndReturn(run func(context.Context, funcie.MessageBase[messages.RegistrationRequestPayload]) (*funcie.ResponseBase[messages.RegistrationResponsePayload], error)) *Handler_Register_Call {
 	_c.Call.Return(run)
 	return _c
 }

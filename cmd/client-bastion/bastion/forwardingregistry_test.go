@@ -32,9 +32,9 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			time.Minute*2,
 		)
 
-		response := funcie.NewResponseWithPayload(
+		response := funcie.NewResponse(
 			message.ID,
-			messages.NewRegistrationResponsePayload(uuid.New()),
+			funcie.MustSerialize(messages.NewRegistrationResponsePayload(uuid.New())),
 			nil,
 		)
 		underlying.EXPECT().Register(ctx, app).Return(nil).Once()
@@ -53,9 +53,9 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			messages.NewDeregistrationRequestPayload(app.Name),
 			time.Minute*2,
 		)
-		response := funcie.NewResponseWithPayload(
+		response := funcie.NewResponse(
 			message.ID,
-			messages.NewDeregistrationRequestPayload(app.Name),
+			funcie.MustSerialize(messages.NewDeregistrationRequestPayload(app.Name)),
 			nil,
 		)
 		underlying.EXPECT().Unregister(ctx, app.Name).Return(nil).Once()

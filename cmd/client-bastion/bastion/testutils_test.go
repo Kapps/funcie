@@ -6,8 +6,8 @@ import (
 	"reflect"
 )
 
-func MessageComparer(message *funcie.Message) interface{} {
-	return mock.MatchedBy(func(m *funcie.Message) bool {
+func MessageComparer[T any](message *funcie.MessageBase[T]) interface{} {
+	return mock.MatchedBy(func(m *funcie.MessageBase[T]) bool {
 		cp := *m
 		cp.ID = message.ID
 		cp.Created = message.Created

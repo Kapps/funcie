@@ -98,18 +98,17 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 
 		var rawResp *json.RawMessage
 
-		msg := NewMessage(t.applicationId, MessageKindDispatch, bytes, 10*time.Minute)
+		msg := NewMessage(t.applicationId, "FORWARD_REQUEST", bytes, 10*time.Minute)
 		res, err := t.publisher.Publish(ctx, msg)
 		if err == nil {
 			// If we got a response, then we can return it immediately.
-			slog.Debug("received response from tunnel", "response", string(res.Data), "err", err)
+			slog.Debug("received response from tunnel", "response", res.Data, "err", err)
 			if res.Error != nil {
 				return nil, fmt.Errorf("received error from proxied implementation: %w", res.Error)
 			}
 
-			if len(res.Data) > 0 {
-				rawResp = &json.RawMessage{}
-				err = rawResp.UnmarshalJSON(res.Data)
+			if res.Data != nil {
+				rawResp = res.Data
 				if err != nil {
 					return nil, fmt.Errorf("failed to marshal response from proxied implementation: %w", err)
 				}

@@ -3,27 +3,16 @@ package messages
 import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/google/uuid"
-	"time"
 )
 
 // MessageKindRegister is a registration request to a server bastion.
 const MessageKindRegister funcie.MessageKind = "REGISTER"
 
 // RegistrationMessage is a message containing a registration request.
-type RegistrationMessage funcie.MessageBase[RegistrationRequestPayload]
+type RegistrationMessage = funcie.MessageBase[RegistrationRequestPayload]
 
 // RegistrationResponse is a message containing a registration response.
-type RegistrationResponse funcie.ResponseBase[RegistrationResponsePayload]
-
-// NewRegistrationMessage creates a new RegistrationMessage with the given application name and payload.
-func NewRegistrationMessage(application string, payload RegistrationRequestPayload, ttl time.Duration) *RegistrationMessage {
-	return (*RegistrationMessage)(funcie.NewMessageWithPayload(application, MessageKindRegister, payload, ttl))
-}
-
-// NewRegistrationResponse creates a new RegistrationResponse with the given id, payload and error.
-func NewRegistrationResponse(id string, payload RegistrationResponsePayload, error *funcie.ProxyError) *RegistrationResponse {
-	return (*RegistrationResponse)(funcie.NewResponseWithPayload(id, payload, error))
-}
+type RegistrationResponse = funcie.ResponseBase[RegistrationResponsePayload]
 
 type RegistrationRequestPayload struct {
 	// Name is the name of the application.

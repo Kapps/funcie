@@ -11,7 +11,7 @@ import (
 func TestResponseUnmarshal(t *testing.T) {
 	t.Parallel()
 
-	response := NewResponse("id", []byte("data"), nil)
+	response := NewResponse("id", []byte("\"data\""), nil)
 	data, err := json.Marshal(response)
 	require.NoError(t, err)
 
