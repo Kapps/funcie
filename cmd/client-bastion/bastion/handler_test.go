@@ -48,8 +48,6 @@ func TestHandler_Unregister(t *testing.T) {
 	expectedResponse := funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 
 	t.Run("should unregister the handler", func(t *testing.T) {
-		t.Parallel()
-
 		registry.EXPECT().Unregister(ctx, app.Name).Return(nil).Once()
 
 		resp, err := handler.Deregister(ctx, *message)
@@ -59,8 +57,6 @@ func TestHandler_Unregister(t *testing.T) {
 	})
 
 	t.Run("should wrap an ApplicationNotFound error if the application is not registered", func(t *testing.T) {
-		t.Parallel()
-
 		registry.EXPECT().Unregister(ctx, app.Name).Return(funcie.ErrApplicationNotFound).Once()
 
 		resp, err := handler.Deregister(ctx, *message)
