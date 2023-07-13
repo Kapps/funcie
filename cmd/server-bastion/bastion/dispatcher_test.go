@@ -33,7 +33,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 		messagePayload, err := request.Payload.MarshalJSON()
 		require.NoError(t, err)
 
-		message := funcie.NewMessage("application", request.MessageKind, messagePayload, ttl)
+		message := funcie.NewMessage("application", request.MessageKind, messagePayload)
 
 		responsePayload := []byte("response")
 		response := funcie.NewResponse(message.ID, responsePayload, nil)

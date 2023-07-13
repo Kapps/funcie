@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
 func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
@@ -36,7 +35,7 @@ func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 
 	payload := "foo"
 
-	req := funcie.NewMessage("test-app", messages.MessageKindForwardRequest, json.RawMessage(payload), time.Minute)
+	req := funcie.NewMessage("test-app", messages.MessageKindForwardRequest, json.RawMessage(payload))
 
 	returned, err := client.ProcessRequest(ctx, app, req)
 	require.NoError(t, err)

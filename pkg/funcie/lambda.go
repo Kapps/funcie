@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/aws/aws-lambda-go/lambda"
 	"golang.org/x/exp/slog"
-	"time"
 )
 
 type Tunnel interface {
@@ -98,7 +98,7 @@ func (t *lambdaTunnel) lambdaHandler() lambda.Handler {
 
 		var rawResp *json.RawMessage
 
-		msg := NewMessage(t.applicationId, "FORWARD_REQUEST", bytes, 10*time.Minute)
+		msg := NewMessage(t.applicationId, messages.MessageKindForwardRequest, bytes)
 		res, err := t.publisher.Publish(ctx, msg)
 		if err == nil {
 			// If we got a response, then we can return it immediately.

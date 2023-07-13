@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestForwardingApplicationRegistry_Integration(t *testing.T) {
@@ -29,7 +28,6 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			app.Name,
 			messages.MessageKindRegister,
 			funcie.MustSerialize(messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)),
-			time.Minute*2,
 		)
 
 		response := funcie.NewResponse(
@@ -51,7 +49,6 @@ func TestForwardingApplicationRegistry_Integration(t *testing.T) {
 			app.Name,
 			messages.MessageKindDeregister,
 			funcie.MustSerialize(messages.NewDeregistrationRequestPayload(app.Name)),
-			time.Minute*2,
 		)
 		response := funcie.NewResponse(
 			message.ID,

@@ -6,14 +6,13 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestUnmarshalPayload(t *testing.T) {
 	regPayload := messages.NewRegistrationRequestPayload("name", funcie.MustNewEndpointFromAddress("http://localhost:8080"))
 	serializedPayload := funcie.MustSerialize(regPayload)
 
-	marshaledMessage := funcie.NewMessage("name", messages.MessageKindRegister, serializedPayload, time.Minute)
+	marshaledMessage := funcie.NewMessage("name", messages.MessageKindRegister, serializedPayload)
 
 	unmarshaledMessage, err := funcie.UnmarshalMessagePayload[messages.RegistrationMessage](marshaledMessage)
 	require.NoError(t, err)
@@ -24,7 +23,7 @@ func TestUnmarshalPayload(t *testing.T) {
 func TestMarshalPayload(t *testing.T) {
 	regPayload := messages.NewRegistrationRequestPayload("name", funcie.MustNewEndpointFromAddress("http://localhost:8080"))
 
-	unmarshaledMessage := funcie.NewMessageWithPayload("name", messages.MessageKindRegister, regPayload, time.Minute)
+	unmarshaledMessage := funcie.NewMessageWithPayload("name", messages.MessageKindRegister, regPayload)
 
 	marshaledMessage, err := funcie.MarshalMessagePayload(*unmarshaledMessage)
 	require.NoError(t, err)

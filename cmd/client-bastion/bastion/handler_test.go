@@ -10,7 +10,6 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestHandler_Register(t *testing.T) {
@@ -22,7 +21,7 @@ func TestHandler_Register(t *testing.T) {
 	appClient := bastionMocks.NewApplicationClient(t)
 	handler := bastion.NewHandler(registry, appClient)
 	payload := messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)
-	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *payload, time.Minute*5)
+	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *payload)
 
 	t.Run("should register the handler", func(t *testing.T) {
 		registry.EXPECT().Register(ctx, app).Return(nil).Once()
@@ -43,7 +42,7 @@ func TestHandler_Unregister(t *testing.T) {
 
 	app := funcie.NewApplication("name", endpoint)
 	payload := messages.NewDeregistrationRequestPayload(app.Name)
-	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload, time.Minute*5)
+	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload)
 	handler := bastion.NewHandler(registry, appClient)
 	responsePayload := messages.NewDeregistrationResponsePayload()
 	expectedResponse := funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
@@ -78,7 +77,7 @@ func TestHandler_ForwardRequest(t *testing.T) {
 	payload := messages.NewForwardRequestPayload(json.RawMessage("{}"))
 	require.NoError(t, err)
 
-	request := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *payload, time.Minute*5)
+	request := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *payload)
 	require.NoError(t, err)
 	marshaledRequest, err := funcie.MarshalMessagePayload(*request)
 	require.NoError(t, err)

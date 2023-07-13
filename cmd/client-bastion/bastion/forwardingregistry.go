@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
-	"time"
 )
 
 type forwardingApplicationRegistry struct {
@@ -34,7 +33,7 @@ func (f *forwardingApplicationRegistry) Register(ctx context.Context, applicatio
 		return fmt.Errorf("marshalling payload: %w", err)
 	}
 
-	message := funcie.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes, time.Minute*2)
+	message := funcie.NewMessage(application.Name, messages.MessageKindRegister, payloadBytes)
 
 	resp, err := f.publisher.Publish(ctx, message)
 	if err != nil {
@@ -60,7 +59,7 @@ func (f *forwardingApplicationRegistry) Unregister(ctx context.Context, applicat
 		return fmt.Errorf("marshalling payload: %w", err)
 	}
 
-	message := funcie.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes, time.Minute*2)
+	message := funcie.NewMessage(applicationName, messages.MessageKindDeregister, payloadBytes)
 
 	resp, err := f.publisher.Publish(ctx, message)
 	if err != nil {

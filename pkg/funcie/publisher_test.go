@@ -6,7 +6,6 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestNewMessage(t *testing.T) {
@@ -15,8 +14,8 @@ func TestNewMessage(t *testing.T) {
 	t.Run("should return a new message with a unique ID", func(t *testing.T) {
 		t.Parallel()
 
-		m1 := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"), time.Second)
-		m2 := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"), time.Second)
+		m1 := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"))
+		m2 := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"))
 
 		require.NotEqual(t, m1.ID, m2.ID)
 	})
@@ -24,7 +23,7 @@ func TestNewMessage(t *testing.T) {
 	t.Run("should return a new message with the given data", func(t *testing.T) {
 		t.Parallel()
 
-		m := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"), time.Second)
+		m := NewMessage("foo", messages.MessageKindForwardRequest, []byte("hello"))
 
 		require.Equal(t, m.Payload, json.RawMessage("hello"))
 	})

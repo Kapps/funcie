@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"time"
 )
 
 // RequestHandler allows the handling of incoming valid Bastion requests.
@@ -15,14 +14,12 @@ type RequestHandler interface {
 }
 
 type requestHandler struct {
-	ttl       time.Duration
 	publisher funcie.Publisher
 }
 
 // NewRequestHandler creates a new RequestHandler.
-func NewRequestHandler(publisher funcie.Publisher, ttl time.Duration) RequestHandler {
+func NewRequestHandler(publisher funcie.Publisher) RequestHandler {
 	return &requestHandler{
-		ttl:       ttl,
 		publisher: publisher,
 	}
 }
@@ -33,7 +30,7 @@ func (h *requestHandler) Dispatch(ctx context.Context, request *Request) (*funci
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	message := funcie.NewMessage(request.Application, request.MessageKind, contents, h.ttl)
+	message := funcie.NewMessage(request.Application, request.MessageKind, contents)
 
 	resp, err := h.publisher.Publish(ctx, message)
 	if err != nil {
