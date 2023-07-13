@@ -9,6 +9,7 @@ import (
 	"github.com/Kapps/funcie/pkg/receiver"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
+	"golang.org/x/exp/slog"
 	"net/http"
 )
 
@@ -52,7 +53,11 @@ func main() {
 		fx.Invoke(func(lc fx.Lifecycle, host bastion.Host) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					return host.Listen(ctx)
+					go func() {
+						err := host.Listen(ctx)
+						slog.WarnCtx(ctx, "host closed", "error", err.Error())
+					}()
+					return nil
 				},
 				OnStop: func(ctx context.Context) error {
 					return host.Close(ctx)
