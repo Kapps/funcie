@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	. "github.com/Kapps/funcie/cmd/server-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 func TestRequestHandler_Dispatch(t *testing.T) {
@@ -17,8 +17,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 
 	ctx := context.Background()
 	publisher := mocks.NewPublisher(t)
-	ttl := time.Minute * 12
-	handler := NewRequestHandler(publisher, ttl)
+	handler := NewRequestHandler(publisher)
 
 	t.Run("should publish the request payload to the publisher", func(t *testing.T) {
 		payload := json.RawMessage(`{"foo": "bar"}`)
@@ -26,7 +25,7 @@ func TestRequestHandler_Dispatch(t *testing.T) {
 			RequestId:         uuid.New().String(),
 			Application:       "application",
 			Payload:           &payload,
-			MessageKind:       funcie.MessageKindDispatch,
+			MessageKind:       messages.MessageKindForwardRequest,
 			RequestParameters: nil,
 		}
 
