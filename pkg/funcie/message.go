@@ -59,7 +59,7 @@ func UnmarshalMessagePayload[MessageType MessageBase[T], T any](message *Message
 	}
 
 	return &MessageType{
-		ID: message.ID, Kind: message.Kind, Application: message.Application, Payload: payload, Created: message.Created, Ttl: message.Ttl,
+		ID: message.ID, Kind: message.Kind, Application: message.Application, Payload: payload, Created: message.Created,
 	}, nil
 }
 

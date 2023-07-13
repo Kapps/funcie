@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ttl = time.Minute * 5
+
 type PublishClient interface {
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	BRPop(ctx context.Context, timeout time.Duration, keys ...string) *redis.StringSliceCmd
@@ -51,7 +53,7 @@ func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (
 
 	// Wait for a response from the consumer.
 	responseKey := GetResponseKeyForMessage(p.baseChannelName, message.ID)
-	resp, err := p.redisClient.BRPop(ctx, message.Ttl, responseKey).Result()
+	resp, err := p.redisClient.BRPop(ctx, ttl, responseKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get response from consumer: %w", err)
 	}

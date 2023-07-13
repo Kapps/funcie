@@ -7,7 +7,7 @@ import (
 )
 
 // Response is a response to a message sent to a tunnel, with either a generic JSON payload or an error.
-type Response ResponseBase[json.RawMessage]
+type Response = ResponseBase[json.RawMessage]
 
 // ResponseBase represents a response to a message sent to a tunnel, with either a generic payload or an error.
 type ResponseBase[T any] struct {
