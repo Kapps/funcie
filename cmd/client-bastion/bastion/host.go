@@ -76,7 +76,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.ErrorCtx(r.Context(), "error unmarshalling message", err, "payload", string(payloadBytes))
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte("invalid request"))
+		_, _ = w.Write([]byte(fmt.Sprintf("invalid request: %v", err)))
 		return
 	}
 

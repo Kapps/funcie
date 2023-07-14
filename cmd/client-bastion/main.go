@@ -16,7 +16,7 @@ import (
 func newRedisClient(conf *bastion.Config) *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:       conf.RedisAddress,
-		ClientName: "Funcie Client Bastion",
+		ClientName: "funcie-client-bastion",
 	})
 }
 
