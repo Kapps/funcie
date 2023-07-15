@@ -22,13 +22,15 @@ type Handler interface {
 type handler struct {
 	registry  funcie.ApplicationRegistry
 	appClient ApplicationClient
+	consumer  funcie.Consumer
 }
 
 // NewHandler creates a new Handler that can register and unregister applications and forward requests.
-func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient) Handler {
+func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient, consumer funcie.Consumer) Handler {
 	return &handler{
 		registry:  registry,
 		appClient: appClient,
+		consumer:  consumer,
 	}
 }
 
@@ -39,6 +41,7 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 		return nil, fmt.Errorf("register application %v: %w", application, err)
 	}
 
+	h.consumer.Subscribe(ctx, application.Name, h.appClient)
 	registrationId := uuid.New()
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
@@ -81,3 +84,5 @@ func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRe
 
 	return unmarshaled, nil
 }
+
+func (h *handler) onConsumerMessage(ctx context.Context)

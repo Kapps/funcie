@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
@@ -11,6 +13,7 @@ import (
 	"go.uber.org/fx"
 	"golang.org/x/exp/slog"
 	"net/http"
+	"os"
 )
 
 func newRedisClient(conf *bastion.Config) *redis.Client {
@@ -50,14 +53,10 @@ func main() {
 			bastion.NewHTTPApplicationClient,
 			bastion.NewHandler,
 		),
-		fx.Invoke(func(lc fx.Lifecycle, host bastion.Host) {
+		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host bastion.Host) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					go func() {
-						err := host.Listen(ctx)
-						slog.WarnCtx(ctx, "host closed", "error", err.Error())
-					}()
-					return nil
+					return Start(ctx, consumer, host)
 				},
 				OnStop: func(ctx context.Context) error {
 					return host.Close(ctx)
@@ -65,4 +64,28 @@ func main() {
 			})
 		}),
 	).Run()
+}
+
+func Start(ctx context.Context, consumer funcie.Consumer, host bastion.Host) error {
+	err := consumer.Connect(ctx)
+	if err != nil {
+		return fmt.Errorf("connect to consumer: %w", err)
+	}
+
+	go func() {
+		// Goroutine for host requests -- a socket for receiving messages from other clients.
+		err := host.Listen(ctx)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.ErrorCtx(ctx, "host closed", err)
+			os.Exit(1)
+		}
+		slog.WarnCtx(ctx, "host closed", "error", err.Error())
+	}()
+
+	go func() {
+
+		// Goroutine for incoming messages -- registers on the consumer and starts listening.
+	}
+
+	return nil
 }
