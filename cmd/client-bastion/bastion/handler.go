@@ -41,7 +41,10 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 		return nil, fmt.Errorf("register application %v: %w", application, err)
 	}
 
-	h.consumer.Subscribe(ctx, application.Name, h.appClient)
+	if err := h.consumer.Subscribe(ctx, application.Name, h.onConsumerMessageReceived); err != nil {
+		return nil, fmt.Errorf("subscribe to application %v: %w", application, err)
+	}
+
 	registrationId := uuid.New()
 	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
 
@@ -54,6 +57,10 @@ func (h *handler) Deregister(ctx context.Context, message messages.Deregistratio
 	err := h.registry.Unregister(ctx, applicationName)
 	if err != nil {
 		return nil, fmt.Errorf("unregister application %v: %w", applicationName, err)
+	}
+
+	if err := h.consumer.Unsubscribe(ctx, applicationName); err != nil {
+		return nil, fmt.Errorf("unsubscribe from application %v: %w", applicationName, err)
 	}
 
 	responsePayload := messages.NewDeregistrationResponsePayload()
@@ -85,4 +92,32 @@ func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRe
 	return unmarshaled, nil
 }
 
-func (h *handler) onConsumerMessage(ctx context.Context)
+func (h *handler) onConsumerMessageReceived(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	if message.Kind != messages.MessageKindForwardRequest {
+		slog.WarnCtx(ctx, "ignoring invalid message kind", "kind", message.Kind)
+		return nil, nil
+	}
+
+	// TODO: More or less a reimplentation of MessageProcessor -- needs some refactoring.
+
+	app, err := h.registry.GetApplication(ctx, message.Application)
+	if err == funcie.ErrApplicationNotFound {
+		slog.WarnCtx(ctx, "application not found in client registry", "application", message.Application)
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting application %v: %w", message.Application, err)
+	}
+
+	resp, err := h.appClient.ProcessRequest(ctx, *app, message)
+	if err != nil {
+		return nil, fmt.Errorf("forward request: %w", err)
+	}
+
+	marshaled, err := funcie.MarshalResponsePayload(resp)
+	if err != nil {
+		return nil, fmt.Errorf("marshal response payload: %w", err)
+	}
+
+	return marshaled, nil
+}

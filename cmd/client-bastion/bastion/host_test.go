@@ -73,7 +73,11 @@ func TestBastionHost_Listen(t *testing.T) {
 		responseBytes, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Equal(t, "invalid request", string(responseBytes))
+		require.Equal(
+			t,
+			"invalid request: invalid character 'i' looking for beginning of value",
+			string(responseBytes),
+		)
 	})
 
 	err := host.Close(ctx)

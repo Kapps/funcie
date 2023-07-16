@@ -36,6 +36,10 @@ func newHost(conf *bastion.Config, messageProcessor bastion.MessageProcessor) ba
 	return bastion.NewHost(conf.ListenAddress, messageProcessor)
 }
 
+func newConsumer(redisClient *redis.Client, conf *bastion.Config, router utils.ClientHandlerRouter) funcie.Consumer {
+	return r.NewConsumer(redisClient, conf.BaseChannelName, router)
+}
+
 func main() {
 	ctx := context.Background()
 	fx.New(
@@ -49,16 +53,16 @@ func main() {
 			newApplicationRegistry,
 			newPublisher,
 			newHost,
-
+			newConsumer,
 			bastion.NewHTTPApplicationClient,
 			bastion.NewHandler,
 		),
 		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host bastion.Host) {
 			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
+				OnStart: func(_ context.Context) error {
 					return Start(ctx, consumer, host)
 				},
-				OnStop: func(ctx context.Context) error {
+				OnStop: func(_ context.Context) error {
 					return host.Close(ctx)
 				},
 			})
@@ -83,9 +87,14 @@ func Start(ctx context.Context, consumer funcie.Consumer, host bastion.Host) err
 	}()
 
 	go func() {
-
 		// Goroutine for incoming messages -- registers on the consumer and starts listening.
-	}
+		err := consumer.Consume(ctx)
+		if err != nil {
+			slog.ErrorCtx(ctx, "consume", err)
+			os.Exit(1)
+		}
+		slog.WarnCtx(ctx, "consume", "error", err.Error())
+	}()
 
 	return nil
 }
