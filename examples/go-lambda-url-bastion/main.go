@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie"
-	redistransport "github.com/Kapps/funcie/pkg/funcie/transports/redis"
+	"github.com/Kapps/funcie/examples/go-lambda-url-bastion/provider"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/redis/go-redis/v9"
-	"os"
+	"net/url"
 	"strings"
 )
 
@@ -39,11 +37,17 @@ func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (ev
 }
 
 func main() {
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("FUNCIE_REDIS_ADDR"),
-	})
-	publisher := redistransport.NewPublisher(redisClient, "funcie:requests")
-	consumer := redistransport.NewConsumer(redisClient, "funcie:requests")
-	tunnel := funcie.NewLambdaTunnel("lambda-url-lib", HandleRequest, publisher, consumer)
+	bastionEndpoint, err := url.Parse("http://localhost:8080")
+	if err != nil {
+		panic(err)
+	}
+
+	tunnel := provider.NewLambdaBastionReceiver(
+		"my-app",
+		"localhost:0",
+		*bastionEndpoint,
+		HandleRequest,
+	)
+
 	tunnel.Start()
 }

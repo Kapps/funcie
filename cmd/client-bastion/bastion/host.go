@@ -82,7 +82,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 
 	response, err := h.messageProcessor.ProcessMessage(r.Context(), &message)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error processing message", err)
+		slog.ErrorCtx(r.Context(), "error processing message", err, "message", message)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error: %v", err)))
 		return
@@ -90,7 +90,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error formatting response", err)
+		slog.ErrorCtx(r.Context(), "error formatting response", err, "response", response)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error formatting response: %v", err)))
 		return
@@ -98,7 +98,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(responseBytes)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error writing response", err)
+		slog.ErrorCtx(r.Context(), "error writing response", err, "response", response)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error writing response: %v", err)))
 		return
