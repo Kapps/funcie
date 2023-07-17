@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	redistransport "github.com/Kapps/funcie/pkg/funcie/transports/redis"
-	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/redis/go-redis/v9"
 	"os"
@@ -43,9 +42,8 @@ func main() {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("FUNCIE_REDIS_ADDR"),
 	})
-	router := utils.NewClientHandlerRouter()
 	publisher := redistransport.NewPublisher(redisClient, "funcie:requests")
-	consumer := redistransport.NewConsumer(redisClient, "funcie:requests", router)
+	consumer := redistransport.NewConsumer(redisClient, "funcie:requests")
 	tunnel := funcie.NewLambdaTunnel("lambda-url-lib", HandleRequest, publisher, consumer)
 	tunnel.Start()
 }

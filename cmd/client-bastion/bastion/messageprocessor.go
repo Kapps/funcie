@@ -29,11 +29,13 @@ func NewMessageProcessor(handler Handler) MessageProcessor {
 func (p *messageProcessor) ProcessMessage(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	switch message.Kind {
 	case messages.MessageKindForwardRequest:
-		// TODO: Remove me -- forwardRequest doesn't make sense.
+		// Usually comes from consumer
 		return p.forwardRequest(ctx, message)
 	case messages.MessageKindRegister:
+		// Usually comes from host
 		return p.register(ctx, message)
 	case messages.MessageKindDeregister:
+		// Usually comes from host
 		return p.deregister(ctx, message)
 	default:
 		return nil, ErrUnknownMessageKind
