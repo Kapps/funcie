@@ -1,12 +1,12 @@
-package bastion_test
+package transports_test
 
 import (
 	"bytes"
 	"context"
-	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion/mocks"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
+	"github.com/Kapps/funcie/pkg/funcie/transports"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -17,7 +17,7 @@ import (
 func TestBastionHost_Listen(t *testing.T) {
 	ctx := context.Background()
 	processor := mocks.NewMessageProcessor(t)
-	host := bastion.NewHost("localhost:8080", processor)
+	host := transports.NewHost("localhost:8080", processor)
 
 	go func() {
 		err := host.Listen(nil)

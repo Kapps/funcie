@@ -1,12 +1,12 @@
-package bastion_test
+package transports_test
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion/mocks"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
+	"github.com/Kapps/funcie/pkg/funcie/transports"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -17,7 +17,7 @@ func TestMessageProcessor_ProcessMessage(t *testing.T) {
 
 	ctx := context.Background()
 	handler := mocks.NewHandler(t)
-	processor := bastion.NewMessageProcessor(handler)
+	processor := transports.NewMessageProcessor(handler)
 
 	t.Run("registration message", func(t *testing.T) {
 		t.Parallel()

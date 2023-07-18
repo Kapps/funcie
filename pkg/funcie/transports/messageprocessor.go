@@ -1,8 +1,9 @@
-package bastion
+package transports
 
 import (
 	"context"
 	"fmt"
+	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
@@ -16,11 +17,11 @@ type MessageProcessor interface {
 var ErrUnknownMessageKind = fmt.Errorf("unknown message kind")
 
 type messageProcessor struct {
-	handler Handler
+	handler bastion.Handler
 }
 
 // NewMessageProcessor creates a new MessageProcessor.
-func NewMessageProcessor(handler Handler) MessageProcessor {
+func NewMessageProcessor(handler bastion.Handler) MessageProcessor {
 	return &messageProcessor{
 		handler: handler,
 	}

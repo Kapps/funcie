@@ -74,7 +74,7 @@ func (r *bastionReceiver) Start() {
 
 	slog.Info("starting bastion receiver", "applicationId", r.applicationId, "listenAddress", listener.Addr())
 
-	err = r.server.ListenAndServe()
+	err = r.server.Serve(listener)
 	slog.Warn("server stopped", "err", err)
 	if err != nil && err != http.ErrServerClosed {
 		panic(err)
@@ -129,6 +129,8 @@ func (r *bastionReceiver) subscribe(addr net.Addr) error {
 }
 
 func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request) {
+	slog.Info("received request", "method", req.Method, "url", req.URL)
+
 	ctx := req.Context()
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -145,7 +147,7 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	slog.InfoCtx(ctx, "received request", "message", message)
+	slog.DebugCtx(ctx, "received request", "message", message)
 	if message.Kind != messages.MessageKindForwardRequest {
 		slog.WarnCtx(ctx, "received message with invalid kind", "kind", message.Kind)
 		w.WriteHeader(http.StatusBadRequest)
@@ -160,14 +162,17 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	}
 
 	payload := []byte(unmarshaled.Payload.Body)
+
+	var response *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
 	invokeResponse, err := r.handler.Invoke(ctx, payload)
 	if err != nil {
 		slog.ErrorCtx(ctx, "failed to handle message", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		response = funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](message.ID, nil, err)
+	} else {
+		slog.InfoCtx(ctx, "received response", "response", invokeResponse)
+		responsePayload := messages.NewForwardRequestResponsePayload(invokeResponse)
+		response = funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 	}
-
-	response := messages.NewForwardRequestResponsePayload(invokeResponse)
 
 	slog.InfoCtx(ctx, "sending response", "response", response)
 	responseBody, err := json.Marshal(response)

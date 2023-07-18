@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,7 +20,14 @@ import (
 )
 
 func TestLambdaBastionReceiver_Integration(t *testing.T) {
-	listenerAddress := registerServer(t)
+	handler := func(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
+		return events.LambdaFunctionURLResponse{
+			StatusCode: 200,
+			Body:       fmt.Sprintf("Hello %s", request.QueryStringParameters["name"]),
+		}, nil
+	}
+
+	listenerAddress := registerServer(t, handler)
 
 	t.Run("should forward requests to the handler", func(t *testing.T) {
 		ev := events.LambdaFunctionURLRequest{
@@ -31,22 +39,25 @@ func TestLambdaBastionReceiver_Integration(t *testing.T) {
 		forwardMessage := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, &forwardRequestPayload)
 		requestBytes := funcie.MustSerialize(forwardMessage)
 
+		slog.Info("Sending request to", "address", listenerAddress.String())
 		resp, err := http.Post(listenerAddress.String(), "application/json", bytes.NewReader(requestBytes))
 		require.NoError(t, err)
 
 		respBytes, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		var responseMessage funcie.Message
+		var responseMessage funcie.ResponseBase[messages.ForwardRequestResponsePayload]
 		require.NoError(t, json.Unmarshal(respBytes, &responseMessage))
 
+		responseEvent := funcie.MustDeserialize[events.LambdaFunctionURLResponse](responseMessage.Data.Body)
+
 		require.Equal(t, forwardMessage.ID, responseMessage.ID)
-		require.Equal(t, "Hello world", responseMessage.Payload)
+		require.Equal(t, "Hello world", responseEvent.Body)
 	})
 
 }
 
-func registerServer(t *testing.T) funcie.Endpoint {
+func registerServer(t *testing.T, handler interface{}) funcie.Endpoint {
 	applicationId := "app"
 	registrationChannel := make(chan funcie.Endpoint)
 
@@ -75,13 +86,6 @@ func registerServer(t *testing.T) funcie.Endpoint {
 
 	bastionServer := httptest.NewServer(http.HandlerFunc(bastionRegistrationStubHandler))
 	t.Cleanup(bastionServer.Close)
-
-	handler := func(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
-		return events.LambdaFunctionURLResponse{
-			StatusCode: 200,
-			Body:       fmt.Sprintf("Hello %s", request.QueryStringParameters["name"]),
-		}, nil
-	}
 
 	bastionUrl, err := url.Parse(fmt.Sprintf("http://%s", bastionServer.Listener.Addr().String()))
 	require.NoError(t, err)

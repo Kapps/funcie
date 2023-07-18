@@ -15,7 +15,7 @@ func main() {
 	})
 
 	publisher := r.NewPublisher(redisClient, config.RequestChannel)
-	handler := bastion.NewRequestHandler(publisher, config.RequestTtl)
+	handler := bastion.NewRequestHandler(publisher)
 	server := bastion.NewServer(config.ListenAddress, handler)
 
 	err := server.Listen()

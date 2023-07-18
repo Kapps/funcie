@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/transports"
 	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/Kapps/funcie/pkg/receiver"
@@ -32,8 +33,8 @@ func newPublisher(redisClient *redis.Client, conf *bastion.Config) funcie.Publis
 	return r.NewPublisher(redisClient, conf.BaseChannelName)
 }
 
-func newHost(conf *bastion.Config, messageProcessor bastion.MessageProcessor) bastion.Host {
-	return bastion.NewHost(conf.ListenAddress, messageProcessor)
+func newHost(conf *bastion.Config, messageProcessor transports.MessageProcessor) transports.Host {
+	return transports.NewHost(conf.ListenAddress, messageProcessor)
 }
 
 func newConsumer(redisClient *redis.Client, conf *bastion.Config, router utils.ClientHandlerRouter) funcie.Consumer {
@@ -49,7 +50,7 @@ func main() {
 			bastion.NewConfigFromEnvironment,
 			newRedisClient,
 			utils.NewClientHandlerRouter,
-			bastion.NewMessageProcessor,
+			transports.NewMessageProcessor,
 			newApplicationRegistry,
 			newPublisher,
 			newHost,
@@ -57,7 +58,7 @@ func main() {
 			bastion.NewHTTPApplicationClient,
 			bastion.NewHandler,
 		),
-		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host bastion.Host) {
+		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host transports.Host) {
 			lc.Append(fx.Hook{
 				OnStart: func(_ context.Context) error {
 					return Start(ctx, consumer, host)
@@ -70,7 +71,7 @@ func main() {
 	).Run()
 }
 
-func Start(ctx context.Context, consumer funcie.Consumer, host bastion.Host) error {
+func Start(ctx context.Context, consumer funcie.Consumer, host transports.Host) error {
 	err := consumer.Connect(ctx)
 	if err != nil {
 		return fmt.Errorf("connect to consumer: %w", err)
