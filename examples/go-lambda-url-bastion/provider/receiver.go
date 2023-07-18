@@ -16,10 +16,10 @@ import (
 
 // BastionReceiver represents a receiver that can be used to receive requests from a bastion.
 type BastionReceiver interface {
-	// Start starts the tunnel. This function never returns.
-	// The handler is the handler that will be invoked when a request is received.
-	// It is subject to the same restrictions as the handler for the serverless function provider (such as lambda.Start).
+	// Start starts the tunnel. This function never returns unless Stop is called by another goroutine.
 	Start()
+	// Stop stops the tunnel.
+	Stop()
 }
 
 type bastionReceiver struct {
@@ -32,6 +32,8 @@ type bastionReceiver struct {
 }
 
 // NewLambdaBastionReceiver creates a new BastionReceiver for AWS Lambda operations.
+// The handler is the handler that will be invoked when a request is received.
+// It is subject to the same restrictions as the handler for the underlying serverless function provider (such as lambda.Start).
 func NewLambdaBastionReceiver(
 	applicationId string,
 	listenAddress string,
@@ -70,12 +72,20 @@ func (r *bastionReceiver) Start() {
 		panic(err)
 	}
 
-	slog.Info("starting bastion receiver", "applicationId", r.applicationId, "listenAddress", r.server.Addr)
+	slog.Info("starting bastion receiver", "applicationId", r.applicationId, "listenAddress", listener.Addr())
 
 	err = r.server.ListenAndServe()
 	slog.Warn("server stopped", "err", err)
 	if err != nil && err != http.ErrServerClosed {
 		panic(err)
+	}
+}
+
+func (r *bastionReceiver) Stop() {
+	slog.Info("stopping bastion receiver", "applicationId", r.applicationId)
+	err := r.server.Close()
+	if err != nil {
+		slog.Error("failed to close server", err)
 	}
 }
 
@@ -107,13 +117,13 @@ func (r *bastionReceiver) subscribe(addr net.Addr) error {
 		return fmt.Errorf("read response body: %w", err)
 	}
 
-	var response funcie.Message
+	var response funcie.Response
 	err = json.Unmarshal(responseBody, &response)
 	if err != nil {
 		return fmt.Errorf("unmarshal response: %w", err)
 	}
 
-	slog.Info("received response", "response", response)
+	slog.Info("received registration response", "response", response)
 
 	return nil
 }
