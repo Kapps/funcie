@@ -9,16 +9,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// Handler allows the handling of incoming valid Bastion requests.
-type Handler interface {
-	// Register registers the given application.
-	Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error)
-	// Deregister removes the registration of the application with the given name.
-	Deregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error)
-	// ForwardRequest forwards the given request to the application specified in the request.
-	ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error)
-}
-
 type handler struct {
 	registry  funcie.ApplicationRegistry
 	appClient ApplicationClient

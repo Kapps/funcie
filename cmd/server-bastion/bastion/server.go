@@ -1,18 +1,6 @@
 package bastion
 
-import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/google/uuid"
-	"golang.org/x/exp/slog"
-	"io"
-	"net/http"
-	"strconv"
-)
-
+/*
 // Server is the interface for a bastion server that can filter and forward requests.
 type Server interface {
 	// Listen starts the server and begins processing requests.
@@ -54,8 +42,9 @@ func NewServerWithHTTPServer(httpServer *http.Server, handler RequestHandler) Se
 		httpServer: httpServer,
 		handler:    handler,
 	}
-}
+}*/
 
+/*
 // Request is an incoming request from the caller to the bastion server.
 type Request struct {
 	// RequestId is a caller-specified unique ID for this request (for example, the request ID of a Lambda invocation).
@@ -104,9 +93,9 @@ func NewDataResponse(resultCode ResultCode, data interface{}) *Response {
 		Data:       data,
 		ResultCode: resultCode,
 	}
-}
+}*/
 
-func (s *server) Listen() error {
+/*func (s *server) Listen() error {
 	s.httpServer.Handler = http.HandlerFunc(s.handleRequest)
 	if err := s.httpServer.ListenAndServe(); err != nil {
 		if err == http.ErrServerClosed {
@@ -215,4 +204,4 @@ func errorResponse(resultCode ResultCode, message string) []byte {
 		panic(fmt.Sprintf("failed to marshal error response: %v", err))
 	}
 	return data
-}
+}*/

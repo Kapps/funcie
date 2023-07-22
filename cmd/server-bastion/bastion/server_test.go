@@ -1,19 +1,6 @@
 package bastion_test
 
-import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"github.com/Kapps/funcie/cmd/server-bastion/bastion"
-	bastionMocks "github.com/Kapps/funcie/cmd/server-bastion/bastion/mocks"
-	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"testing"
-)
-
+/*
 const testAddress = "http://127.0.0.1:8080/dispatch"
 
 func TestServer_Listen_Shutdown(t *testing.T) {
@@ -125,3 +112,4 @@ func (s *stubs) shutdown(tb testing.TB) {
 
 	<-s.done
 }
+*/

@@ -3,10 +3,11 @@ package transports
 import (
 	"context"
 	"fmt"
-	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
+
+// TODO: Refactor -- MessageHandler vs MessageProcessor is confusing.
 
 // MessageProcessor dispatches messages to the appropriate handler.
 type MessageProcessor interface {
@@ -17,11 +18,11 @@ type MessageProcessor interface {
 var ErrUnknownMessageKind = fmt.Errorf("unknown message kind")
 
 type messageProcessor struct {
-	handler bastion.Handler
+	handler MessageHandler
 }
 
 // NewMessageProcessor creates a new MessageProcessor.
-func NewMessageProcessor(handler bastion.Handler) MessageProcessor {
+func NewMessageProcessor(handler MessageHandler) MessageProcessor {
 	return &messageProcessor{
 		handler: handler,
 	}
