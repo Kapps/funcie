@@ -43,6 +43,9 @@ func newConsumer(redisClient *redis.Client, conf *bastion.Config, router utils.C
 
 func main() {
 	ctx := context.Background()
+
+	funcie.ConfigureLogging()
+
 	fx.New(
 		fx.Provide(
 			func() context.Context { return ctx },

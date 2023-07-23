@@ -83,7 +83,7 @@ func (c *Consumer) Consume(ctx context.Context) error {
 	ps := c.pubsub
 	defer funcie.CloseOrLog(fmt.Sprintf("pubsub from base channel %v", c.baseChannelName), ps)
 
-	slog.Info("starting to consume messages")
+	slog.InfoCtx(ctx, "starting to consume messages", "baseChannelName", c.baseChannelName)
 
 	for {
 		select {
@@ -95,6 +95,8 @@ func (c *Consumer) Consume(ctx context.Context) error {
 				slog.Debug("pubsub channel closed")
 				return funcie.ErrPubSubChannelClosed
 			}
+
+			slog.DebugCtx(ctx, "received message", "channel", msg.Channel, "payload", msg.Payload)
 
 			message, err := parseMessage(msg.Payload)
 			if err != nil {

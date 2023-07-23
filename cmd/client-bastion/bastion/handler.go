@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
+	"github.com/Kapps/funcie/pkg/funcie/transports"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
@@ -16,7 +17,7 @@ type handler struct {
 }
 
 // NewHandler creates a new Handler that can register and unregister applications and forward requests.
-func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient, consumer funcie.Consumer) Handler {
+func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient, consumer funcie.Consumer) transports.MessageHandler {
 	return &handler{
 		registry:  registry,
 		appClient: appClient,

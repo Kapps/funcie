@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"golang.org/x/exp/slog"
 	"os"
+	"strings"
 )
 
 // MustSerialize serializes the given value to JSON, or panics if it fails.
@@ -40,4 +41,38 @@ func CloseOrLog(name string, c Closable) {
 // IsRunningWithLambda returns true if the current process is running in AWS Lambda.
 func IsRunningWithLambda() bool {
 	return os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != ""
+}
+
+// ConfigureLogging configures slog to log to stdout at the given level.
+// If FUNCIE_LOG_LEVEL is set, it will be used as the log level.
+// Otherwise, the default is Info.
+func ConfigureLogging() {
+	programLevel := new(slog.LevelVar)
+	h := slog.HandlerOptions{
+		//AddSource: true,
+		Level: logLevelFromEnv(),
+	}.NewTextHandler(os.Stdout)
+	slog.SetDefault(slog.New(h))
+	programLevel.Set(slog.LevelDebug)
+}
+
+func logLevelFromEnv() slog.Level {
+	logLevel := os.Getenv("FUNCIE_LOG_LEVEL")
+	if logLevel == "" {
+		return slog.LevelInfo
+	}
+
+	switch strings.ToLower(logLevel) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		slog.Warn("unknown log level", "level", logLevel)
+		return slog.LevelInfo
+	}
 }
