@@ -26,7 +26,8 @@ func newRedisClient(conf *bastion.Config) *redis.Client {
 
 func newApplicationRegistry(publisher funcie.Publisher) funcie.ApplicationRegistry {
 	underlying := receiver.NewMemoryApplicationRegistry()
-	return bastion.NewForwardingApplicationRegistry(underlying, publisher)
+	return underlying
+	//return bastion.NewForwardingApplicationRegistry(underlying, publisher)
 }
 
 func newPublisher(redisClient *redis.Client, conf *bastion.Config) funcie.Publisher {

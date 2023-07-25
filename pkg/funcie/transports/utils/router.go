@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"golang.org/x/exp/slog"
 )
 
 var ErrNoHandlerFound = fmt.Errorf("no handler exists for this application")
@@ -26,7 +27,7 @@ type clientHandlerRouter struct {
 
 func (h *clientHandlerRouter) AddClientHandler(applicationId string, handler funcie.Handler) error {
 	if _, ok := h.handlers[applicationId]; ok {
-		return fmt.Errorf("handler already exists for application %s", applicationId)
+		slog.Warn("overwriting handler for application", "application", applicationId)
 	}
 	h.handlers[applicationId] = handler
 	return nil

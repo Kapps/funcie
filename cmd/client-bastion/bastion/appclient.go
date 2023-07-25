@@ -30,7 +30,13 @@ func NewHTTPApplicationClient(client *http.Client) ApplicationClient {
 
 func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application funcie.Application, request *funcie.Message) (*funcie.Response, error) {
 	url := makeUrl(application.Endpoint, "process")
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(request.Payload))
+
+	serialized, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("serialize request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(serialized))
 	if err != nil {
 		return nil, fmt.Errorf("create request to %v: %w", url, err)
 	}
