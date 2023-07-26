@@ -101,7 +101,7 @@ func (r *bastionReceiver) subscribe(addr net.Addr) error {
 	}
 
 	slog.Info("sending registration request",
-		"message", message, "bastionEndpoint", r.bastionEndpoint.String(), "registerEndpoint", registerEndpoint)
+		"message", message.String(), "bastionEndpoint", r.bastionEndpoint.String(), "registerEndpoint", registerEndpoint)
 
 	resp, err := r.client.Post(registerEndpoint, "application/json", bytes.NewReader(marshaled))
 	if err != nil {
@@ -147,7 +147,7 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	slog.DebugCtx(ctx, "received request", "message", message)
+	slog.DebugCtx(ctx, "received request", "message", message.String())
 	if message.Kind != messages.MessageKindForwardRequest {
 		slog.WarnCtx(ctx, "received message with invalid kind", "kind", message.Kind)
 		w.WriteHeader(http.StatusBadRequest)

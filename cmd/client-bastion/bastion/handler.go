@@ -2,12 +2,14 @@ package bastion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
+	"syscall"
 )
 
 type handler struct {
@@ -101,6 +103,10 @@ func (h *handler) onConsumerMessageReceived(ctx context.Context, message *funcie
 	}
 
 	resp, err := h.appClient.ProcessRequest(ctx, *app, message)
+	if errors.Is(err, syscall.ECONNREFUSED) {
+		slog.WarnCtx(ctx, "application not available", "application", message.Application)
+		return funcie.NewResponse(message.ID, nil, funcie.ErrNoActiveConsumer), nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("forward request: %w", err)
 	}
