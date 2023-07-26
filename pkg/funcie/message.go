@@ -80,9 +80,9 @@ func MarshalMessagePayload[MessageType MessageBase[T], T any](message MessageTyp
 }
 
 func (m *MessageBase[T]) String() string {
-	marshaled, err := json.Marshal(m)
+	/*marshaled, err := json.Marshal(m)
 	if err != nil {
 		marshaled = []byte("<error marshaling message>")
-	}
-	return fmt.Sprintf("Message{ID: %s, Kind: %s, Application: %s, Created: %s, Payload: %s}", m.ID, m.Kind, m.Application, m.Created, string(marshaled))
+	}*/
+	return fmt.Sprintf("Message{ID: %s, Kind: %s, Application: %s, Created: %s}", m.ID, m.Kind, m.Application, m.Created)
 }

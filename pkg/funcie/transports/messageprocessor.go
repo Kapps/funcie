@@ -51,7 +51,7 @@ func (p *messageProcessor) forwardRequest(ctx context.Context, message *funcie.M
 	}
 	resp, err := p.handler.ForwardRequest(ctx, *forwardMessage)
 	if err != nil {
-		return nil, fmt.Errorf("forward request %v: %w", forwardMessage, err)
+		return nil, fmt.Errorf("forward request %v: %w", forwardMessage.ID, err)
 	}
 	serializedResponse, err := funcie.MarshalResponsePayload(resp)
 	if err != nil {
