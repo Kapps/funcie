@@ -69,7 +69,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.DebugCtx(r.Context(), "received payload", "payload", string(payloadBytes))
+	//slog.DebugCtx(r.Context(), "received payload", "payload", string(payloadBytes))
 
 	var message funcie.Message
 	err = json.Unmarshal(payloadBytes, &message)

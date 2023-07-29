@@ -24,7 +24,7 @@ func newRedisClient(config *bastion.Config) *redis.Client {
 }
 
 func newPublisher(redisClient *redis.Client, config *bastion.Config) funcie.Publisher {
-	return r.NewPublisher(redisClient, config.ResponseKeyPrefix)
+	return r.NewPublisher(redisClient, config.RequestChannel)
 }
 
 func newConsumer(redisClient *redis.Client, config *bastion.Config, router utils.ClientHandlerRouter) funcie.Consumer {

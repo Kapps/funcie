@@ -40,7 +40,7 @@ func NewConfigFromEnvironment() *Config {
 		ListenAddress:     requiredEnv("FUNCIE_LISTEN_ADDRESS"),
 		RequestTtl:        parseTimeDuration(optionalEnv("FUNCIE_REQUEST_TTL", "15m")),
 		RequestChannel:    optionalEnv("FUNCIE_REQUEST_CHANNEL", "funcie:requests"),
-		ResponseKeyPrefix: optionalEnv("FUNCIE_RESPONSE_KEY_PREFIX", "funcie:response:"),
+		ResponseKeyPrefix: optionalEnv("FUNCIE_RESPONSE_KEY_PREFIX", "funcie:response"),
 	}
 }
 

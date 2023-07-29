@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/exp/slog"
 	"time"
 )
 
@@ -36,6 +37,8 @@ func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
+
+	slog.InfoCtx(ctx, "publishing message to channel", "channel", channelName, "messageId", message.ID)
 
 	pub := p.redisClient.Publish(ctx, channelName, messageContents)
 	if err := pub.Err(); err != nil {
