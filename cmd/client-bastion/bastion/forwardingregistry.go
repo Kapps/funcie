@@ -8,6 +8,8 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 )
 
+// TODO: This was never actually needed. Currently unused, will be removed soon.
+
 type forwardingApplicationRegistry struct {
 	underlying funcie.ApplicationRegistry
 	publisher  funcie.Publisher
