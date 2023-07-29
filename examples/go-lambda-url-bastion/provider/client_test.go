@@ -1,9 +1,8 @@
-package provider_test
+package provider
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/Kapps/funcie/examples/go-lambda-url-bastion/provider"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
@@ -42,7 +41,7 @@ func TestHttpBastionClient_SendRequest(t *testing.T) {
 	parsedUrl, err := url.Parse(server.URL)
 	require.NoError(t, err)
 
-	client := provider.NewHTTPBastionClient(*parsedUrl)
+	client := NewHTTPBastionClient(*parsedUrl)
 
 	t.Run("should send requests to the bastion", func(t *testing.T) {
 		req := funcie.NewMessage("app", messages.MessageKindForwardRequest, funcie.MustSerialize(requestPayload))

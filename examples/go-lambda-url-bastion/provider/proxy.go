@@ -10,6 +10,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+var lambdaStart = lambda.Start
+
 type FunctionProxy interface {
 	// Start starts the tunnel. This function never returns unless Stop is called by another goroutine.
 	Start()
@@ -41,7 +43,7 @@ func NewLambdaFunctionProxy(
 func (p *lambdaProxy) Start() {
 	handler := p.lambdaHandler()
 	slog.Info("starting lambda proxy")
-	lambda.Start(handler)
+	lambdaStart(handler)
 }
 
 // lambdaHandler is the Lambda-level wrapper around the handler.

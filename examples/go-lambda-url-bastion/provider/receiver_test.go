@@ -1,11 +1,10 @@
-package provider_test
+package provider
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Kapps/funcie/examples/go-lambda-url-bastion/provider"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/aws/aws-lambda-go/events"
@@ -79,8 +78,6 @@ func registerServer(t *testing.T, handler interface{}) funcie.Endpoint {
 		_, err = w.Write(respBytes)
 		require.NoError(t, err)
 
-		w.WriteHeader(http.StatusOK)
-
 		registrationChannel <- message.Payload.Endpoint
 	}
 
@@ -90,7 +87,7 @@ func registerServer(t *testing.T, handler interface{}) funcie.Endpoint {
 	bastionUrl, err := url.Parse(fmt.Sprintf("http://%s", bastionServer.Listener.Addr().String()))
 	require.NoError(t, err)
 
-	receiver := provider.NewLambdaBastionReceiver(applicationId, "localhost:0", *bastionUrl, handler)
+	receiver := NewLambdaBastionReceiver(applicationId, "localhost:0", *bastionUrl, handler)
 	t.Cleanup(receiver.Stop)
 
 	go receiver.Start()

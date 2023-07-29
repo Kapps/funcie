@@ -3,6 +3,7 @@ package provider
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
@@ -76,7 +77,7 @@ func (r *bastionReceiver) Start() {
 
 	err = r.server.Serve(listener)
 	slog.Warn("server stopped", "err", err)
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(err)
 	}
 }
