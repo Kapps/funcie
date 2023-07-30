@@ -12,6 +12,7 @@ import (
 
 var lambdaStart = lambda.Start
 
+// FunctionProxy represents a proxy that can be used to wrap the invocation of a function, such as a Lambda.
 type FunctionProxy interface {
 	// Start starts the tunnel. This function never returns unless Stop is called by another goroutine.
 	Start()
