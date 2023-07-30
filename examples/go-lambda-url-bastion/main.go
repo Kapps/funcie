@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/examples/go-lambda-url-bastion/provider"
+	"github.com/Kapps/funcie/clients/go/funcie-tunnel"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/aws/aws-lambda-go/events"
 	"net/url"
@@ -45,7 +45,7 @@ func main() {
 
 	funcie.ConfigureLogging()
 
-	tunnel := provider.NewLambdaBastionReceiver(
+	tunnel := funcie_tunnel.NewLambdaBastionReceiver(
 		"my-app",
 		"localhost:0",
 		*bastionEndpoint,
