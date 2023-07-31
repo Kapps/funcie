@@ -16,10 +16,12 @@ import (
 func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 	ctx := context.Background()
 	resp := funcie.NewResponse("id", []byte("\"hello\""), nil)
+	payload := "\"foo\""
+	req := funcie.NewMessage("test-app", messages.MessageKindForwardRequest, json.RawMessage(payload))
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
-		require.Equal(t, []byte("foo"), body)
+		require.Equal(t, funcie.MustSerialize(req), body)
 		_, err = w.Write(funcie.MustSerialize(resp))
 		require.NoError(t, err)
 	}))
@@ -32,10 +34,6 @@ func TestHttpApplicationClient_ProcessRequest(t *testing.T) {
 		Name:     "test-app",
 		Endpoint: endpoint,
 	}
-
-	payload := "foo"
-
-	req := funcie.NewMessage("test-app", messages.MessageKindForwardRequest, json.RawMessage(payload))
 
 	returned, err := client.ProcessRequest(ctx, app, req)
 	require.NoError(t, err)

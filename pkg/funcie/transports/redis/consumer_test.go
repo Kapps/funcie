@@ -54,8 +54,8 @@ func TestRedisConsumer_Consume(t *testing.T) {
 			require.Equal(t, f.ErrPubSubChannelClosed, err)
 		}()
 
-		msg1 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("msg1"))
-		msg2 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("msg2"))
+		msg1 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg1\""))
+		msg2 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg2\""))
 
 		// If no handler, the message should be ignored.
 		router.EXPECT().Handle(consumerCtx, msg1).Return(nil, utils.ErrNoHandlerFound).Once()
@@ -66,8 +66,8 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		// Now subscribe, and then try again.
 
-		resp1 := f.NewResponse(msg1.ID, []byte("resp1"), nil)
-		resp2 := f.NewResponse(msg2.ID, []byte("resp2"), nil)
+		resp1 := f.NewResponse(msg1.ID, []byte("\"resp1\""), nil)
+		resp2 := f.NewResponse(msg2.ID, []byte("\"resp2\""), nil)
 
 		router.EXPECT().AddClientHandler(appId, mock.Anything).Return(nil).Once()
 		pubSub.EXPECT().Subscribe(ctx, channelName).Return(nil).Once()
