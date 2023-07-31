@@ -32,7 +32,7 @@ func NewResponse(id string, data []byte, error error) *Response {
 	return &Response{
 		ID:       id,
 		Data:     formatted,
-		Received: time.Now().Truncate(time.Millisecond),
+		Received: time.Now().UTC().Truncate(time.Millisecond),
 		Error:    NewProxyErrorFromError(error),
 	}
 }
@@ -42,7 +42,7 @@ func NewResponseWithPayload[T any](id string, payload *T, error error) *Response
 	return &ResponseBase[T]{
 		ID:       id,
 		Data:     payload,
-		Received: time.Now().Truncate(time.Millisecond),
+		Received: time.Now().UTC().Truncate(time.Millisecond),
 		Error:    NewProxyErrorFromError(error),
 	}
 }

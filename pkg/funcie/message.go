@@ -35,7 +35,7 @@ func NewMessage(application string, kind MessageKind, payload []byte) *Message {
 		Application: application,
 		Kind:        kind,
 		Payload:     serialized,
-		Created:     time.Now().Truncate(time.Millisecond),
+		Created:     time.Now().UTC().Truncate(time.Millisecond),
 	}
 }
 
@@ -46,7 +46,7 @@ func NewMessageWithPayload[T any](application string, kind MessageKind, payload 
 		Application: application,
 		Kind:        kind,
 		Payload:     payload,
-		Created:     time.Now().Truncate(time.Millisecond),
+		Created:     time.Now().UTC().Truncate(time.Millisecond),
 	}
 }
 
