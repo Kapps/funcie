@@ -11,7 +11,7 @@ func TestMemoryApplicationRegistry_Integration(t *testing.T) {
 	registry := NewMemoryApplicationRegistry()
 	app := &funcie.Application{
 		Name:     "test",
-		Endpoint: "ep",
+		Endpoint: funcie.MustNewEndpointFromAddress("http://localhost:8080"),
 	}
 
 	t.Run("loading with no applications", func(t *testing.T) {
