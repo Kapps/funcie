@@ -2,13 +2,14 @@ package funcie_tunnel
 
 import (
 	"fmt"
+	"github.com/Kapps/funcie/clients/go/funcie-tunnel/internal"
 	"net/url"
 	"os"
 )
 
 type FuncieConfig struct {
-	ClientBastionEndpoint url.URL `json:"bastionEndpoint"`
-	ServerBastionEndpoint url.URL `json:"bastionEndpoint"`
+	ClientBastionEndpoint url.URL `json:"clientBastionEndpoint"`
+	ServerBastionEndpoint url.URL `json:"serverBastionEndpoint"`
 	ListenAddress         string  `json:"listenAddress"`
 	ApplicationId         string  `json:"applicationId"`
 }
@@ -19,29 +20,33 @@ type FuncieConfig struct {
 //	FUNCIE_APPLICATION_ID (required)
 //	FUNCIE_CLIENT_BASTION_ENDPOINT (required for client)
 //	FUNCIE_SERVER_BASTION_ENDPOINT (required for server)
-//	FUNCIE_LISTEN_ADDRESS (required for client)
+//	FUNCIE_LISTEN_ADDRESS (optional; defaults to localhost on a random port)
 func NewConfigFromEnvironment() *FuncieConfig {
 	return &FuncieConfig{
-		ClientBastionEndpoint: requireUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT"),
-		ServerBastionEndpoint: requireUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT"),
-		ListenAddress:         requiredEnv("FUNCIE_LISTEN_ADDRESS"),
-		ApplicationId:         requiredEnv("FUNCIE_APPLICATION_ID"),
+		ClientBastionEndpoint: requireUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", internal.ConfigPurposeClient),
+		ServerBastionEndpoint: requireUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT", internal.ConfigPurposeServer),
+		ApplicationId:         requiredEnv("FUNCIE_APPLICATION_ID", internal.ConfigPurposeAny),
+		ListenAddress:         optionalEnv("FUNCIE_LISTEN_ADDRESS", "localhost:0"),
 	}
 }
 
-func requireUrlEnv(name string) url.URL {
-	value := requiredEnv(name)
-	url, err := url.Parse(value)
+func requireUrlEnv(name string, purpose internal.ConfigPurpose) url.URL {
+	value := requiredEnv(name, purpose)
+	parsedUrl, err := url.Parse(value)
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse %s %s: %s", name, value, err))
 	}
-	return *url
+	return *parsedUrl
 }
 
-func requiredEnv(name string) string {
+func requiredEnv(name string, purpose internal.ConfigPurpose) string {
 	value := os.Getenv(name)
 	if value == "" {
-		panic(fmt.Sprintf("required environment variable %s not set", name))
+		currPurpose := internal.GetConfigPurpose()
+		purposeMatches := purpose == internal.ConfigPurposeAny || currPurpose == purpose
+		if purposeMatches {
+			panic(fmt.Sprintf("required environment variable %s not set", name))
+		}
 	}
 	return value
 }

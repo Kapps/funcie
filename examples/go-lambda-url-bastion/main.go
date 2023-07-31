@@ -8,7 +8,6 @@ import (
 	"github.com/Kapps/funcie/clients/go/funcie-tunnel"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/aws/aws-lambda-go/events"
-	"net/url"
 	"strings"
 )
 
@@ -38,19 +37,6 @@ func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (ev
 }
 
 func main() {
-	bastionEndpoint, err := url.Parse("http://localhost:8081")
-	if err != nil {
-		panic(err)
-	}
-
 	funcie.ConfigureLogging()
-
-	tunnel := funcie_tunnel.NewLambdaBastionReceiver(
-		"my-app",
-		"localhost:0",
-		*bastionEndpoint,
-		HandleRequest,
-	)
-
-	tunnel.Start()
+	funcie_tunnel.Start(HandleRequest)
 }
