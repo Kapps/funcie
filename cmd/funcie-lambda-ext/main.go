@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/funcie-lambda-ext/lambdaext"
-	bastion2 "github.com/Kapps/funcie/cmd/server-bastion/bastion"
-	r "github.com/Kapps/funcie/pkg/funcie/transports/redis"
-	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/slog"
 	"os"
 	"os/signal"
@@ -39,13 +36,13 @@ func main() {
 		slog.Info("Running locally; not registering extension")
 	}
 
-	bastionServer := createBastion()
+	/*bastionServer := createBastion()
 	go func() {
 		if err := bastionServer.Listen(); err != nil {
 			slog.Info("Error; exiting", "error", err)
 			panic(err)
 		}
-	}()
+	}()*/
 
 	if !isLocal {
 		// Will block until shutdown event is received or cancelled via the context.
@@ -59,7 +56,7 @@ func main() {
 	}
 }
 
-func createBastion() bastion2.Server {
+/*func createBastion() bastion2.Server {
 	config := bastion2.NewConfigFromEnvironment()
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:       config.RedisAddress,
@@ -69,7 +66,7 @@ func createBastion() bastion2.Server {
 	handler := bastion2.NewRequestHandler(publisher, config.RequestTtl)
 	server := bastion2.NewServer(config.ListenAddress, handler)
 	return server
-}
+}*/
 
 func registerExtension(ctx context.Context, extensionClient *lambdaext.Client) {
 	res, err := extensionClient.Register(ctx, extensionName)
