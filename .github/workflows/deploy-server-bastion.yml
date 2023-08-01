@@ -63,7 +63,7 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REGISTRY: public.ecr.aws # Public registry output doesn't seem to work?
         ECR_REGISTRY_ALIAS: w1h1o7p8
         IMAGE_TAG: ${{ github.sha }}
       run: |
