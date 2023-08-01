@@ -64,11 +64,12 @@ resource "aws_ecs_task_definition" "server-bastion-task" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
+  execution_role_arn = aws_iam_role.ecs_execution_role.arn
 
   container_definitions = <<DEFINITION
   [
     {
-      "name": "app-container",
+      "name": "server-bastion-container",
       "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:bab13026ca0a7dad8db8e89f1463cb680baf18f4",
       "essential": true,
       "portMappings": [
@@ -80,10 +81,22 @@ resource "aws_ecs_task_definition" "server-bastion-task" {
       "environment" : [
         { "name" : "FUNCIE_REDIS_ADDRESS", "value" : "${var.redis_host}" },
         { "name" : "FUNCIE_LISTEN_ADDRESS", "value" : "0.0.0.0:8082" }
-      ]
+      ],
+      "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+          "awslogs-group": "/ecs/funcie-server-bastion",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+          }
+      }
     }
   ]
   DEFINITION
+}
+
+resource aws_cloudwatch_log_group "funcie-server-bastion_lg" {
+  name = "/ecs/funcie-server-bastion"
 }
 
 resource "aws_ecs_service" "server-bastion-service" {
@@ -94,48 +107,79 @@ resource "aws_ecs_service" "server-bastion-service" {
   launch_type     = "FARGATE"
 
   network_configuration {
+    # TODO: This should not be public in a deploy but rather behind a NAT Gateway with no public IP address.
+    # It should be in a private subnet, but that's beyond the scope of the example.
     assign_public_ip = true
-    subnets          = var.subnet_ids
+    subnets          = var.public_subnet_ids
     security_groups  = var.security_group_ids
   }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.funcie_server_bastion_tg.arn
-    container_name   = "app-container"
+    container_name   = "server-bastion-container"
     container_port   = 8082
   }
 }
 
+resource "aws_iam_role" "ecs_execution_role" {
+  name = "ecs_execution_role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "ecs_logging" {
+  name = "ecs_logging"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
 variable "subnet_ids" {
   type = set(string)
-  default = []
 }
 
 variable "security_group_ids" {
   type = set(string)
-  default = []
 }
 
 variable "redis_host" {
   type = string
-  default = "localhost:6379"
 }
 
 variable "vpc_id" {
   type = string
-  default = ""
 }
 
-resource "aws_security_group" "funcie-server-bastion-sg" {
-  name   = "funcie-server-bastion-sg"
-  vpc_id = var.vpc_id
-
-  ingress {
-    from_port   = 8082
-    to_port     = 8082
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
-  }
+variable "public_subnet_ids" {
+  type = set(string)
 }
 
 resource "aws_lb" "funcie_lb" {
@@ -143,7 +187,6 @@ resource "aws_lb" "funcie_lb" {
   internal           = true
   load_balancer_type = "network"
   subnets            = var.subnet_ids
-  security_groups    = var.security_group_ids
 }
 
 resource "aws_lb_target_group" "funcie_server_bastion_tg" {
