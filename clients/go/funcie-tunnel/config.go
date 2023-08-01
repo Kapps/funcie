@@ -26,7 +26,7 @@ func NewConfigFromEnvironment() *FuncieConfig {
 		ClientBastionEndpoint: requireUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", internal.ConfigPurposeClient),
 		ServerBastionEndpoint: requireUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT", internal.ConfigPurposeServer),
 		ApplicationId:         requiredEnv("FUNCIE_APPLICATION_ID", internal.ConfigPurposeAny),
-		ListenAddress:         optionalEnv("FUNCIE_LISTEN_ADDRESS", "localhost:0"),
+		ListenAddress:         optionalEnv("FUNCIE_LISTEN_ADDRESS", "0.0.0.0:0"),
 	}
 }
 
