@@ -54,11 +54,11 @@ output "lambda" {
   value = aws_lambda_function.funcie_go.arn
 }
 
-resource "aws_ecs_cluster" "funcie-cluster" {
+resource "aws_ecs_cluster" "funcie_cluster" {
   name = "funcie-cluster"
 }
 
-resource "aws_ecs_task_definition" "server-bastion-task" {
+resource "aws_ecs_task_definition" "server_bastion_task" {
   family                   = "funcie-server-bastion"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
@@ -95,14 +95,14 @@ resource "aws_ecs_task_definition" "server-bastion-task" {
   DEFINITION
 }
 
-resource aws_cloudwatch_log_group "funcie-server-bastion_lg" {
+resource aws_cloudwatch_log_group "funcie_server_bastion_lg" {
   name = "/ecs/funcie-server-bastion"
 }
 
-resource "aws_ecs_service" "server-bastion-service" {
+resource "aws_ecs_service" "server_bastion_service" {
   name            = "funcie-server-bastion-service"
-  cluster         = aws_ecs_cluster.funcie-cluster.id
-  task_definition = aws_ecs_task_definition.server-bastion-task.arn
+  cluster         = aws_ecs_cluster.funcie_cluster.id
+  task_definition = aws_ecs_task_definition.server_bastion_task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
