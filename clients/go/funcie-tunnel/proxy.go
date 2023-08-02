@@ -51,7 +51,7 @@ func (p *lambdaProxy) Start() {
 // It is responsible for publishing the message to the tunnel, and waiting for a response.
 func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 	wrapper := func(ctx context.Context, payload *json.RawMessage) (*json.RawMessage, error) {
-		slog.Debug("publishing message to tunnel", "length", len(*payload))
+		slog.Debug("publishing message to tunnel", "message", payload)
 
 		// Raw constant to avoid cycles -- this needs to be moved.
 		msg := funcie.NewMessage(p.applicationId, "FORWARD_REQUEST", *payload)
@@ -59,7 +59,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		resp, err := p.client.SendRequest(ctx, msg)
 		if err != nil {
 			// If we can't reach the bastion, we should just handle the request directly.
-			slog.ErrorCtx(ctx, "failed to send request to bastion", err)
+			slog.ErrorCtx(ctx, "failed to send request to bastion", err, "message", msg)
 			return p.handleDirect(ctx, payload)
 		}
 

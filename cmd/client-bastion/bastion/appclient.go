@@ -46,6 +46,8 @@ func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application 
 	slog.InfoCtx(ctx, "sending request to client application",
 		"id", request.ID, "kind", request.Kind, "application", application.Name, "url", url)
 
+	slog.DebugCtx(ctx, "sending message", "message", string(serialized))
+
 	httpResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("send request to %v: %w", url, err)

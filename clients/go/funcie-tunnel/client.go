@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"net/url"
@@ -36,6 +37,8 @@ func (c *httpBastionClient) SendRequest(ctx context.Context, request *funcie.Mes
 		return nil, fmt.Errorf("marshalling request: %w", err)
 	}
 
+	slog.DebugCtx(ctx, "sending message", "message", string(requestBytes))
+
 	httpResp, err := c.client.Post(c.endpoint.String(), "application/json", bytes.NewReader(requestBytes))
 	if err != nil {
 		return nil, fmt.Errorf("sending request: %w", err)
@@ -51,7 +54,7 @@ func (c *httpBastionClient) SendRequest(ctx context.Context, request *funcie.Mes
 
 	err = json.Unmarshal(responseData, &response)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalling response: %w", err)
+		return nil, fmt.Errorf("unmarshalling response %v: %w", string(responseData), err)
 	}
 
 	return &response, nil

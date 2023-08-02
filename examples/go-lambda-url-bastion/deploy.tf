@@ -20,7 +20,9 @@ resource "aws_lambda_function" "funcie_go" {
   environment {
     variables = {
       FUNCIE_REDIS_ADDR = var.redis_host,
-      FUNCIE_SERVER_BASTION_ENDPOINT = "${aws_lb.funcie_lb.dns_name}:8082"
+      FUNCIE_SERVER_BASTION_ENDPOINT = "http://${aws_lb.funcie_lb.dns_name}:8082/dispatch"
+      FUNCIE_APPLICATION_ID = "url"
+      FUNCIE_LOG_LEVEL = "debug"
     }
   }
 }
@@ -70,7 +72,7 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
   [
     {
       "name": "server-bastion-container",
-      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:bab13026ca0a7dad8db8e89f1463cb680baf18f4",
+      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:dff9042d45195e77579e43734896a33965afc72b",
       "essential": true,
       "portMappings": [
         {
@@ -80,7 +82,8 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
       ],
       "environment" : [
         { "name" : "FUNCIE_REDIS_ADDRESS", "value" : "${var.redis_host}" },
-        { "name" : "FUNCIE_LISTEN_ADDRESS", "value" : "0.0.0.0:8082" }
+        { "name" : "FUNCIE_LISTEN_ADDRESS", "value" : "0.0.0.0:8082" },
+        { "name" : "FUNCIE_LOG_LEVEL", "value" : "debug" }
       ],
       "logConfiguration": {
           "logDriver": "awslogs",
@@ -99,6 +102,26 @@ resource aws_cloudwatch_log_group "funcie_server_bastion_lg" {
   name = "/ecs/funcie-server-bastion"
 }
 
+resource aws_security_group "server_bastion_sg" {
+    name        = "funcie-server-bastion-sg"
+    description = "funcie-server-bastion-sg"
+    vpc_id      = var.vpc_id
+
+    ingress {
+      from_port   = 8082
+      to_port     = 8082
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/8"]
+    }
+
+    egress {
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
 resource "aws_ecs_service" "server_bastion_service" {
   name            = "funcie-server-bastion-service"
   cluster         = aws_ecs_cluster.funcie_cluster.id
@@ -111,7 +134,7 @@ resource "aws_ecs_service" "server_bastion_service" {
     # It should be in a private subnet, but that's beyond the scope of the example.
     assign_public_ip = true
     subnets          = var.public_subnet_ids
-    security_groups  = var.security_group_ids
+    security_groups  = [aws_security_group.server_bastion_sg.id]
   }
 
   load_balancer {
