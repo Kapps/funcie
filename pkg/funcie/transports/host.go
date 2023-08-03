@@ -80,7 +80,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.DebugCtx(r.Context(), "received message", "message", message)
+	slog.DebugCtx(r.Context(), "received message", "message", message.String())
 
 	response, err := h.messageProcessor.ProcessMessage(r.Context(), &message)
 	if err != nil {
