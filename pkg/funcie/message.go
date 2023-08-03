@@ -80,7 +80,7 @@ func MarshalMessagePayload[MessageType MessageBase[T], T any](message MessageTyp
 }
 
 func (m *MessageBase[T]) String() string {
-	marshaled, err := json.Marshal(m)
+	marshaled, err := json.Marshal(m.Payload)
 	if err != nil {
 		marshaled = []byte("<error marshaling message>")
 	}

@@ -72,7 +72,7 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
   [
     {
       "name": "server-bastion-container",
-      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:b9e2d3603383ff243c7243592d12905863b83a1d",
+      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:latest",
       "essential": true,
       "portMappings": [
         {
@@ -86,12 +86,12 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
         { "name" : "FUNCIE_LOG_LEVEL", "value" : "debug" }
       ],
       "logConfiguration": {
-          "logDriver": "awslogs",
-          "options": {
+        "logDriver": "awslogs",
+        "options": {
           "awslogs-group": "/ecs/funcie-server-bastion",
           "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
-          }
+        }
       }
     }
   ]
