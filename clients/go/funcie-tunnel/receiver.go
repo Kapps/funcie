@@ -140,6 +140,8 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 		return
 	}
 
+	slog.Debug("request details", "headers", req.Header, "body", string(body))
+
 	var message funcie.Message
 	err = json.Unmarshal(body, &message)
 	if err != nil {

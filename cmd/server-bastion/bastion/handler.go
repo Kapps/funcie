@@ -6,6 +6,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
+	"golang.org/x/exp/slog"
 )
 
 type requestHandler struct {
@@ -28,6 +29,8 @@ func (r *requestHandler) Deregister(ctx context.Context, message messages.Deregi
 }
 
 func (r *requestHandler) ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
+	slog.DebugCtx(ctx, "forwarding request", "message", message)
+
 	marshaled, err := funcie.MarshalMessagePayload(message)
 	if err != nil {
 		return nil, fmt.Errorf("marshal request: %w", err)

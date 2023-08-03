@@ -18,7 +18,7 @@ type Response struct {
 func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
 	name := event.QueryStringParameters["name"]
 	resp := Response{
-		Greeting: fmt.Sprintf("Hello %s -- yay|", name),
+		Greeting: fmt.Sprintf("Hello %s -- yay.", name),
 	}
 
 	if strings.ToLower(event.QueryStringParameters["error"]) == "true" {

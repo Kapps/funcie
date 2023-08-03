@@ -73,7 +73,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 			return nil, fmt.Errorf("received error from proxied implementation: %w", forwardResponse.Error)
 		}
 
-		slog.DebugCtx(ctx, "received response from bastion", "response", forwardResponse.Data)
+		slog.DebugCtx(ctx, "received response from bastion", "response", string(forwardResponse.Data.Body))
 
 		return &forwardResponse.Data.Body, nil
 	}
