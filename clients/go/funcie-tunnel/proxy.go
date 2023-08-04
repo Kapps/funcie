@@ -54,12 +54,18 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		slog.Debug("publishing message to tunnel", "message", payload)
 
 		// Raw constant to avoid cycles -- this needs to be moved.
-		msg := funcie.NewMessage(p.applicationId, "FORWARD_REQUEST", *payload)
+		forwardPayload := messages.NewForwardRequestPayload(*payload)
+		message := funcie.NewMessageWithPayload(p.applicationId, "FORWARD_REQUEST", forwardPayload)
 
-		resp, err := p.client.SendRequest(ctx, msg)
+		marshaled, err := funcie.MarshalMessagePayload(*message)
+		if err != nil {
+			return nil, fmt.Errorf("marshalling message payload: %w", err)
+		}
+
+		resp, err := p.client.SendRequest(ctx, marshaled)
 		if err != nil {
 			// If we can't reach the bastion, we should just handle the request directly.
-			slog.ErrorCtx(ctx, "failed to send request to bastion", err, "message", msg)
+			slog.ErrorCtx(ctx, "failed to send request to bastion", err, "message", message)
 			return p.handleDirect(ctx, payload)
 		}
 

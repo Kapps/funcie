@@ -84,5 +84,5 @@ func (m *MessageBase[T]) String() string {
 	if err != nil {
 		marshaled = []byte("<error marshaling message>")
 	}
-	return fmt.Sprintf("Message{ID: %s, Kind: %s, Application: %s, Created: %s, Payload: %s}", m.ID, m.Kind, m.Application, m.Created, string(marshaled))
+	return fmt.Sprintf("%T{ID: %s, Kind: %s, Application: %s, Created: %s, Payload: %s}", m, m.ID, m.Kind, m.Application, m.Created, string(marshaled))
 }
