@@ -72,7 +72,7 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
   [
     {
       "name": "server-bastion-container",
-      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:latest",
+      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:43b589406de5d18a1d85315f11e9dc51fa8b5ccd",
       "essential": true,
       "portMappings": [
         {

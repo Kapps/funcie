@@ -49,6 +49,7 @@ func (p *messageProcessor) forwardRequest(ctx context.Context, message *funcie.M
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal payload %v: %w", message.Payload, err)
 	}
+
 	resp, err := p.handler.ForwardRequest(ctx, *forwardMessage)
 	if err != nil {
 		return nil, fmt.Errorf("forward request %v: %w", forwardMessage.ID, err)
