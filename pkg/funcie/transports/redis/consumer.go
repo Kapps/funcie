@@ -109,7 +109,10 @@ func (c *Consumer) Consume(ctx context.Context) error {
 				break
 			}
 			if err != nil {
-				return fmt.Errorf("error handling message: %w", err)
+				// We don't want to return here because we want to continue consuming messages.
+				// This is just a handler error, not a consumer error, so keep going.
+				slog.ErrorCtx(ctx, "error handling message", err)
+				break
 			}
 
 			responseKey := GetResponseKeyForMessage(c.baseChannelName, message.ID)
