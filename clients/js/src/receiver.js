@@ -1,8 +1,8 @@
 const http = require('http');
-const url = require('node:url');
 const { promisify } = require('util');
 const { Message, Response } = require('./models');
-const axios = require('axios');
+const { sendMessage } = require('./bastionClient');
+const { invokeLambda } = require('./utils');
 
 const beginReceiving = async (config, handler) => {
     if (config.ListenAddress.protocol !== 'http:') {
@@ -21,7 +21,7 @@ const beginReceiving = async (config, handler) => {
             const response = new Response(message.id, {
                 body: responseData,
             }, undefined, new Date());
-            // console.log(`Sending response: ${response}`);
+            console.log(`Sending response: ${response}`);
             res.writeHead(200, {
                 'Content-Type': 'application/json',
             });
@@ -60,43 +60,12 @@ const subscribe = async (config, address) => {
 
     const req = new Message('REGISTER', config.Application, app);
     // return;
+    const resp = await sendMessage(config, req);
 
-    const resp = await axios.post(new url.URL('/dispatch', config.ClientBastionEndpoint), req);
-    //const resp = axios.post(`${config.ClientBastionEndpoint}/dispatch`, req);
-    /*const resp = await axios.post({
-        url: new url.URL('/dispatch', config.ClientBastionEndpoint),
-        data: req,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });*/
-    
-    if (resp.error) {
-        throw new Error(resp.error);
-    }
-
-    console.log(`Registered with registration ID ${resp.data.data.RegistrationId}`);
+    console.log(`Registered with registration ID ${resp.data.RegistrationId}`);
 
     //console.log('Registered with bastion: ', resp.data);
 };
-
-const invokeLambda = (handler, event, context) => {
-    // Callback-based handlers are supported, but we wrap them in a promise
-    if (handler.length >= 3) {
-        return new Promise((resolve, reject) => {
-            handler(event, context, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-    }
-
-    // Async handlers are just invoked directly.
-    return handler(event, context);
-}
 
 module.exports = {
     beginReceiving,

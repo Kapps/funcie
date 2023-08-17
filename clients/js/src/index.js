@@ -1,27 +1,20 @@
-let done = false;
-const { exit } = require('process');
 const { beginReceiving } = require('./receiver');
-const config = require('./config').loadConfigFromEnvironment();
+const { lambdaProxy } = require('./proxy');
 
-console.log('Starting server with config: ', JSON.stringify(config));
 
-const handler = (event) => {
-    console.log('Receiving Event: ', JSON.stringify(event));
+const lambdaWrapper = (handler) => {
+    const config = require('./config').loadConfigFromEnvironment();
+    const isRunningInLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify({
-            message: `Hello ${event.body?.queryStringParameters?.name} from Funcie!`,
-        }),
-    };
+    if (isRunningInLambda) {
+        console.log('Starting proxy with config: ', JSON.stringify(config));
+        return lambdaProxy(handler);
+    }
+
+    console.log('Starting server with config: ', JSON.stringify(config));
+    return beginReceiving(config, handler);
 };
 
-
-beginReceiving(config, handler).then((server) => {
-    server.on('close', () => {
-        done = true;
-    });
-}).catch((err) => {
-    console.log(err.message);
-    exit(1);
-});
+module.exports = {
+    lambdaWrapper,
+};
