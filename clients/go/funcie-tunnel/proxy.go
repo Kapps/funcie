@@ -75,6 +75,10 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		}
 
 		if forwardResponse.Error != nil {
+			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
+				slog.InfoCtx(ctx, "no active consumer for request", "message", message)
+				return p.handleDirect(ctx, payload)
+			}
 			slog.DebugCtx(ctx, "received error from bastion", "error", forwardResponse.Error)
 			return nil, fmt.Errorf("received error from proxied implementation: %w", forwardResponse.Error)
 		}

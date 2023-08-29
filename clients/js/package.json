@@ -1,0 +1,26 @@
+{
+  "name": "funcie-tunnel",
+  "version": "0.1.0",
+  "description": "JavaScript client for funcie -- proxy Lambda requests to a local handler when debugging, or handle them in the cloud when not debugging.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kapps/funcie.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kapps/funcie/issues"
+  },
+  "homepage": "https://github.com/Kapps/funcie#readme",
+  "devDependencies": {
+    "jest": "^29.6.2"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "uuid": "^9.0.0"
+  }
+}
