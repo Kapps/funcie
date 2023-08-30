@@ -60,7 +60,7 @@ const subscribe = async (config, address) => {
 
     const req = new Message('REGISTER', config.Application, app);
     // return;
-    const resp = await sendMessage(config, req);
+    const resp = await sendMessage(config.ClientBastionEndpoint, req);
 
     console.log(`Registered with registration ID ${resp.data.RegistrationId}`);
 

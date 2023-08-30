@@ -44,7 +44,7 @@ form-data@^4.0.0:
 
 "funcie-tunnel@https://gitpkg.now.sh/Kapps/funcie/clients/js?main":
   version "0.1.0"
-  resolved "https://gitpkg.now.sh/Kapps/funcie/clients/js?main#ee62df06e23fef6009b118e3485407f32b7110bd"
+  resolved "https://gitpkg.now.sh/Kapps/funcie/clients/js?main#2c21f7f71833d7d6518d038f256ccdc2472e4819"
   dependencies:
     axios "^1.4.0"
     uuid "^9.0.0"
