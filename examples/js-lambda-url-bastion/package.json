@@ -1,0 +1,13 @@
+{
+  "name": "js-lambda-url-bastion",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "repository": "https://github.com/Kapps/funcie",
+  "license": "MIT",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "funcie-tunnel": "https://gitpkg.now.sh/Kapps/funcie/clients/js?main"
+  }
+}

@@ -12,6 +12,8 @@ import (
 	"net/url"
 )
 
+var ErrStatusNotOK = fmt.Errorf("status code not OK")
+
 // BastionClient is a client that can send requests to a server bastion.
 type BastionClient interface {
 	// SendRequest sends a request to the bastion.
@@ -50,6 +52,10 @@ func (c *httpBastionClient) SendRequest(ctx context.Context, request *funcie.Mes
 	responseData, err := io.ReadAll(httpResp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading response: %w", err)
+	}
+
+	if httpResp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("received non-200 response %v: %w", httpResp.StatusCode, ErrStatusNotOK)
 	}
 
 	err = json.Unmarshal(responseData, &response)

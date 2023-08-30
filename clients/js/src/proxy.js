@@ -5,6 +5,7 @@ const { invokeLambda } = require("./utils");
 
 const lambdaProxy = (handler) => {
     return async (event, context) => {
+        const config = loadConfigFromEnvironment();
         const payload = {
             body: event,
         };

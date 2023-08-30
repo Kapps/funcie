@@ -1,4 +1,4 @@
-const { lambdaWrapper} = require('../../clients/js/src/index');
+const { lambdaWrapper } = require('funcie-tunnel');
 
 exports.handler = lambdaWrapper(async (event) => {
     return {

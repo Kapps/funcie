@@ -75,6 +75,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		}
 
 		if forwardResponse.Error != nil {
+			// This is a bit of a gross way to check this, but... it is what it is.
 			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
 				slog.InfoCtx(ctx, "no active consumer for request", "message", message)
 				return p.handleDirect(ctx, payload)
