@@ -43,9 +43,11 @@ esac
 
 echo $NEW_VERSION > VERSION
 
+NEW_TAG="v$NEW_VERSION"
+
 git add VERSION
-git commit -m "Bump version to $NEW_VERSION"
-git tag $NEW_VERSION
+git commit -m "Bump version to $NEW_TAG"
+git tag $NEW_TAG
 
 
 read -p "Version bumped from $CURRENT_VERSION to $NEW_VERSION. Do you want to push the changes? [y/N] " confirm
@@ -53,8 +55,8 @@ case $confirm in
     [yY][eE][sS]|[yY])
         # Push changes to the repository
         git push origin main
-        git push origin $NEW_VERSION
-        echo "Version bumped to $NEW_VERSION and pushed to the repository."
+        git push origin $NEW_TAG
+        echo "Version bumped to $NEW_TAG and pushed to the repository."
         ;;
     *)
         echo "Push aborted. The commit and tag are still available locally. Don't forget to push the tag along with the commit."
