@@ -29,7 +29,7 @@ func (r *requestHandler) Deregister(ctx context.Context, message messages.Deregi
 }
 
 func (r *requestHandler) ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
-	slog.DebugCtx(ctx, "forwarding request", "message", message)
+	slog.DebugCtx(ctx, "forwarding request", "message", &message)
 
 	marshaled, err := funcie.MarshalMessagePayload(message)
 	if err != nil {

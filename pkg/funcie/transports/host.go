@@ -80,11 +80,11 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.DebugCtx(r.Context(), "received message", "message", message.String())
+	slog.DebugCtx(r.Context(), "received message", "message", &message)
 
 	response, err := h.messageProcessor.ProcessMessage(r.Context(), &message)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error processing message", err, "message", message.String())
+		slog.ErrorCtx(r.Context(), "error processing message", err, "message", &message)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error: %v", err)))
 		return

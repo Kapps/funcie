@@ -38,7 +38,7 @@ func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	slog.InfoCtx(ctx, "publishing message to channel", "channel", channelName, "message", message.String())
+	slog.InfoCtx(ctx, "publishing message to channel", "channel", channelName, "message", message)
 
 	pub := p.redisClient.Publish(ctx, channelName, messageContents)
 	if err := pub.Err(); err != nil {
