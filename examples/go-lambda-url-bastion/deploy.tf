@@ -29,10 +29,10 @@ data "aws_lb" "bastion_lb" {
 }
 
 resource "aws_lambda_function" "funcie_go" {
-  function_name    = "FuncieLambdaUrlSample"
+  function_name    = "FuncieGoLambdaUrlSample"
   filename         = "funciego.zip"
   handler          = "main"
-  source_code_hash = "data.archive_file.zip.output_base64sha256"
+  source_code_hash = data.archive_file.zip.output_base64sha256
   role             = aws_iam_role.iam_for_lambda.arn
   runtime          = "go1.x"
   memory_size      = 128

@@ -14,7 +14,7 @@ const lambdaProxy = (handler) => {
         try {
             forwardResponse = await sendMessage(config.ServerBastionEndpoint, forwardRequest);
         } catch (err) {
-            console.log(`failed to send request to bastion: ${err}; handling directly`);
+            console.log(`failed to send request to bastion: ${err}; handling request directly`);
             return invokeLambda(handler, event, context);
         }
 

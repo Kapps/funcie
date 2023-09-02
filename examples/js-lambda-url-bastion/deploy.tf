@@ -33,7 +33,7 @@ resource "aws_lambda_function" "funcie_js" {
   function_name    = "FuncieJsLambdaUrlSample"
   filename         = "funciejs.zip"
   handler          = "src/index.handler"
-  source_code_hash = "data.archive_file.zip.output_base64sha256"
+  source_code_hash = data.archive_file.zip.output_base64sha256
   role             = aws_iam_role.iam_for_js_url_lambda.arn
   runtime          = "nodejs18.x"
   memory_size      = 128

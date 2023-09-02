@@ -5,21 +5,15 @@ This sample uses the bastion deployed from the `deploy` folder, referencing the 
 
 To run this sample, create a `terraform.tfvars` file that contains values for the variables (according to `sample.tfvars`).
 Then, build the lambda by typing `make`.
-Finally, deploy it via `terraform apply --var-file={your-above-var-file}.tfvars`.
-
-You will also need to change the `FUNCIE_REDIS_ADDR` environment variable to point to the
-Redis instance you are using, such as `my.remote.host:6379`. This environment variable
-will need to be set both on your Lambda, and your local instance.
-Remember that both the Lambda and your local environment need to be able to connect to the
-Redis instance.
+Finally, deploy it via `terraform apply`.
 
 When running this locally, you may wish to use `gow` to watch for changes and rebuild
-the binary automatically. You can install `gow` using `go get github.com/mitranim/gow`.
+the binary automatically. See https://github.com/mitranim/gow for details on `gow`.`
 
 For example, to run this locally and automatically restart on any change, you can use:
 
 ```bash
-FUNCIE_REDIS_ADDR=10.1.1.1:6379 gow run main.go
+FUNCIE_APPLICATION_ID=url FUNCIE_CLIENT_BASTION_ENDPOINT=http://localhost:8081 gow run main.go
 ```
 
 Then you can simply hit the URL, apply some changes, and see the next invocation automatically
