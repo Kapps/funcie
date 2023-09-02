@@ -18,7 +18,7 @@ import (
 )
 
 // This is a test helper function that returns a connected c, a mock websocket client, and a mock websocket.
-func getConnectedConsumer(t *testing.T, ctx context.Context) (*c.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
+func getConnectedConsumer(t *testing.T, ctx context.Context) (funcie.Consumer, *mocks.WebsocketClient, *mocks.Websocket) {
 	wsClient := mocks.NewWebsocketClient(t)
 	consumer := c.NewConsumerWithWS(wsClient, "ws://localhost:8080", utils.NewClientHandlerRouter())
 	mockSocket := mocks.NewWebsocket(t)
