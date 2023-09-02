@@ -35,6 +35,12 @@ func newHost(config *bastion.Config, processor transports.MessageProcessor) tran
 	return transports.NewHost(config.ListenAddress, processor)
 }
 
+func newMessageProcessor(handler transports.MessageHandler) transports.MessageProcessor {
+	underlying := transports.NewMessageProcessor(handler)
+	caching := transports.NewCachingMessageProcessor(underlying)
+	return caching
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -49,7 +55,7 @@ func main() {
 			newPublisher,
 			bastion.NewRequestHandler,
 			newHost,
-			transports.NewMessageProcessor,
+			newMessageProcessor,
 			utils.NewClientHandlerRouter,
 			newConsumer,
 		),
