@@ -30,7 +30,7 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
   [
     {
       "name": "server-bastion-container",
-      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:${data.version.version}",
+      "image": "public.ecr.aws/w1h1o7p8/funcie-server-bastion:v${local.version}",
       "essential": true,
       "portMappings": [
         {
@@ -41,7 +41,8 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
       "environment" : [
         { "name" : "FUNCIE_REDIS_ADDRESS", "value" : "${var.redis_host}" },
         { "name" : "FUNCIE_LISTEN_ADDRESS", "value" : "0.0.0.0:8082" },
-        { "name" : "FUNCIE_LOG_LEVEL", "value" : "debug" }
+        { "name" : "FUNCIE_LOG_LEVEL", "value" : "debug" },
+        { "name" : "FUNCIE_VERSION", "value" : "${local.version}" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
