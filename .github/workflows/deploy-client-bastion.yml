@@ -3,6 +3,8 @@ name: Deploy Client Bastion Docker image to Amazon ECS
 on:
   push:
     branches: ["main"]
+    tags:
+      - "v*.*.*"
 
 env:
   AWS_REGION: ca-central-1
@@ -36,11 +38,12 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: public.ecr.aws/w1h1o7p8
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ github.ref == 'refs/heads/main' && github.sha || startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
+          IMAGE_SHA: ${{ github.sha }}
         run: |
           # Build a docker container and
           # push it to ECR so that it can
           # be deployed to ECS.
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest . -f cmd/client-bastion/Dockerfile
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG . -f cmd/client-bastion/Dockerfile
           docker push --all-tags $ECR_REGISTRY/$ECR_REPOSITORY
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
