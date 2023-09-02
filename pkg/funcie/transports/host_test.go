@@ -3,10 +3,10 @@ package transports_test
 import (
 	"bytes"
 	"context"
-	"github.com/Kapps/funcie/cmd/client-bastion/bastion/mocks"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
+	"github.com/Kapps/funcie/pkg/funcie/transports/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io"

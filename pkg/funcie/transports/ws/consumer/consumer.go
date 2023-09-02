@@ -12,8 +12,7 @@ import (
 	ws "nhooyr.io/websocket"
 )
 
-// Consumer represents a consumer that consumes messages from a Redis channel.
-type Consumer struct {
+type wsConsumer struct {
 	URL       string
 	wsClient  WebsocketClient
 	websocket Websocket
@@ -23,7 +22,7 @@ type Consumer struct {
 
 // NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
 func NewConsumer(url string) funcie.Consumer {
-	return &Consumer{
+	return &wsConsumer{
 		URL:      url,
 		wsClient: &WebsocketClientWrapper{},
 		router:   utils.NewClientHandlerRouter(),
@@ -31,15 +30,15 @@ func NewConsumer(url string) funcie.Consumer {
 }
 
 // NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
-func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.ClientHandlerRouter) *Consumer {
-	return &Consumer{
+func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.ClientHandlerRouter) funcie.Consumer {
+	return &wsConsumer{
 		wsClient: wsClient,
 		URL:      url,
 		router:   router,
 	}
 }
 
-func (c *Consumer) Connect(ctx context.Context) error {
+func (c *wsConsumer) Connect(ctx context.Context) error {
 	var err error
 	c.websocket, err = c.connectSocket(ctx)
 	if err != nil {
@@ -61,7 +60,7 @@ func (c *Consumer) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (c *Consumer) connectSocket(ctx context.Context) (Websocket, error) {
+func (c *wsConsumer) connectSocket(ctx context.Context) (Websocket, error) {
 	conn, _, err := c.wsClient.Dial(ctx, c.URL, &ws.DialOptions{
 		Subprotocols: []string{"funcie"},
 	})
@@ -73,7 +72,7 @@ func (c *Consumer) connectSocket(ctx context.Context) (Websocket, error) {
 	return conn, nil
 }
 
-func (c *Consumer) Subscribe(ctx context.Context, application string, handler funcie.Handler) error {
+func (c *wsConsumer) Subscribe(ctx context.Context, application string, handler funcie.Handler) error {
 	if !c.connected {
 		return fmt.Errorf("not connected")
 	}
@@ -101,7 +100,7 @@ func (c *Consumer) Subscribe(ctx context.Context, application string, handler fu
 	return nil
 }
 
-func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
+func (c *wsConsumer) Unsubscribe(ctx context.Context, channel string) error {
 	if !c.connected {
 		return fmt.Errorf("not connected")
 	}
@@ -130,7 +129,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, channel string) error {
 }
 
 // Consume starts the consume loop, reading from the Websocket and passing it to the router for handling.
-func (c *Consumer) Consume(ctx context.Context) error {
+func (c *wsConsumer) Consume(ctx context.Context) error {
 	messageChannel := make(chan *funcie.Message, 10)
 
 	var readError error = nil
