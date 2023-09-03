@@ -51,7 +51,7 @@ func (p *lambdaProxy) Start() {
 // It is responsible for publishing the message to the tunnel, and waiting for a response.
 func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 	wrapper := func(ctx context.Context, payload *json.RawMessage) (*json.RawMessage, error) {
-		slog.Debug("publishing message to tunnel", "message", payload)
+		slog.DebugCtx(ctx, "publishing message to tunnel", "message", payload)
 
 		// Raw constant to avoid cycles -- this needs to be moved.
 		forwardPayload := messages.NewForwardRequestPayload(*payload)
@@ -76,10 +76,14 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 
 		if forwardResponse.Error != nil {
 			// This is a bit of a gross way to check this, but... it is what it is.
+			// We need to add error codes in the future and make this less gross.
 			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
-				slog.InfoCtx(ctx, "no active consumer for request", "message", message)
+				// If there is no active consumer, we should just handle the request directly.
+				slog.DebugCtx(ctx, "no active consumer for request", "message", message)
 				return p.handleDirect(ctx, payload)
 			}
+			// In this case though, the request was handled and the handling returned an error.
+			// So we should forward that error back to the Lambda.
 			slog.DebugCtx(ctx, "received error from bastion", "error", forwardResponse.Error)
 			return nil, fmt.Errorf("received error from proxied implementation: %w", forwardResponse.Error)
 		}
