@@ -11,9 +11,6 @@ const sendMessage = async (endpoint, message) => {
     }
 
     const response = httpResponse.data;
-    if (response.error) {
-        throw new Error(response.error.message);
-    }
 
     return response;
 };

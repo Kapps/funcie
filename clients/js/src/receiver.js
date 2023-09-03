@@ -16,11 +16,15 @@ const beginReceiving = async (config, handler) => {
         }).on('end', async () => {
             const data = Buffer.concat(body).toString();
             const message = Message.fromJson(data);
-            // console.log(`Received message: ${message}`);
-            const responseData = await invokeLambda(handler, message.payload);
-            const response = new Response(message.id, {
-                body: responseData,
-            }, undefined, new Date());
+            let response;
+            try {
+                const responseData = await invokeLambda(handler, message.payload.body);
+                response = new Response(message.id, {
+                    body: responseData,
+                }, undefined, new Date());
+            } catch (err) {
+                response = new Response(message.id, undefined, err.message, new Date());
+            }
             console.log(`Sending response: ${response}`);
             res.writeHead(200, {
                 'Content-Type': 'application/json',

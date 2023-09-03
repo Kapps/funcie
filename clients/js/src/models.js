@@ -24,7 +24,7 @@ class Response {
     constructor(id, data, error, received) {
         this.id = id;
         this.data = data;
-        this.error = error;
+        this.error = error ? { message: JSON.stringify(error) } : null;
         this.received = received;
     }
 
