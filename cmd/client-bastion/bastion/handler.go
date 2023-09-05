@@ -13,23 +13,37 @@ import (
 )
 
 type handler struct {
-	registry  funcie.ApplicationRegistry
-	appClient ApplicationClient
-	consumer  funcie.Consumer
+	registry       funcie.ApplicationRegistry
+	appClient      ApplicationClient
+	consumer       funcie.Consumer
+	hostTranslator HostTranslator
 }
 
 // NewHandler creates a new Handler that can register and unregister applications and forward requests.
-func NewHandler(registry funcie.ApplicationRegistry, appClient ApplicationClient, consumer funcie.Consumer) transports.MessageHandler {
+func NewHandler(
+	registry funcie.ApplicationRegistry,
+	appClient ApplicationClient,
+	consumer funcie.Consumer,
+	hostTranslator HostTranslator,
+) transports.MessageHandler {
 	return &handler{
-		registry:  registry,
-		appClient: appClient,
-		consumer:  consumer,
+		registry:       registry,
+		appClient:      appClient,
+		consumer:       consumer,
+		hostTranslator: hostTranslator,
 	}
 }
 
 func (h *handler) Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error) {
 	application := funcie.NewApplication(message.Payload.Name, message.Payload.Endpoint)
-	err := h.registry.Register(ctx, application)
+	translatedHost, err := h.hostTranslator.TranslateLocalHostToResolvedHost(ctx, application.Endpoint.Host)
+	if err != nil {
+		return nil, fmt.Errorf("translate local host %v to resolved host: %w", application.Endpoint.Host, err)
+	}
+
+	application.Endpoint.Host = translatedHost
+
+	err = h.registry.Register(ctx, application)
 	if err != nil {
 		return nil, fmt.Errorf("register application %v: %w", application, err)
 	}

@@ -7,7 +7,7 @@ exports.handler = lambdaWrapper(async (event) => {
         }
         return {
             statusCode: 200,
-            body: `Hello, ${event.queryStringParameters.name}!`,
+            body: `Hello, ${event.queryStringParameters.name}..`,
             headers: {
                 'Content-Type': 'text/plain',
             },

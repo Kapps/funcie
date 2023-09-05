@@ -13,6 +13,7 @@ import (
 type forwardingApplicationRegistry struct {
 	underlying funcie.ApplicationRegistry
 	publisher  funcie.Publisher
+	config     *Config
 }
 
 // NewForwardingApplicationRegistry creates a new ApplicationRegistry that forwards requests to a server bastion.

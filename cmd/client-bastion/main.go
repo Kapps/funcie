@@ -61,6 +61,7 @@ func main() {
 			newConsumer,
 			bastion.NewHTTPApplicationClient,
 			bastion.NewHandler,
+			bastion.NewDockerHostTranslator,
 		),
 		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host transports.Host) {
 			lc.Append(fx.Hook{
