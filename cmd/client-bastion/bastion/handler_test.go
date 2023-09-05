@@ -13,19 +13,29 @@ import (
 	"testing"
 )
 
-func TestHandler_Register(t *testing.T) {
+// TODO: These tests are already unwieldy due to the number of mocks.
+// Consider refactoring to use a test suite.
+
+func TestHandler(t *testing.T) {
 	t.Parallel()
 
-	registry := mocks.NewApplicationRegistry(t)
 	ctx := context.Background()
-	app := funcie.NewApplication("name", funcie.MustNewEndpointFromAddress("http://localhost:8080"))
+	registry := mocks.NewApplicationRegistry(t)
 	appClient := bastionMocks.NewApplicationClient(t)
 	consumer := mocks.NewConsumer(t)
-	handler := bastion.NewHandler(registry, appClient, consumer)
-	payload := messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)
-	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *payload)
+	hostTranslator := bastionMocks.NewHostTranslator(t)
 
-	t.Run("should register the handler", func(t *testing.T) {
+	hostTranslator.EXPECT().TranslateLocalHostToResolvedHost(ctx, "localhost").Return("localhost", nil)
+
+	handler := bastion.NewHandler(registry, appClient, consumer, hostTranslator)
+
+	endpoint := funcie.MustNewEndpointFromAddress("http://localhost:8080")
+	app := funcie.NewApplication("app", endpoint)
+
+	t.Run("should register an application", func(t *testing.T) {
+		payload := messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)
+		message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *payload)
+
 		registry.EXPECT().Register(ctx, app).Return(nil).Once()
 		consumer.EXPECT().Subscribe(ctx, app.Name, mock.Anything).Return(nil).Once()
 
@@ -34,24 +44,14 @@ func TestHandler_Register(t *testing.T) {
 
 		require.NotZero(t, registered.Data.RegistrationId)
 	})
-}
 
-func TestHandler_Unregister(t *testing.T) {
-	ctx := context.Background()
-	registry := mocks.NewApplicationRegistry(t)
-	consumer := mocks.NewConsumer(t)
-	appClient := bastionMocks.NewApplicationClient(t)
-	endpoint, err := funcie.NewEndpointFromAddress("http://localhost:8080")
-	require.NoError(t, err)
+	t.Run("should unregister an application", func(t *testing.T) {
+		payload := messages.NewDeregistrationRequestPayload(app.Name)
+		message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload)
 
-	app := funcie.NewApplication("name", endpoint)
-	payload := messages.NewDeregistrationRequestPayload(app.Name)
-	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload)
-	handler := bastion.NewHandler(registry, appClient, consumer)
-	responsePayload := messages.NewDeregistrationResponsePayload()
-	expectedResponse := funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
+		responsePayload := messages.NewDeregistrationResponsePayload()
+		expectedResponse := funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 
-	t.Run("should unregister the handler", func(t *testing.T) {
 		registry.EXPECT().Unregister(ctx, app.Name).Return(nil).Once()
 		consumer.EXPECT().Unsubscribe(ctx, app.Name).Return(nil).Once()
 
@@ -62,68 +62,20 @@ func TestHandler_Unregister(t *testing.T) {
 	})
 
 	t.Run("should wrap an ApplicationNotFound error if the application is not registered", func(t *testing.T) {
+		payload := messages.NewDeregistrationRequestPayload(app.Name)
+		message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindDeregister, *payload)
+
 		registry.EXPECT().Unregister(ctx, app.Name).Return(funcie.ErrApplicationNotFound).Once()
 
 		resp, err := handler.Deregister(ctx, *message)
 		require.ErrorIs(t, err, funcie.ErrApplicationNotFound)
 		require.Nil(t, resp)
 	})
-}
 
-func TestHandler_ForwardRequest(t *testing.T) {
-	ctx := context.Background()
-	registry := mocks.NewApplicationRegistry(t)
-	appClient := bastionMocks.NewApplicationClient(t)
-	consumer := mocks.NewConsumer(t)
-	endpoint, err := funcie.NewEndpointFromAddress("http://localhost:8080")
-	payload := messages.NewForwardRequestPayload(json.RawMessage("{}"))
-	require.NoError(t, err)
-
-	request := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *payload)
-	require.NoError(t, err)
-	marshaledRequest, err := funcie.MarshalMessagePayload(*request)
-	require.NoError(t, err)
-
-	responsePayload := messages.NewForwardRequestResponsePayload(json.RawMessage("{}"))
-	response := funcie.NewResponseWithPayload("id", responsePayload, nil)
-	marshaledResponse, err := funcie.MarshalResponsePayload(response)
-	require.NoError(t, err)
-
-	app := funcie.NewApplication("app", endpoint)
-	handler := bastion.NewHandler(registry, appClient, consumer)
-
-	registry.EXPECT().GetApplication(ctx, app.Name).Return(app, nil).Once()
-	appClient.EXPECT().ProcessRequest(ctx, *app, marshaledRequest).Return(marshaledResponse, nil).Once()
-
-	receivedResponse, err := handler.ForwardRequest(ctx, *request)
-	require.NoError(t, err)
-
-	RequireEqualResponse(t, response, receivedResponse)
-}
-
-func TestHandler_Consumer_Message(t *testing.T) {
-	ctx := context.Background()
-	registry := mocks.NewApplicationRegistry(t)
-	appClient := bastionMocks.NewApplicationClient(t)
-	consumer := mocks.NewConsumer(t)
-
-	app := funcie.NewApplication("app", funcie.MustNewEndpointFromAddress("http://localhost:8080"))
-	payload := messages.NewRegistrationRequestPayload(app.Name, app.Endpoint)
-	message := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *payload)
-
-	handler := bastion.NewHandler(registry, appClient, consumer)
-
-	consumer.EXPECT().Subscribe(ctx, "app", mock.Anything).Return(nil)
-	registry.EXPECT().Register(ctx, app).Return(nil)
-	registry.EXPECT().GetApplication(ctx, app.Name).Return(app, nil)
-
-	_, err := handler.Register(ctx, *message)
-	require.NoError(t, err)
-
-	consumeCallback := consumer.Calls[0].Arguments[2].(funcie.Handler)
-
-	t.Run("should forward the request to the application", func(t *testing.T) {
+	t.Run("should forward a request to an application", func(t *testing.T) {
+		payload := messages.NewForwardRequestPayload(json.RawMessage("{}"))
 		request := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *payload)
+
 		marshaledRequest, err := funcie.MarshalMessagePayload(*request)
 		require.NoError(t, err)
 
@@ -132,9 +84,40 @@ func TestHandler_Consumer_Message(t *testing.T) {
 		marshaledResponse, err := funcie.MarshalResponsePayload(response)
 		require.NoError(t, err)
 
+		registry.EXPECT().GetApplication(ctx, app.Name).Return(app, nil).Once()
 		appClient.EXPECT().ProcessRequest(ctx, *app, marshaledRequest).Return(marshaledResponse, nil).Once()
 
-		resp, err := consumeCallback(ctx, marshaledRequest)
+		receivedResponse, err := handler.ForwardRequest(ctx, *request)
+		require.NoError(t, err)
+
+		RequireEqualResponse(t, response, receivedResponse)
+	})
+
+	t.Run("should send a request to an application when consuming a message", func(t *testing.T) {
+		registerPayload := messages.NewRegistrationRequestPayload("app", endpoint)
+		registerRequest := funcie.NewMessageWithPayload(app.Name, messages.MessageKindRegister, *registerPayload)
+
+		forwardPayload := messages.NewForwardRequestPayload(json.RawMessage("{}"))
+		forwardRequest := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, *forwardPayload)
+
+		marshaledForwardRequest, err := funcie.MarshalMessagePayload(*forwardRequest)
+		require.NoError(t, err)
+
+		responsePayload := messages.NewForwardRequestResponsePayload(json.RawMessage("{}"))
+		response := funcie.NewResponseWithPayload("id", responsePayload, nil)
+
+		marshaledResponse, err := funcie.MarshalResponsePayload(response)
+		require.NoError(t, err)
+
+		registry.EXPECT().Register(ctx, app).Return(nil).Once()
+		consumer.EXPECT().Subscribe(ctx, "app", mock.Anything).Return(nil).Once()
+		registry.EXPECT().GetApplication(ctx, app.Name).Return(app, nil).Once()
+		appClient.EXPECT().ProcessRequest(ctx, *app, marshaledForwardRequest).Return(marshaledResponse, nil).Once()
+
+		_, err = handler.Register(ctx, *registerRequest)
+
+		consumeCallback := consumer.Calls[0].Arguments[2].(funcie.Handler)
+		resp, err := consumeCallback(ctx, marshaledForwardRequest)
 		require.NoError(t, err)
 
 		RequireEqualResponse(t, marshaledResponse, resp)

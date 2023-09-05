@@ -1,6 +1,7 @@
 package bastion
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 )
 
 func TestDockerHostTranslator_NoTranslationsRequired(t *testing.T) {
+	ctx := context.Background()
 	translator := NewDockerHostTranslator()
 	setCleanup(t)
 
@@ -22,19 +24,20 @@ func TestDockerHostTranslator_NoTranslationsRequired(t *testing.T) {
 	}
 
 	t.Run("should not require translation", func(t *testing.T) {
-		req, err := translator.IsHostTranslationRequired()
+		req, err := translator.IsHostTranslationRequired(ctx)
 		require.NoError(t, err)
 		require.False(t, req)
 	})
 
 	t.Run("should not translate", func(t *testing.T) {
-		result, err := translator.TranslateLocalHostToResolvedHost("localhost")
+		result, err := translator.TranslateLocalHostToResolvedHost(ctx, "localhost")
 		require.NoError(t, err)
 		require.Equal(t, "localhost", result)
 	})
 }
 
 func TestDockerHostTranslator_TranslationsRequired(t *testing.T) {
+	ctx := context.Background()
 	translator := NewDockerHostTranslator()
 	setCleanup(t)
 
@@ -44,7 +47,7 @@ func TestDockerHostTranslator_TranslationsRequired(t *testing.T) {
 	}
 
 	t.Run("should require translation", func(t *testing.T) {
-		req, err := translator.IsHostTranslationRequired()
+		req, err := translator.IsHostTranslationRequired(ctx)
 		require.NoError(t, err)
 		require.True(t, req)
 	})
@@ -61,7 +64,7 @@ func TestDockerHostTranslator_TranslationsRequired(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			result, err := translator.TranslateLocalHostToResolvedHost(test.input)
+			result, err := translator.TranslateLocalHostToResolvedHost(ctx, test.input)
 			require.NoError(t, err)
 			require.Equal(t, test.expected, result)
 		}
