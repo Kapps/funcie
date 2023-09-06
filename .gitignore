@@ -26,5 +26,6 @@ node_modules/
 .terraform
 *.tfvars
 .terraform.lock.hcl
-
+.terraform.tfstate.lock.info
+*.tfstate
 

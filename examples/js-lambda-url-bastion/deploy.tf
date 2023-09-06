@@ -9,7 +9,7 @@ variable "security_group_ids" {
 }
 
 variable "redis_host" {
-  description = "Address of the Redis host"
+  description = "Address of the Redis host, including port"
   type        = string
 }
 

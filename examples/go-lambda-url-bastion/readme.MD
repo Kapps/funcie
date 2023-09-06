@@ -22,3 +22,13 @@ pick up the changes.
 If you close the local instance, the Lambda will simply respond using the last code you uploaded
 to the Lambda. Then when you start the local instance, it will automatically continue forwarding
 requests.
+
+## Deployment Variables
+
+When deploying this Lambda, you will need to pass the following Terraform variables in your terraform.tfvars file:
+
+- subnet_ids: List of (private) subnet IDs for the Lambda function
+- security_group_ids: List of security group IDs for the Lambda function
+- redis_host: Address of the Redis host, including port.
+- bastion_lb_arn: The ARN for the load balancer created to be used for the bastion (can be viewed in the outputs).
+- region: AWS region to deploy to.

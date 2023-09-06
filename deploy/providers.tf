@@ -1,3 +1,8 @@
+variable "region" {
+  description = "The AWS region to deploy to"
+  type        = string
+}
+
 terraform {
   required_providers {
     aws = {
@@ -10,5 +15,5 @@ terraform {
 }
 
 provider "aws" {
-  region  = "us-east-1"
+  region = var.region
 }
