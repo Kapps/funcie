@@ -58,8 +58,7 @@ func (cp *cachingMessageProcessor) handleForwardRequest(ctx context.Context, mes
 		// No consumer because client bastion is unreachable.
 		slog.DebugCtx(ctx, "no consumer found (client bastion unresponsive?), caching for a minute", "application", message.Application)
 		cp.noConsumerCache.Store(message.Application, cachedEntry{timestamp: time.Now()})
-	}
-	if resp.Error != nil && resp.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
+	} else if err == nil && resp.Error != nil && resp.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
 		// Client bastion was reachable, and it responded with no consumer.
 		slog.DebugCtx(ctx, "no consumer found (negative response), caching for a minute", "application", message.Application)
 		cp.noConsumerCache.Store(message.Application, cachedEntry{timestamp: time.Now()})
