@@ -19,6 +19,14 @@ type cachingMessageProcessor struct {
 	noConsumerCache     sync.Map
 }
 
+// NOTE: Currently this is not being used.
+// The problem is that client bastions have no way to communicate with a server bastion.
+// So the unavailable cache has no way to be cleared beyond waiting the expiration time.
+// Eventually we'd probably want some sort of control plane for things like authentication, which
+// could then be used to clear the cache upon an application registration.
+
+// Meanwhile, it's not particularly expensive to go from Server -> Client -> Server.
+
 // NewCachingMessageProcessor creates a new caching MessageProcessor, forwarding requests to the underlying processor.
 // If the underlying processor returns ErrNoConsumerFound, that result is cached for a minute or until registered.
 func NewCachingMessageProcessor(underlyingProcessor MessageProcessor) MessageProcessor {
