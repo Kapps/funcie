@@ -5,6 +5,7 @@ const { invokeLambda } = require("./utils");
 
 // TODO: Proper response codes. This is... gross.
 const errNoConsumerActive = 'no consumer is active on this tunnel';
+const errApplicationNotFound = 'application not found';
 
 const lambdaProxy = (handler) => {
     return async (event, context) => {
@@ -30,7 +31,7 @@ const lambdaProxy = (handler) => {
             // or because we successfully forwarded to the client but the client errored.
 
             // If there is no consumer active on the bastion, handle the request directly.
-            if (forwardResponse.error.message === errNoConsumerActive) {
+            if (forwardResponse.error.message === errNoConsumerActive || forwardResponse.error === errApplicationNotFound) {
                 console.log(`no consumer active on bastion; handling request directly`);
                 return invokeLambda(handler, event, context);
             }

@@ -54,7 +54,7 @@ func (p *lambdaProxy) Start() {
 // It is responsible for publishing the message to the tunnel, and waiting for a response.
 func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 	wrapper := func(ctx context.Context, payload *json.RawMessage) (*json.RawMessage, error) {
-		p.logger.DebugCtx(ctx, "publishing message to tunnel", "message", payload)
+		p.logger.DebugCtx(ctx, "publishing message to tunnel", "message", string(*payload))
 
 		// Raw constant to avoid cycles -- this needs to be moved.
 		forwardPayload := messages.NewForwardRequestPayload(*payload)
@@ -81,7 +81,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		if forwardResponse.Error != nil {
 			// This is a bit of a gross way to check this, but... it is what it is.
 			// We need to add error codes in the future and make this less gross.
-			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
+			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() || forwardResponse.Error.Error() == funcie.ErrApplicationNotFound.Error() {
 				// If there is no active consumer, we should just handle the request directly.
 				p.logger.DebugCtx(ctx, "no active consumer for request", "message", message)
 				return p.handleDirect(ctx, payload)
