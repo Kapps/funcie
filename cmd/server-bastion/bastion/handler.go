@@ -2,6 +2,7 @@ package bastion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
@@ -38,6 +39,12 @@ func (r *requestHandler) ForwardRequest(ctx context.Context, message messages.Fo
 
 	resp, err := r.publisher.Publish(ctx, marshaled)
 	if err != nil {
+		if errors.Is(err, funcie.ErrNoActiveConsumer) {
+			// If the application is not found, return a successful response with the not found error.
+			return funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](
+				message.ID, nil, funcie.ErrApplicationNotFound,
+			), nil
+		}
 		return nil, fmt.Errorf("publish request: %w", err)
 	}
 
