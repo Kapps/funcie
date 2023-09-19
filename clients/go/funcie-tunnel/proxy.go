@@ -81,7 +81,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		if forwardResponse.Error != nil {
 			// This is a bit of a gross way to check this, but... it is what it is.
 			// We need to add error codes in the future and make this less gross.
-			if forwardResponse.Error.Error() == funcie.ErrNoActiveConsumer.Error() || forwardResponse.Error.Error() == funcie.ErrApplicationNotFound.Error() {
+			if isExpectedProxyError(forwardResponse.Error) {
 				// If there is no active consumer, we should just handle the request directly.
 				p.logger.DebugCtx(ctx, "no active consumer for request", "message", message)
 				return p.handleDirect(ctx, payload)
@@ -107,4 +107,9 @@ func (p *lambdaProxy) handleDirect(ctx context.Context, payload *json.RawMessage
 
 	raw := json.RawMessage(res)
 	return &raw, nil
+}
+
+func isExpectedProxyError(err *funcie.ProxyError) bool {
+	str := err.Error()
+	return str == funcie.ErrNoActiveConsumer.Error() || str == funcie.ErrApplicationNotFound.Error()
 }

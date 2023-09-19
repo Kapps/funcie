@@ -39,10 +39,10 @@ func (r *requestHandler) ForwardRequest(ctx context.Context, message messages.Fo
 
 	resp, err := r.publisher.Publish(ctx, marshaled)
 	if err != nil {
-		if errors.Is(err, funcie.ErrNoActiveConsumer) {
+		if errors.Is(err, funcie.ErrNoActiveConsumer) || errors.Is(err, funcie.ErrApplicationNotFound) {
 			// If the application is not found, return a successful response with the not found error.
 			return funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](
-				message.ID, nil, funcie.ErrApplicationNotFound,
+				message.ID, nil, funcie.ErrNoActiveConsumer,
 			), nil
 		}
 		return nil, fmt.Errorf("publish request: %w", err)

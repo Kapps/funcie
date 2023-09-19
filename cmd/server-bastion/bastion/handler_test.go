@@ -73,10 +73,25 @@ func TestForwardRequest(t *testing.T) {
 
 	t.Run("no active consumer", func(t *testing.T) {
 		response := funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](
-			forwardMessage.ID, nil, funcie.ErrApplicationNotFound,
+			forwardMessage.ID, nil, funcie.ErrNoActiveConsumer,
 		)
 
 		publisher.EXPECT().Publish(ctx, marshaledForwardMessage).Return(nil, funcie.ErrNoActiveConsumer).Once()
+
+		resp, err := handler.ForwardRequest(ctx, *forwardMessage)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+
+		require.Equal(t, response, resp)
+	})
+
+	t.Run("application not found", func(t *testing.T) {
+		// We expect the same response as for no active consumer
+		response := funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](
+			forwardMessage.ID, nil, funcie.ErrNoActiveConsumer,
+		)
+
+		publisher.EXPECT().Publish(ctx, marshaledForwardMessage).Return(nil, funcie.ErrApplicationNotFound).Once()
 
 		resp, err := handler.ForwardRequest(ctx, *forwardMessage)
 		require.NoError(t, err)
