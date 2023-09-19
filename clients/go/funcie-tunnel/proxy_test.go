@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 	"testing"
 )
 
@@ -26,7 +27,7 @@ func TestLambdaProxy_Start(t *testing.T) {
 
 	client := mocks.NewBastionClient(t)
 
-	proxy := NewLambdaFunctionProxy(app, client, rawHandler)
+	proxy := NewLambdaFunctionProxy(app, client, rawHandler, slog.Default())
 
 	var handler lambda.Handler
 	lambdaProxy := func(wrappedHandler interface{}) {
