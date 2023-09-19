@@ -2,6 +2,7 @@ package funcie_tunnel
 
 import (
 	"github.com/Kapps/funcie/pkg/funcie"
+	"golang.org/x/exp/slog"
 )
 
 // Start is a replacement to lambda.Start that configures the proxy from environment variables.
@@ -11,20 +12,26 @@ import (
 // See NewConfigFromEnvironment for the environment variables that are used.
 func Start(handler interface{}) {
 	config := NewConfigFromEnvironment()
-	StartWithConfig(*config, handler)
+	StartWithConfig(*config, slog.Default(), handler)
 }
 
 // StartWithConfig is a replacement to lambda.Start that configures the proxy from the given config.
 // See `Start` for more information.
-func StartWithConfig(config FuncieConfig, handler interface{}) {
+func StartWithConfig(config FuncieConfig, logger *slog.Logger, handler interface{}) {
 	if funcie.IsRunningWithLambda() {
 		// In a Lambda, we wait for the Lambda runtime to call the handler and forward that request to the bastion.
-		client := NewHTTPBastionClient(config.ServerBastionEndpoint)
-		proxy := NewLambdaFunctionProxy(config.ApplicationId, client, handler)
+		client := NewHTTPBastionClient(config.ServerBastionEndpoint, logger)
+		proxy := NewLambdaFunctionProxy(config.ApplicationId, client, handler, logger)
 		proxy.Start()
 	} else {
 		// Locally, we receive the request from the bastion.
-		receiver := NewLambdaBastionReceiver(config.ApplicationId, config.ListenAddress, config.ClientBastionEndpoint, handler)
+		receiver := NewLambdaBastionReceiver(
+			config.ApplicationId,
+			config.ListenAddress,
+			config.ClientBastionEndpoint,
+			handler,
+			logger,
+		)
 		receiver.Start()
 	}
 }

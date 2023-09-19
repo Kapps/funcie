@@ -23,13 +23,15 @@ type BastionClient interface {
 type httpBastionClient struct {
 	client   *http.Client
 	endpoint url.URL
+	logger   *slog.Logger
 }
 
 // NewHTTPBastionClient creates a new BastionClient that uses HTTP to communicate with the bastion.
-func NewHTTPBastionClient(endpoint url.URL) BastionClient {
+func NewHTTPBastionClient(endpoint url.URL, logger *slog.Logger) BastionClient {
 	return &httpBastionClient{
 		client:   &http.Client{},
 		endpoint: endpoint,
+		logger:   logger,
 	}
 }
 
@@ -39,7 +41,7 @@ func (c *httpBastionClient) SendRequest(ctx context.Context, request *funcie.Mes
 		return nil, fmt.Errorf("marshalling request: %w", err)
 	}
 
-	slog.DebugCtx(ctx, "sending message", "message", string(requestBytes))
+	c.logger.DebugCtx(ctx, "sending message", "message", string(requestBytes))
 
 	httpResp, err := c.client.Post(c.endpoint.String(), "application/json", bytes.NewReader(requestBytes))
 	if err != nil {

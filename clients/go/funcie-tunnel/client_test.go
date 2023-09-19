@@ -6,6 +6,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -41,7 +42,7 @@ func TestHttpBastionClient_SendRequest(t *testing.T) {
 	parsedUrl, err := url.Parse(server.URL)
 	require.NoError(t, err)
 
-	client := NewHTTPBastionClient(*parsedUrl)
+	client := NewHTTPBastionClient(*parsedUrl, slog.Default())
 
 	t.Run("should send requests to the bastion", func(t *testing.T) {
 		req := funcie.NewMessage("app", messages.MessageKindForwardRequest, funcie.MustSerialize(requestPayload))

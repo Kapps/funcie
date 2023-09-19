@@ -30,6 +30,7 @@ type bastionReceiver struct {
 	server          *http.Server
 	client          *http.Client
 	handler         lambda.Handler
+	logger          *slog.Logger
 }
 
 // NewLambdaBastionReceiver creates a new BastionReceiver for AWS Lambda operations.
@@ -40,6 +41,7 @@ func NewLambdaBastionReceiver(
 	listenAddress string,
 	bastionEndpoint url.URL,
 	handler interface{},
+	logger *slog.Logger,
 ) BastionReceiver {
 	lambdaHandler := lambda.NewHandler(handler)
 
@@ -49,6 +51,7 @@ func NewLambdaBastionReceiver(
 		handler:         lambdaHandler,
 		listenAddress:   listenAddress,
 		client:          &http.Client{},
+		logger:          logger,
 		server: &http.Server{
 			Addr: listenAddress,
 		},
@@ -63,30 +66,30 @@ func (r *bastionReceiver) Start() {
 	// Before we start the server, we need to subscribe to the bastion.
 	listener, err := net.Listen("tcp", r.listenAddress)
 	if err != nil {
-		slog.Error("failed to listen", err)
+		r.logger.Error("failed to listen", err)
 		panic(err)
 	}
 
 	err = r.subscribe(listener.Addr())
 	if err != nil {
-		slog.Error("failed to subscribe", err)
+		r.logger.Error("failed to subscribe", err)
 		panic(err)
 	}
 
-	slog.Info("starting bastion receiver", "applicationId", r.applicationId, "listenAddress", listener.Addr())
+	r.logger.Info("starting bastion receiver", "applicationId", r.applicationId, "listenAddress", listener.Addr())
 
 	err = r.server.Serve(listener)
-	slog.Warn("server stopped", "err", err)
+	r.logger.Warn("server stopped", "err", err)
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(err)
 	}
 }
 
 func (r *bastionReceiver) Stop() {
-	slog.Info("stopping bastion receiver", "applicationId", r.applicationId)
+	r.logger.Info("stopping bastion receiver", "applicationId", r.applicationId)
 	err := r.server.Close()
 	if err != nil {
-		slog.Error("failed to close server", err)
+		r.logger.Error("failed to close server", err)
 	}
 }
 
@@ -101,7 +104,7 @@ func (r *bastionReceiver) subscribe(addr net.Addr) error {
 		return fmt.Errorf("marshal message: %w", err)
 	}
 
-	slog.Info("sending registration request",
+	r.logger.Info("sending registration request",
 		"message", message, "bastionEndpoint", r.bastionEndpoint.String(), "registerEndpoint", registerEndpoint)
 
 	resp, err := r.client.Post(registerEndpoint, "application/json", bytes.NewReader(marshaled))
@@ -124,42 +127,42 @@ func (r *bastionReceiver) subscribe(addr net.Addr) error {
 		return fmt.Errorf("unmarshal response: %w", err)
 	}
 
-	slog.Info("received registration response", "response", response)
+	r.logger.Info("received registration response", "response", response)
 
 	return nil
 }
 
 func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request) {
-	slog.Info("received request", "method", req.Method, "url", req.URL)
+	r.logger.Info("received request", "method", req.Method, "url", req.URL)
 
 	ctx := req.Context()
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to read request body", err)
+		r.logger.ErrorCtx(ctx, "failed to read request body", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	slog.Debug("request details", "headers", req.Header, "body", string(body))
+	r.logger.Debug("request details", "headers", req.Header, "body", string(body))
 
 	var message funcie.Message
 	err = json.Unmarshal(body, &message)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to unmarshal request body", err)
+		r.logger.ErrorCtx(ctx, "failed to unmarshal request body", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	slog.DebugCtx(ctx, "received request", "message", &message)
+	r.logger.DebugCtx(ctx, "received request", "message", &message)
 	if message.Kind != messages.MessageKindForwardRequest {
-		slog.WarnCtx(ctx, "received message with invalid kind", "kind", message.Kind)
+		r.logger.WarnCtx(ctx, "received message with invalid kind", "kind", message.Kind)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	unmarshaled, err := funcie.UnmarshalMessagePayload[messages.ForwardRequestMessage](&message)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to unmarshal request message", err)
+		r.logger.ErrorCtx(ctx, "failed to unmarshal request message", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -169,28 +172,28 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	var response *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
 	invokeResponse, err := r.handler.Invoke(ctx, payload)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to handle message", err)
+		r.logger.ErrorCtx(ctx, "failed to handle message", err)
 		response = funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](message.ID, nil, err)
 	} else {
-		slog.InfoCtx(ctx, "received response", "response", invokeResponse)
+		r.logger.DebugCtx(ctx, "received response", "response", invokeResponse)
 		responsePayload := messages.NewForwardRequestResponsePayload(invokeResponse)
 		response = funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 	}
 
-	slog.InfoCtx(ctx, "sending response", "response", response)
+	r.logger.DebugCtx(ctx, "sending response", "response", response)
 	responseBody, err := json.Marshal(response)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to marshal response", err)
+		r.logger.ErrorCtx(ctx, "failed to marshal response", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	_, err = w.Write(responseBody)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to write response", err)
+		r.logger.ErrorCtx(ctx, "failed to write response", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	slog.InfoCtx(ctx, "sent response")
+	r.logger.DebugCtx(ctx, "sent response")
 }

@@ -38,7 +38,6 @@ func TestLambdaBastionReceiver_Integration(t *testing.T) {
 		forwardMessage := funcie.NewMessageWithPayload("app", messages.MessageKindForwardRequest, &forwardRequestPayload)
 		requestBytes := funcie.MustSerialize(forwardMessage)
 
-		slog.Info("Sending request to", "address", listenerAddress.String())
 		resp, err := http.Post(listenerAddress.String(), "application/json", bytes.NewReader(requestBytes))
 		require.NoError(t, err)
 
@@ -87,7 +86,7 @@ func registerServer(t *testing.T, handler interface{}) funcie.Endpoint {
 	bastionUrl, err := url.Parse(fmt.Sprintf("http://%s", bastionServer.Listener.Addr().String()))
 	require.NoError(t, err)
 
-	receiver := NewLambdaBastionReceiver(applicationId, "localhost:0", *bastionUrl, handler)
+	receiver := NewLambdaBastionReceiver(applicationId, "localhost:0", *bastionUrl, handler, slog.Default())
 	t.Cleanup(receiver.Stop)
 
 	go receiver.Start()
