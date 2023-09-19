@@ -21,7 +21,7 @@ func TestLambdaProxy_Start(t *testing.T) {
 	rawHandler := func(ctx context.Context, payload events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
 		return events.LambdaFunctionURLResponse{
 			StatusCode: 200,
-			Body:       "Hello world",
+			Body:       "Hello world direct",
 		}, nil
 	}
 
@@ -53,7 +53,7 @@ func TestLambdaProxy_Start(t *testing.T) {
 
 		respPayload := messages.NewForwardRequestResponsePayload(funcie.MustSerialize(urlResp))
 		resp := funcie.NewResponse("id", funcie.MustSerialize(respPayload), nil)
-		client.EXPECT().SendRequest(ctx, mock.Anything).Return(resp, nil)
+		client.EXPECT().SendRequest(ctx, mock.Anything).Return(resp, nil).Once()
 
 		responseBytes, err := handler.Invoke(ctx, reqBytes)
 		require.NoError(t, err)
@@ -63,5 +63,22 @@ func TestLambdaProxy_Start(t *testing.T) {
 
 		require.Equal(t, 200, response.StatusCode)
 		require.Equal(t, "Hello world", response.Body)
+	})
+
+	t.Run("no active consumer", func(t *testing.T) {
+		req := events.LambdaFunctionURLRequest{}
+		reqBytes := funcie.MustSerialize(req)
+
+		resp := funcie.NewResponse("id", nil, funcie.ErrNoActiveConsumer)
+		client.EXPECT().SendRequest(ctx, mock.Anything).Return(resp, nil).Once()
+
+		responseBytes, err := handler.Invoke(ctx, reqBytes)
+		require.NoError(t, err)
+
+		var response events.LambdaFunctionURLResponse
+		require.NoError(t, json.Unmarshal(responseBytes, &response))
+
+		require.Equal(t, 200, response.StatusCode)
+		require.Equal(t, "Hello world direct", response.Body)
 	})
 }
