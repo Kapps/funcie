@@ -1,0 +1,35 @@
+# Tests and publishes the JS client to npm
+
+name: Test & Publish JS Client
+
+on:
+  push:
+    branches: ["main"]
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm ci --prefix clients/js
+      - run: npm test --prefix clients/js
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci --prefix clients/js
+      - run: npm publish --prefix clients/js
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
