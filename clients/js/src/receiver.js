@@ -23,7 +23,7 @@ const beginReceiving = async (config, handler) => {
                     body: responseData,
                 }, undefined, new Date());
             } catch (err) {
-                response = new Response(message.id, undefined, err.message, new Date());
+                response = new Response(message.id, undefined, { message: err.message }, new Date());
             }
             console.log(`Sending response: ${response}`);
             res.writeHead(200, {
@@ -63,7 +63,6 @@ const subscribe = async (config, address) => {
     };
 
     const req = new Message('REGISTER', config.Application, app);
-    // return;
     const resp = await sendMessage(config.ClientBastionEndpoint, req);
 
     console.log(`Registered with registration ID ${resp.data.RegistrationId}`);

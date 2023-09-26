@@ -24,18 +24,18 @@ class Response {
     constructor(id, data, error, received) {
         this.id = id;
         this.data = data;
-        this.error = error ? { message: JSON.stringify(error) } : null;
+        this.error = error;
         this.received = received;
     }
 
     static fromJson(json) {
         const data = JSON.parse(json);
-        return new Response(data.id, data.data, data.error, new Date(data.received));
+        return new Response(data.id, data.data, data.error, data.received ? new Date(data.received) : undefined);
     }
 
     toString() {
         const marshaledData = JSON.stringify(this.data);
-        return `Response{ID: ${this.id}, Data: ${marshaledData}, Error: ${this.error}, Received: ${this.received.toISOString()}}`;
+        return `Response{ID: ${this.id}, Data: ${marshaledData}, Error: ${this.error?.message}, Received: ${this.received?.toISOString()}}`;
     }
 }
 
