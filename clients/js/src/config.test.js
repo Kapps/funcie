@@ -11,7 +11,7 @@ describe('FuncieConfig Module Tests', () => {
             AWS_LAMBDA_FUNCTION_NAME: undefined,
             FUNCIE_CLIENT_BASTION_ENDPOINT: "http://localhost/client",
             FUNCIE_SERVER_BASTION_ENDPOINT: "http://localhost/server",
-            FUNCIE_LISTEN_ADDRESS: "127.0.0.1:3000",
+            FUNCIE_LISTEN_ADDRESS: "http://127.0.0.1:3000",
             FUNCIE_APPLICATION_ID: "test_app_id"
         };
     });
@@ -54,7 +54,7 @@ describe('FuncieConfig Module Tests', () => {
 
             expect(config.ClientBastionEndpoint).toEqual(new URL("http://localhost/client"));
             expect(config.ServerBastionEndpoint).toEqual(new URL("http://localhost/server"));
-            expect(config.ListenAddress).toBe("127.0.0.1:3000");
+            expect(config.ListenAddress.toString()).toBe("http://127.0.0.1:3000/");
             expect(config.ApplicationId).toBe("test_app_id");
         });
     });
