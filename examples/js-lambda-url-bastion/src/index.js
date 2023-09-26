@@ -1,4 +1,4 @@
-const { lambdaWrapper } = require('funcie-tunnel');
+const { lambdaWrapper } = require('@funcie/client');
 
 exports.handler = lambdaWrapper(async (event) => {
     if (event.queryStringParameters && event.queryStringParameters.name) {

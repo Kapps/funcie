@@ -67,8 +67,6 @@ const subscribe = async (config, address) => {
     const resp = await sendMessage(config.ClientBastionEndpoint, req);
 
     console.log(`Registered with registration ID ${resp.data.RegistrationId}`);
-
-    //console.log('Registered with bastion: ', resp.data);
 };
 
 module.exports = {

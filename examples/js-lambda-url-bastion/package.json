@@ -8,6 +8,6 @@
     "start": "node src/index.js"
   },
   "dependencies": {
-    "funcie-tunnel": "https://gitpkg.now.sh/Kapps/funcie/clients/js?main"
+    "@funcie/client": "^0.1.7"
   }
 }
