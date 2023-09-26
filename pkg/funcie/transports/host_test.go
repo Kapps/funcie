@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestBastionHost_Listen(t *testing.T) {
@@ -23,6 +24,10 @@ func TestBastionHost_Listen(t *testing.T) {
 		err := host.Listen(nil)
 		require.ErrorIs(t, err, http.ErrServerClosed)
 	}()
+
+	// Since Listen blocks, and is running in a goroutine, we don't know when it's ready to accept connections.
+	// So we just wait a bit.
+	time.Sleep(100 * time.Millisecond)
 
 	t.Cleanup(func() { _ = host.Close(ctx) })
 
