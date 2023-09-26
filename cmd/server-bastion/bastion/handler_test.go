@@ -68,7 +68,7 @@ func TestForwardRequest(t *testing.T) {
 		resp, err := handler.ForwardRequest(ctx, *forwardMessage)
 		require.NotNil(t, resp)
 		require.NoError(t, err)
-		require.Equal(t, *response, *resp)
+		RequireEqualResponse(t, response, resp)
 	})
 
 	t.Run("no active consumer", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestForwardRequest(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		require.Equal(t, response, resp)
+		RequireEqualResponse(t, response, resp)
 	})
 
 	t.Run("application not found", func(t *testing.T) {
@@ -97,6 +97,6 @@ func TestForwardRequest(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 
-		require.Equal(t, response, resp)
+		RequireEqualResponse(t, response, resp)
 	})
 }
