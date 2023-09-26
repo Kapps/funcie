@@ -4,7 +4,6 @@ name: Test & Publish JS Client
 
 on:
   push:
-    branches: ["main"]
     tags:
       - "v*.*.*"
 
