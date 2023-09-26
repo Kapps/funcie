@@ -8,6 +8,6 @@
     "start": "node src/index.js"
   },
   "dependencies": {
-    "@funcie/client": "^0.2.1"
+    "@funcie/client": "^0.2.2"
   }
 }
