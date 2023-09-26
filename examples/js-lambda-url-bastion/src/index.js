@@ -11,7 +11,7 @@ exports.handler = lambdaWrapper(async (event) => {
             headers: {
                 'Content-Type': 'text/plain',
             },
-        };   
+        };
     }
     return {
         statusCode: 200,

@@ -17,7 +17,7 @@ describe('bastionClient', () => {
             const message = { type: 'test', payload: { foo: 'bar' } };
             const expectedResponse = new Response('success', { baz: 'qux' });
 
-            axios.post.mockResolvedValueOnce({ status: 200, data: JSON.stringify(expectedResponse) });
+            axios.post.mockResolvedValueOnce({ status: 200, data: expectedResponse });
 
             const response = await sendMessage(baseUrl, message);
 

@@ -12,7 +12,7 @@ const sendMessage = async (baseUrl, message) => {
     }
 
     const responseData = httpResponse.data;
-    const response = Response.fromJson(responseData);
+    const response = Response.fromObject(responseData);
 
     return response;
 };

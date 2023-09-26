@@ -33,6 +33,10 @@ class Response {
         return new Response(data.id, data.data, data.error, data.received ? new Date(data.received) : undefined);
     }
 
+    static fromObject(obj) {
+        return new Response(obj.id, obj.data, obj.error, obj.received ? new Date(obj.received) : undefined);
+    }
+
     toString() {
         const marshaledData = JSON.stringify(this.data);
         return `Response{ID: ${this.id}, Data: ${marshaledData}, Error: ${this.error?.message}, Received: ${this.received?.toISOString()}}`;
