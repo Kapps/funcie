@@ -1,5 +1,5 @@
 {
-  "name": "funcie-tunnel",
+  "name": "@funcie/client",
   "version": "0.1.0",
   "description": "JavaScript client for funcie -- proxy Lambda requests to a local handler when debugging, or handle them in the cloud when not debugging.",
   "main": "src/index.js",
