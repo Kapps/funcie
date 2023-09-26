@@ -12,12 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - working-directory: clients/js
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 18
       - run: |
+          cd clients/js
           npm ci
           npm test
 
@@ -25,13 +25,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - working-directory: clients/js
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org/
       - run: |
+          cd clients/js
           npm version ${{ github.ref_name }}
           npm ci
           npm publish
