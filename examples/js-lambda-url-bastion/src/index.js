@@ -5,6 +5,9 @@ exports.handler = lambdaWrapper(async (event) => {
         if (event.queryStringParameters.name === 'error') {
             throw new Error('error being forwarded');
         }
+        if (event.queryStringParameters.name === 'sleep') {
+            await new Promise((resolve) => setTimeout(resolve, 10000));
+        }
         return {
             statusCode: 200,
             body: `Hello, ${event.queryStringParameters.name}!`,
