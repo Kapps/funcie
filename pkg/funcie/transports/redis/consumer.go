@@ -96,37 +96,47 @@ func (c *Consumer) Consume(ctx context.Context) error {
 				return funcie.ErrPubSubChannelClosed
 			}
 
-			slog.DebugCtx(ctx, "received message", "channel", msg.Channel, "payload", msg.Payload)
-
-			message, err := parseMessage(msg.Payload)
-			if err != nil {
-				return fmt.Errorf("error parsing message: %w", err)
-			}
-
-			response, err := c.router.Handle(ctx, message)
-			if err == utils.ErrNoHandlerFound {
-				slog.Warn("no handler found for message", "messageId", message.ID, "application", message.Application)
-				break
-			}
-			if err != nil {
-				// We don't want to return here because we want to continue consuming messages.
-				// This is just a handler error, not a consumer error, so keep going.
-				slog.ErrorCtx(ctx, "error handling message", err)
-				break
-			}
-
-			responseKey := GetResponseKeyForMessage(c.baseChannelName, message.ID)
-			responseData, err := formatResponse(response)
-			if err != nil {
-				return fmt.Errorf("error formatting response: %w", err)
-			}
-
-			cmd := c.redisClient.RPush(ctx, responseKey, responseData)
-			if err := cmd.Err(); err != nil {
-				return fmt.Errorf("error pushing response to queue: %w", err)
-			}
+			slog.DebugCtx(ctx, "received message", "channel", msg.Channel)
+			go func(msg *redis.Message) {
+				err := c.processMessage(ctx, msg)
+				if err != nil {
+					// If we get an error processing the message, we still want to continue our loop.
+					// So we just log the error and keep going.
+					slog.ErrorCtx(ctx, "error processing message", err)
+				}
+			}(msg)
 		}
 	}
+}
+
+func (c *Consumer) processMessage(ctx context.Context, msg *redis.Message) error {
+	slog.DebugCtx(ctx, "received message", "channel", msg.Channel, "payload", msg.Payload)
+
+	message, err := parseMessage(msg.Payload)
+	if err != nil {
+		return fmt.Errorf("error parsing message: %w", err)
+	}
+
+	response, err := c.router.Handle(ctx, message)
+	if err == utils.ErrNoHandlerFound {
+		return fmt.Errorf("no handler found for app %v in message %v: %w", message.Application, message.ID, err)
+	}
+	if err != nil {
+		return fmt.Errorf("error handling message: %w", err)
+	}
+
+	responseKey := GetResponseKeyForMessage(c.baseChannelName, message.ID)
+	responseData, err := formatResponse(response)
+	if err != nil {
+		return fmt.Errorf("error formatting response: %w", err)
+	}
+
+	cmd := c.redisClient.RPush(ctx, responseKey, responseData)
+	if err := cmd.Err(); err != nil {
+		return fmt.Errorf("error pushing response to queue: %w", err)
+	}
+
+	return nil
 }
 
 func (c *Consumer) Subscribe(ctx context.Context, applicationId string, handler funcie.Handler) error {
