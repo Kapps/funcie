@@ -119,6 +119,11 @@ func (c *Consumer) processMessage(ctx context.Context, msg *redis.Message) error
 
 	response, err := c.router.Handle(ctx, message)
 	if err == utils.ErrNoHandlerFound {
+		unsubErr := c.Unsubscribe(ctx, message.Application)
+		if unsubErr != nil {
+			// An error unsubscribing isn't the end of the world. We can still continue and still want to return the original error.
+			slog.ErrorCtx(ctx, "error unsubscribing from channel", err, "channel", msg.Channel)
+		}
 		return fmt.Errorf("no handler found for app %v in message %v: %w", message.Application, message.ID, err)
 	}
 	if err != nil {
