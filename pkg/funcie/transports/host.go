@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
@@ -45,7 +45,7 @@ func (h *bastionHost) setHandlers() {
 }
 
 func (h *bastionHost) Listen(ctx context.Context) error {
-	slog.InfoCtx(ctx, "listening for incoming requests", "address", h.httpServer.Addr)
+	slog.InfoContext(ctx, "listening for incoming requests", "address", h.httpServer.Addr)
 	if err := h.httpServer.ListenAndServe(); err != nil {
 		return fmt.Errorf("listen and serve: %w", err)
 	}
@@ -63,7 +63,7 @@ func (h *bastionHost) Close(ctx context.Context) error {
 }
 
 func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
-	slog.InfoCtx(r.Context(), "received request", "method", r.Method, "url", r.URL)
+	slog.InfoContext(r.Context(), "received request", "method", r.Method, "url", r.URL)
 	payloadBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
@@ -74,17 +74,17 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 	var message funcie.Message
 	err = json.Unmarshal(payloadBytes, &message)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error unmarshalling message", err, "payload", string(payloadBytes))
+		slog.ErrorContext(r.Context(), "error unmarshalling message", err, "payload", string(payloadBytes))
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(fmt.Sprintf("invalid request: %v", err)))
 		return
 	}
 
-	slog.DebugCtx(r.Context(), "received message", "message", &message)
+	slog.DebugContext(r.Context(), "received message", "message", &message)
 
 	response, err := h.messageProcessor.ProcessMessage(r.Context(), &message)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error processing message", err, "message", &message)
+		slog.ErrorContext(r.Context(), "error processing message", err, "message", &message)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error: %v", err)))
 		return
@@ -92,7 +92,7 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error formatting response", err, "response", response)
+		slog.ErrorContext(r.Context(), "error formatting response", err, "response", response)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error formatting response: %v", err)))
 		return
@@ -100,11 +100,11 @@ func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(responseBytes)
 	if err != nil {
-		slog.ErrorCtx(r.Context(), "error writing response", err, "response", response)
+		slog.ErrorContext(r.Context(), "error writing response", err, "response", response)
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(fmt.Sprintf("internal server error writing response: %v", err)))
 		return
 	}
 
-	slog.DebugCtx(r.Context(), "sent response", "response", string(responseBytes))
+	slog.DebugContext(r.Context(), "sent response", "response", string(responseBytes))
 }

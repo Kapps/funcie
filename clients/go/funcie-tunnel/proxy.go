@@ -7,7 +7,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/aws/aws-lambda-go/lambda"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 var lambdaStart = lambda.Start
@@ -54,7 +54,7 @@ func (p *lambdaProxy) Start() {
 // It is responsible for publishing the message to the tunnel, and waiting for a response.
 func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 	wrapper := func(ctx context.Context, payload *json.RawMessage) (*json.RawMessage, error) {
-		p.logger.DebugCtx(ctx, "publishing message to tunnel", "message", string(*payload))
+		p.logger.DebugContext(ctx, "publishing message to tunnel", "message", string(*payload))
 
 		// Raw constant to avoid cycles -- this needs to be moved.
 		forwardPayload := messages.NewForwardRequestPayload(*payload)
@@ -68,8 +68,8 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		resp, err := p.client.SendRequest(ctx, marshaled)
 		if err != nil {
 			// If we can't reach the bastion, we should just handle the request directly.
-			p.logger.WarnCtx(ctx, "failed to send request to bastion", err, "messageId", message.ID)
-			p.logger.DebugCtx(ctx, "failed delivery details", "message", message)
+			p.logger.WarnContext(ctx, "failed to send request to bastion", err, "messageId", message.ID)
+			p.logger.DebugContext(ctx, "failed delivery details", "message", message)
 			return p.handleDirect(ctx, payload)
 		}
 
@@ -83,16 +83,16 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 			// We need to add error codes in the future and make this less gross.
 			if isExpectedProxyError(forwardResponse.Error) {
 				// If there is no active consumer, we should just handle the request directly.
-				p.logger.DebugCtx(ctx, "no active consumer for request", "message", message)
+				p.logger.DebugContext(ctx, "no active consumer for request", "message", message)
 				return p.handleDirect(ctx, payload)
 			}
 			// In this case though, the request was handled and the handling returned an error.
 			// So we should forward that error back to the Lambda.
-			p.logger.DebugCtx(ctx, "received error from bastion", "error", forwardResponse.Error)
+			p.logger.DebugContext(ctx, "received error from bastion", "error", forwardResponse.Error)
 			return nil, fmt.Errorf("received error from proxied implementation: %w", forwardResponse.Error)
 		}
 
-		p.logger.DebugCtx(ctx, "received response from bastion", "response", string(forwardResponse.Data.Body))
+		p.logger.DebugContext(ctx, "received response from bastion", "response", string(forwardResponse.Data.Body))
 
 		return &forwardResponse.Data.Body, nil
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // PubSub is the interface that wraps the redis PubSub methods used by the consumer.
@@ -83,7 +83,7 @@ func (c *Consumer) Consume(ctx context.Context) error {
 	ps := c.pubsub
 	defer funcie.CloseOrLog(fmt.Sprintf("pubsub from base channel %v", c.baseChannelName), ps)
 
-	slog.InfoCtx(ctx, "starting to consume messages", "baseChannelName", c.baseChannelName)
+	slog.InfoContext(ctx, "starting to consume messages", "baseChannelName", c.baseChannelName)
 
 	for {
 		select {
@@ -96,13 +96,13 @@ func (c *Consumer) Consume(ctx context.Context) error {
 				return funcie.ErrPubSubChannelClosed
 			}
 
-			slog.DebugCtx(ctx, "received message", "channel", msg.Channel)
+			slog.DebugContext(ctx, "received message", "channel", msg.Channel)
 			go func(msg *redis.Message) {
 				err := c.processMessage(ctx, msg)
 				if err != nil {
 					// If we get an error processing the message, we still want to continue our loop.
 					// So we just log the error and keep going.
-					slog.ErrorCtx(ctx, "error processing message", err)
+					slog.ErrorContext(ctx, "error processing message", err)
 				}
 			}(msg)
 		}
@@ -110,7 +110,7 @@ func (c *Consumer) Consume(ctx context.Context) error {
 }
 
 func (c *Consumer) processMessage(ctx context.Context, msg *redis.Message) error {
-	slog.DebugCtx(ctx, "received message", "channel", msg.Channel, "payload", msg.Payload)
+	slog.DebugContext(ctx, "received message", "channel", msg.Channel, "payload", msg.Payload)
 
 	message, err := parseMessage(msg.Payload)
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg *redis.Message) error
 		unsubErr := c.Unsubscribe(ctx, message.Application)
 		if unsubErr != nil {
 			// An error unsubscribing isn't the end of the world. We can still continue and still want to return the original error.
-			slog.ErrorCtx(ctx, "error unsubscribing from channel", err, "channel", msg.Channel)
+			slog.ErrorContext(ctx, "error unsubscribing from channel", err, "channel", msg.Channel)
 		}
 		return fmt.Errorf("no handler found for app %v in message %v: %w", message.Application, message.ID, err)
 	}
@@ -163,7 +163,7 @@ func (c *Consumer) Unsubscribe(ctx context.Context, applicationId string) error 
 	channelName := GetChannelNameForApplication(c.baseChannelName, applicationId)
 	slog.Info("unsubscribing from channel", "channel", channelName)
 
-	if err := c.router.RemoveClientHandler(channelName); err != nil {
+	if err := c.router.RemoveClientHandler(applicationId); err != nil {
 		return fmt.Errorf("removing client handler: %w", err)
 	}
 

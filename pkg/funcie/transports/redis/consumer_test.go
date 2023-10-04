@@ -57,8 +57,10 @@ func TestRedisConsumer_Consume(t *testing.T) {
 		msg1 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg1\""))
 		msg2 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg2\""))
 
-		// If no handler, the message should be ignored.
+		// If no handler, receiving a message should unsubscribe and close the channel.
 		router.EXPECT().Handle(consumerCtx, msg1).Return(nil, utils.ErrNoHandlerFound).Once()
+		router.EXPECT().RemoveClientHandler(appId).Return(nil).Once()
+		pubSub.EXPECT().Unsubscribe(consumerCtx, channelName).Return(nil).Once()
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg1)),
 		})

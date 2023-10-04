@@ -2,7 +2,7 @@ package bastion
 
 import (
 	"context"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"net"
 	"sync"
 )

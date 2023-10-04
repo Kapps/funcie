@@ -1,7 +1,7 @@
 package funcie_test
 
 import (
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"os"
 	"testing"
 )
@@ -73,11 +73,12 @@ import (
 
 func TestMain(m *testing.M) {
 	programLevel := new(slog.LevelVar)
-	h := slog.HandlerOptions{
+	opts := &slog.HandlerOptions{
 		AddSource: true,
 		Level:     programLevel,
-	}.NewJSONHandler(os.Stdout)
-	slog.SetDefault(slog.New(h))
+	}
+	handler := slog.NewJSONHandler(os.Stdout, opts)
+	slog.SetDefault(slog.New(handler))
 	programLevel.Set(slog.LevelDebug)
 	m.Run()
 }

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -53,10 +53,10 @@ func (cp *cachingMessageProcessor) handleForwardRequest(ctx context.Context, mes
 	if found {
 		entry := value.(cachedEntry)
 		if time.Since(entry.timestamp) < time.Minute {
-			slog.DebugCtx(ctx, "no consumer found, cached", "application", message.Application)
+			slog.DebugContext(ctx, "no consumer found, cached", "application", message.Application)
 			return nil, funcie.ErrNoActiveConsumer
 		} else {
-			slog.DebugCtx(ctx, "no consumer found, cache expired", "application", message.Application)
+			slog.DebugContext(ctx, "no consumer found, cache expired", "application", message.Application)
 			cp.noConsumerCache.Delete(message.Application)
 		}
 	}
@@ -64,11 +64,11 @@ func (cp *cachingMessageProcessor) handleForwardRequest(ctx context.Context, mes
 	resp, err := cp.underlyingProcessor.ProcessMessage(ctx, message)
 	if errors.Is(err, funcie.ErrNoActiveConsumer) {
 		// No consumer because client bastion is unreachable.
-		slog.DebugCtx(ctx, "no consumer found (client bastion unresponsive?), caching for a minute", "application", message.Application)
+		slog.DebugContext(ctx, "no consumer found (client bastion unresponsive?), caching for a minute", "application", message.Application)
 		cp.noConsumerCache.Store(message.Application, cachedEntry{timestamp: time.Now()})
 	} else if err == nil && resp.Error != nil && resp.Error.Error() == funcie.ErrNoActiveConsumer.Error() {
 		// Client bastion was reachable, and it responded with no consumer.
-		slog.DebugCtx(ctx, "no consumer found (negative response), caching for a minute", "application", message.Application)
+		slog.DebugContext(ctx, "no consumer found (negative response), caching for a minute", "application", message.Application)
 		cp.noConsumerCache.Store(message.Application, cachedEntry{timestamp: time.Now()})
 	}
 

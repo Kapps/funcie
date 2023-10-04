@@ -2,7 +2,7 @@ package funcie_tunnel
 
 import (
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // Start is a replacement to lambda.Start that configures the proxy from environment variables.

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/lambda"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 type Tunnel interface {

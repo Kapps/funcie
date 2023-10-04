@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"sync"
 )
 
@@ -21,7 +21,7 @@ func NewMemoryApplicationRegistry() funcie.ApplicationRegistry {
 func (r *memoryApplicationRegistry) Register(ctx context.Context, application *funcie.Application) error {
 	_, exists := r.registeredApplications.Swap(application.Name, application)
 	if exists {
-		slog.Warn(
+		slog.WarnContext(ctx,
 			"application %s already registered; overwriting",
 			"application", application.Name, "previous", application.Endpoint,
 			"new", application.Endpoint,
@@ -30,7 +30,7 @@ func (r *memoryApplicationRegistry) Register(ctx context.Context, application *f
 	return nil
 }
 
-func (r *memoryApplicationRegistry) Unregister(ctx context.Context, applicationName string) error {
+func (r *memoryApplicationRegistry) Unregister(_ context.Context, applicationName string) error {
 	_, exists := r.registeredApplications.LoadAndDelete(applicationName)
 	if !exists {
 		return fmt.Errorf("application %s not registered", applicationName)
@@ -39,7 +39,7 @@ func (r *memoryApplicationRegistry) Unregister(ctx context.Context, applicationN
 	return nil
 }
 
-func (r *memoryApplicationRegistry) GetApplication(ctx context.Context, applicationName string) (*funcie.Application, error) {
+func (r *memoryApplicationRegistry) GetApplication(_ context.Context, applicationName string) (*funcie.Application, error) {
 	application, ok := r.registeredApplications.Load(applicationName)
 	if !ok {
 		return nil, funcie.ErrApplicationNotFound

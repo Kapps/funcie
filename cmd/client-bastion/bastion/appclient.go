@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
@@ -43,10 +43,10 @@ func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application 
 
 	req.Header.Set("Content-Type", "application/json")
 
-	slog.InfoCtx(ctx, "sending request to client application",
+	slog.InfoContext(ctx, "sending request to client application",
 		"id", request.ID, "kind", request.Kind, "application", application.Name, "url", url)
 
-	slog.DebugCtx(ctx, "sending message", "message", string(serialized))
+	slog.DebugContext(ctx, "sending message", "message", string(serialized))
 
 	httpResponse, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -62,7 +62,7 @@ func (h *httpApplicationClient) ProcessRequest(ctx context.Context, application 
 
 	var response funcie.Response
 	if err := json.Unmarshal(responsePayload, &response); err != nil {
-		slog.WarnCtx(ctx, "failed to deserialize response from client application",
+		slog.WarnContext(ctx, "failed to deserialize response from client application",
 			"error", err, "payload", string(responsePayload))
 		return nil, fmt.Errorf("deserialize response from %v: %w", url, err)
 	}

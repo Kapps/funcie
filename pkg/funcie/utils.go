@@ -2,7 +2,7 @@ package funcie
 
 import (
 	"encoding/json"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"os"
 	"strings"
 )
@@ -48,11 +48,12 @@ func IsRunningWithLambda() bool {
 // Otherwise, the default is Info.
 func ConfigureLogging() {
 	programLevel := new(slog.LevelVar)
-	h := slog.HandlerOptions{
+	opts := &slog.HandlerOptions{
 		//AddSource: true,
 		Level: logLevelFromEnv(),
-	}.NewTextHandler(os.Stdout)
-	slog.SetDefault(slog.New(h))
+	}
+	handler := slog.NewTextHandler(os.Stdout, opts)
+	slog.SetDefault(slog.New(handler))
 	programLevel.Set(slog.LevelDebug)
 }
 

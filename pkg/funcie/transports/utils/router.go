@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 var ErrNoHandlerFound = fmt.Errorf("no handler exists for this application")

@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"golang.org/x/exp/slog"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 )
@@ -41,7 +41,7 @@ func (c *httpBastionClient) SendRequest(ctx context.Context, request *funcie.Mes
 		return nil, fmt.Errorf("marshalling request: %w", err)
 	}
 
-	c.logger.DebugCtx(ctx, "sending message", "message", string(requestBytes))
+	c.logger.DebugContext(ctx, "sending message", "message", string(requestBytes))
 
 	httpResp, err := c.client.Post(c.endpoint.String(), "application/json", bytes.NewReader(requestBytes))
 	if err != nil {

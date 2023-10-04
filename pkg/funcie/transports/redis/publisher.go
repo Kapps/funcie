@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"time"
 )
 
@@ -38,21 +38,21 @@ func (p *redisPublisher) Publish(ctx context.Context, message *funcie.Message) (
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
 
-	slog.InfoCtx(ctx, "publishing message to channel", "channel", channelName, "message", message.ID)
+	slog.InfoContext(ctx, "publishing message to channel", "channel", channelName, "message", message.ID)
 
 	pub := p.redisClient.Publish(ctx, channelName, messageContents)
 	if err := pub.Err(); err != nil {
 		return nil, fmt.Errorf("failed to publish message to channel %s: %w", message.Application, err)
 	}
 
-	slog.DebugCtx(ctx, "published message to channel", "channel", channelName, "message", message.ID)
+	slog.DebugContext(ctx, "published message to channel", "channel", channelName, "message", message.ID)
 
 	consumers, err := pub.Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get result of publish: %w", err)
 	}
 
-	slog.DebugCtx(ctx, "received publish result", "consumers", consumers)
+	slog.DebugContext(ctx, "received publish result", "consumers", consumers)
 
 	if consumers == 0 {
 		return nil, funcie.ErrNoActiveConsumer

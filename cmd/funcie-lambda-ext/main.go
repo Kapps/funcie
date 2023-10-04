@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/funcie-lambda-ext/lambdaext"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"

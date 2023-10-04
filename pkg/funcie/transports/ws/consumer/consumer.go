@@ -7,8 +7,8 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
-	"golang.org/x/exp/slog"
 	"log"
+	"log/slog"
 	ws "nhooyr.io/websocket"
 )
 
@@ -138,13 +138,13 @@ func (c *wsConsumer) Consume(ctx context.Context) error {
 		for {
 			select {
 			case <-ctx.Done():
-				slog.Warn("context cancelled", "err", ctx.Err())
+				slog.WarnContext(ctx, "context cancelled", "err", ctx.Err())
 				close(messageChannel)
 				return
 			default:
 				message, err := readMessage(ctx, c.websocket)
 				if err != nil {
-					slog.Error("error reading message", err)
+					slog.ErrorContext(ctx, "error reading message", err)
 					readError = err
 					close(messageChannel)
 					return

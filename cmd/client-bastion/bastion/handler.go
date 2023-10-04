@@ -8,7 +8,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
 	"github.com/google/uuid"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"syscall"
 )
 
@@ -53,7 +53,7 @@ func (h *handler) Register(ctx context.Context, message messages.RegistrationMes
 	}
 
 	registrationId := uuid.New()
-	slog.InfoCtx(ctx, "registered application", "application", application, "registrationId", registrationId)
+	slog.InfoContext(ctx, "registered application", "application", application, "registrationId", registrationId)
 
 	responsePayload := messages.NewRegistrationResponsePayload(registrationId)
 	return funcie.NewResponseWithPayload(message.ID, responsePayload, nil), nil
@@ -77,7 +77,7 @@ func (h *handler) Deregister(ctx context.Context, message messages.Deregistratio
 func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
 	if err == funcie.ErrApplicationNotFound {
-		slog.WarnCtx(ctx, "application not found in client registry", "application", request.Application)
+		slog.WarnContext(ctx, "application not found in client registry", "application", request.Application)
 		// TODO: What should we return here?
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRe
 
 func (h *handler) onConsumerMessageReceived(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
 	if message.Kind != messages.MessageKindForwardRequest {
-		slog.WarnCtx(ctx, "ignoring invalid message kind", "kind", message.Kind)
+		slog.WarnContext(ctx, "ignoring invalid message kind", "kind", message.Kind)
 		return nil, nil
 	}
 
@@ -109,7 +109,7 @@ func (h *handler) onConsumerMessageReceived(ctx context.Context, message *funcie
 
 	app, err := h.registry.GetApplication(ctx, message.Application)
 	if err == funcie.ErrApplicationNotFound {
-		slog.WarnCtx(ctx, "application not found in client registry", "application", message.Application)
+		slog.WarnContext(ctx, "application not found in client registry", "application", message.Application)
 		return nil, nil
 	}
 	if err != nil {
@@ -118,7 +118,7 @@ func (h *handler) onConsumerMessageReceived(ctx context.Context, message *funcie
 
 	resp, err := h.appClient.ProcessRequest(ctx, *app, message)
 	if errors.Is(err, syscall.ECONNREFUSED) {
-		slog.WarnCtx(ctx, "application not available", "application", message.Application)
+		slog.WarnContext(ctx, "application not available", "application", message.Application)
 		return funcie.NewResponse(message.ID, nil, funcie.ErrNoActiveConsumer), nil
 	}
 	if err != nil {

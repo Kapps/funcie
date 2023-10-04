@@ -8,8 +8,8 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/aws/aws-lambda-go/lambda"
-	"golang.org/x/exp/slog"
 	"io"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/url"
@@ -138,7 +138,7 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	ctx := req.Context()
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to read request body", err)
+		r.logger.ErrorContext(ctx, "failed to read request body", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -148,21 +148,21 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	var message funcie.Message
 	err = json.Unmarshal(body, &message)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to unmarshal request body", err)
+		r.logger.ErrorContext(ctx, "failed to unmarshal request body", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	r.logger.DebugCtx(ctx, "received request", "message", &message)
+	r.logger.DebugContext(ctx, "received request", "message", &message)
 	if message.Kind != messages.MessageKindForwardRequest {
-		r.logger.WarnCtx(ctx, "received message with invalid kind", "kind", message.Kind)
+		r.logger.WarnContext(ctx, "received message with invalid kind", "kind", message.Kind)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	unmarshaled, err := funcie.UnmarshalMessagePayload[messages.ForwardRequestMessage](&message)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to unmarshal request message", err)
+		r.logger.ErrorContext(ctx, "failed to unmarshal request message", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -172,28 +172,28 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	var response *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
 	invokeResponse, err := r.handler.Invoke(ctx, payload)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to handle message", err)
+		r.logger.ErrorContext(ctx, "failed to handle message", err)
 		response = funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](message.ID, nil, err)
 	} else {
-		r.logger.DebugCtx(ctx, "received response", "response", invokeResponse)
+		r.logger.DebugContext(ctx, "received response", "response", invokeResponse)
 		responsePayload := messages.NewForwardRequestResponsePayload(invokeResponse)
 		response = funcie.NewResponseWithPayload(message.ID, responsePayload, nil)
 	}
 
-	r.logger.DebugCtx(ctx, "sending response", "response", response)
+	r.logger.DebugContext(ctx, "sending response", "response", response)
 	responseBody, err := json.Marshal(response)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to marshal response", err)
+		r.logger.ErrorContext(ctx, "failed to marshal response", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	_, err = w.Write(responseBody)
 	if err != nil {
-		r.logger.ErrorCtx(ctx, "failed to write response", err)
+		r.logger.ErrorContext(ctx, "failed to write response", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	r.logger.DebugCtx(ctx, "sent response")
+	r.logger.DebugContext(ctx, "sent response")
 }

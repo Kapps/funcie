@@ -7,7 +7,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 type requestHandler struct {
@@ -21,16 +21,16 @@ func NewRequestHandler(publisher funcie.Publisher) transports.MessageHandler {
 	}
 }
 
-func (r *requestHandler) Register(ctx context.Context, message messages.RegistrationMessage) (*messages.RegistrationResponse, error) {
+func (r *requestHandler) Register(_ context.Context, _ messages.RegistrationMessage) (*messages.RegistrationResponse, error) {
 	return nil, fmt.Errorf("register unsupported")
 }
 
-func (r *requestHandler) Deregister(ctx context.Context, message messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
+func (r *requestHandler) Deregister(_ context.Context, _ messages.DeregistrationMessage) (*messages.DeregistrationResponse, error) {
 	return nil, fmt.Errorf("deregister unsupported")
 }
 
 func (r *requestHandler) ForwardRequest(ctx context.Context, message messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
-	slog.DebugCtx(ctx, "forwarding request", "message", &message)
+	slog.DebugContext(ctx, "forwarding request", "message", &message)
 
 	marshaled, err := funcie.MarshalMessagePayload(message)
 	if err != nil {

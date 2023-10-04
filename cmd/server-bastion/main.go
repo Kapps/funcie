@@ -11,7 +11,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
-	"golang.org/x/exp/slog"
+	"log/slog"
 	"net/http"
 	"os"
 )
@@ -83,20 +83,20 @@ func Start(ctx context.Context, consumer funcie.Consumer, host transports.Host) 
 		// Goroutine for host requests -- a socket for receiving messages from other clients.
 		err := host.Listen(ctx)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.ErrorCtx(ctx, "host closed", err)
+			slog.ErrorContext(ctx, "host closed", err)
 			os.Exit(1)
 		}
-		slog.WarnCtx(ctx, "host closed", "error", err.Error())
+		slog.WarnContext(ctx, "host closed", "error", err.Error())
 	}()
 
 	go func() {
 		// Goroutine for incoming messages -- registers on the consumer and starts listening.
 		err := consumer.Consume(ctx)
 		if err != nil {
-			slog.ErrorCtx(ctx, "consume", err)
+			slog.ErrorContext(ctx, "consume", err)
 			os.Exit(1)
 		}
-		slog.WarnCtx(ctx, "consume", "error", err.Error())
+		slog.WarnContext(ctx, "consume", "error", err.Error())
 	}()
 
 	return nil
