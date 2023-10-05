@@ -1,8 +1,8 @@
-package funcie_tunnel
+package funcietunnel
 
 import (
 	"fmt"
-	"github.com/Kapps/funcie/clients/go/funcie-tunnel/internal"
+	"github.com/Kapps/funcie/clients/go/funcietunnel/internal"
 	"net/url"
 	"os"
 )

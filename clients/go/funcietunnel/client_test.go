@@ -1,4 +1,4 @@
-package funcie_tunnel
+package funcietunnel
 
 import (
 	"context"

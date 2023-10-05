@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/clients/go/funcie-tunnel"
+	"github.com/Kapps/funcie/clients/go/funcietunnel"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/aws/aws-lambda-go/events"
 	"strings"
@@ -38,5 +38,5 @@ func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (*e
 
 func main() {
 	funcie.ConfigureLogging()
-	funcie_tunnel.Start(HandleRequest)
+	funcietunnel.Start(HandleRequest)
 }

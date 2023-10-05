@@ -1,9 +1,9 @@
-package funcie_tunnel
+package funcietunnel
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/Kapps/funcie/clients/go/funcie-tunnel/mocks"
+	"github.com/Kapps/funcie/clients/go/funcietunnel/mocks"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/aws/aws-lambda-go/events"

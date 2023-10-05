@@ -1,4 +1,4 @@
-package funcie_tunnel
+package funcietunnel
 
 import (
 	"github.com/Kapps/funcie/pkg/funcie"
