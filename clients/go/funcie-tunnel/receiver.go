@@ -29,8 +29,10 @@ type bastionReceiver struct {
 	listenAddress   string
 	server          *http.Server
 	client          *http.Client
-	handler         lambda.Handler
 	logger          *slog.Logger
+	// handlerFactory is a function that returns a new handler for each request.
+	// This is necessary because the AWS SDK handler is not safe for concurrent requests.
+	handlerFactory func() lambda.Handler
 }
 
 // NewLambdaBastionReceiver creates a new BastionReceiver for AWS Lambda operations.
@@ -43,15 +45,15 @@ func NewLambdaBastionReceiver(
 	handler interface{},
 	logger *slog.Logger,
 ) BastionReceiver {
-	lambdaHandler := lambda.NewHandler(handler)
-
 	return &bastionReceiver{
 		applicationId:   applicationId,
 		bastionEndpoint: bastionEndpoint,
-		handler:         lambdaHandler,
 		listenAddress:   listenAddress,
 		client:          &http.Client{},
 		logger:          logger,
+		handlerFactory: func() lambda.Handler {
+			return lambda.NewHandler(handler)
+		},
 		server: &http.Server{
 			Addr: listenAddress,
 		},
@@ -173,9 +175,10 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	}
 
 	payload := []byte(unmarshaled.Payload.Body)
+	handler := r.handlerFactory()
 
 	var response *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
-	invokeResponse, err := r.handler.Invoke(ctx, payload)
+	invokeResponse, err := handler.Invoke(ctx, payload)
 	if err != nil {
 		r.logger.ErrorContext(ctx, "failed to handle message", err)
 		response = funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](message.ID, nil, err)
