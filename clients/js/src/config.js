@@ -46,7 +46,7 @@ class FuncieConfig {
  */
 function loadConfigFromEnvironment() {
     return new FuncieConfig(
-        requireUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", CONFIG_PURPOSE_CLIENT),
+        optionalUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", "http://127.0.0.1:24193"),
         requireUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT", CONFIG_PURPOSE_SERVER),
         optionalUrlEnv("FUNCIE_LISTEN_ADDRESS", "http://0.0.0.0:0"),
         requiredEnv("FUNCIE_APPLICATION_ID", CONFIG_PURPOSE_ANY),

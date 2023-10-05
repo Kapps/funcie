@@ -23,7 +23,7 @@ type FuncieConfig struct {
 //	FUNCIE_LISTEN_ADDRESS (optional; defaults to localhost on a random port)
 func NewConfigFromEnvironment() *FuncieConfig {
 	return &FuncieConfig{
-		ClientBastionEndpoint: requireUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", internal.ConfigPurposeClient),
+		ClientBastionEndpoint: optionalUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", "http://127.0.0.1:24193"),
 		ServerBastionEndpoint: requireUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT", internal.ConfigPurposeServer),
 		ApplicationId:         requiredEnv("FUNCIE_APPLICATION_ID", internal.ConfigPurposeAny),
 		ListenAddress:         optionalEnv("FUNCIE_LISTEN_ADDRESS", "0.0.0.0:0"),
@@ -57,4 +57,13 @@ func optionalEnv(name string, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func optionalUrlEnv(name string, defaultValue string) url.URL {
+	value := optionalEnv(name, defaultValue)
+	parsedUrl, err := url.Parse(value)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse %s %s: %s", name, value, err))
+	}
+	return *parsedUrl
 }

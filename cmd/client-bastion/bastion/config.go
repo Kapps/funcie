@@ -28,7 +28,7 @@ func NewConfig() *Config {
 func NewConfigFromEnvironment() *Config {
 	return &Config{
 		RedisAddress:    requiredEnv("FUNCIE_REDIS_ADDRESS"),
-		ListenAddress:   requiredEnv("FUNCIE_LISTEN_ADDRESS"),
+		ListenAddress:   optionalEnv("FUNCIE_LISTEN_ADDRESS", "127.0.0.1:24193"),
 		BaseChannelName: optionalEnv("FUNCIE_BASE_CHANNEL_NAME", "funcie:requests"),
 	}
 }

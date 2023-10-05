@@ -64,11 +64,16 @@ func (r *bastionReceiver) Start() {
 	r.server.Handler = mux
 
 	// Before we start the server, we need to subscribe to the bastion.
-	listener, err := net.Listen("tcp", r.listenAddress)
+	// We're doing IPv4 to avoid host name shenanigans that we then have to re-map the listen address to the random port.
+	// This is just easier.
+	listener, err := net.Listen("tcp4", r.listenAddress)
 	if err != nil {
 		r.logger.Error("failed to listen", err)
 		panic(err)
 	}
+
+	// And we should subscribe using our listen address, but with the port that the listener is listening on.
+	// This allows us to do something like 127.0.0.1:0 as a listen address for a random port.
 
 	err = r.subscribe(listener.Addr())
 	if err != nil {
