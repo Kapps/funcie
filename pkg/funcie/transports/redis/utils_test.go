@@ -1,6 +1,7 @@
-package redis
+package redis_test
 
 import (
+	. "github.com/Kapps/funcie/pkg/funcie/transports/redis"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

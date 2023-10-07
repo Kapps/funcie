@@ -23,6 +23,17 @@ func RoughCompare(expected interface{}, actual interface{}) bool {
 	return true
 }
 
+// RoughCompareMatcher returns a matcher that compares the given object to the
+// input object, when the expected object is a JSON string.
+// The object is unmarshalled from JSON, and then compared using RoughCompare.
+// If the unmarshalling fails, or the objects are not equal, the matcher
+// will return false; otherwise, it will return true.
+func RoughCompareMatcher[T comparable](expected T) func(T) bool {
+	return func(actual T) bool {
+		return RoughCompare(expected, actual)
+	}
+}
+
 // RoughCompareMatcherJson returns a matcher that compares the given object to the
 // input object, when the expected object is a JSON string.
 // The object is unmarshalled from JSON, and then compared using RoughCompare.

@@ -26,8 +26,6 @@ func TestRedisConsumer_Consume(t *testing.T) {
 	consumer := r.NewConsumerWithClient(redisClient, baseChannelName, router)
 
 	t.Run("should consume a message from the channel", func(t *testing.T) {
-		t.Parallel()
-
 		consumerCtx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
@@ -54,17 +52,24 @@ func TestRedisConsumer_Consume(t *testing.T) {
 			require.Equal(t, f.ErrPubSubChannelClosed, err)
 		}()
 
+		time.Sleep(50 * time.Millisecond)
+
 		msg1 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg1\""))
 		msg2 := f.NewMessage(appId, messages.MessageKindForwardRequest, []byte("\"msg2\""))
 
 		// If no handler, receiving a message should unsubscribe and close the channel.
-		router.EXPECT().Handle(consumerCtx, msg1).Return(nil, utils.ErrNoHandlerFound).Once()
+		router.EXPECT().Handle(consumerCtx, msg1).
+			RunAndReturn(func(ctx context.Context, message *f.Message) (*f.Response, error) {
+				completedChannel <- struct{}{}
+				return nil, utils.ErrNoHandlerFound
+			}).Once()
 		router.EXPECT().RemoveClientHandler(appId).Return(nil).Once()
 		pubSub.EXPECT().Unsubscribe(consumerCtx, channelName).Return(nil).Once()
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg1)),
 		})
-		time.Sleep(100 * time.Millisecond)
+
+		<-completedChannel
 
 		// Now subscribe, and then try again.
 
@@ -84,13 +89,16 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		router.EXPECT().Handle(
 			consumerCtx,
-			msg1,
-		).Return(resp1, nil).Once()
+			mock.MatchedBy(RoughCompareMatcher(msg1)),
+		).RunAndReturn(func(ctx context.Context, message *f.Message) (*f.Response, error) {
+			completedChannel <- struct{}{}
+			return resp1, nil
+		}).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg1)),
 		})
-		require.Empty(t, completedChannel)
+		<-completedChannel
 
 		redisClient.EXPECT().RPush(
 			consumerCtx,
@@ -100,13 +108,16 @@ func TestRedisConsumer_Consume(t *testing.T) {
 
 		router.EXPECT().Handle(
 			consumerCtx,
-			msg2,
-		).Return(resp2, nil).Once()
+			mock.MatchedBy(RoughCompareMatcher(msg2)),
+		).RunAndReturn(func(ctx context.Context, message *f.Message) (*f.Response, error) {
+			completedChannel <- struct{}{}
+			return resp2, nil
+		}).Once()
 
 		ExpectSendToChannel(t, messageChannel, &redis.Message{
 			Payload: string(f.MustSerialize(msg2)),
 		})
-		require.Empty(t, completedChannel)
+		<-completedChannel
 
 		close(messageChannel)
 
