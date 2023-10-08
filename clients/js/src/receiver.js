@@ -2,7 +2,7 @@ const http = require('http');
 const { promisify } = require('util');
 const { Message, Response } = require('./models');
 const { sendMessage } = require('./bastionClient');
-const { invokeLambda } = require('./utils');
+const { invokeLambda, info, error } = require('./utils');
 
 const beginReceiving = async (config, handler) => {
     if (config.ListenAddress.protocol !== 'http:') {
@@ -25,27 +25,22 @@ const beginReceiving = async (config, handler) => {
             } catch (err) {
                 response = new Response(message.id, undefined, { message: err.message }, new Date());
             }
-            console.log(`Sending response: ${response}`);
             res.writeHead(200, {
                 'Content-Type': 'application/json',
             });
-    
+
             res.write(JSON.stringify(response));
             res.end();
         });
     });
 
     server.on('error', (err) => {
-        console.error('Server error: ');
-    });
-
-    server.on('close', () => {
-        console.log('Server closed');
+        error(`Server error: ${err.message}`);
     });
 
     await promisify(server.listen).bind(server)(config.ListenAddress.port, config.ListenAddress.hostname);
 
-    console.log('Server started: ', server.address());
+    info('Funcie Server Started: ', server.address());
 
     await subscribe(config, server.address());
 
@@ -65,7 +60,7 @@ const subscribe = async (config, address) => {
     const req = new Message('REGISTER', config.Application, app);
     const resp = await sendMessage(config.ClientBastionEndpoint, req);
 
-    console.log(`Registered with registration ID ${resp.data.RegistrationId}`);
+    info(`Funcie registered with registration ID ${resp.data.RegistrationId}`);
 };
 
 module.exports = {

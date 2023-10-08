@@ -1,7 +1,7 @@
 const { sendMessage } = require("./bastionClient");
 const { loadConfigFromEnvironment } = require("./config");
 const { Message } = require("./models");
-const { invokeLambda } = require("./utils");
+const { invokeLambda, info, error } = require("./utils");
 
 // TODO: Proper response codes. This is... gross.
 const errNoConsumerActive = 'no consumer is active on this tunnel';
@@ -21,7 +21,7 @@ const lambdaProxy = (handler) => {
         } catch (err) {
             // Failed to send request to bastion. This could be because the bastion is down or other reasons.
             // This shouldn't interrupt standard request flow; in this scenario handle requests directly.
-            console.log(`failed to send request to bastion: ${err}; handling request directly`);
+            error(`failed to send request to bastion: ${err}; handling request directly`);
             return invokeLambda(handler, event, context);
         }
 
@@ -32,7 +32,7 @@ const lambdaProxy = (handler) => {
 
             // If there is no consumer active on the bastion, handle the request directly.
             if (forwardResponse.error.message === errNoConsumerActive || forwardResponse.error === errApplicationNotFound) {
-                console.log(`no consumer active on bastion; handling request directly`);
+                info(`no consumer active on bastion; handling request directly`);
                 return invokeLambda(handler, event, context);
             }
 

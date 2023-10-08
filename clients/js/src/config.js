@@ -11,7 +11,7 @@ const CONFIG_PURPOSE_ANY = 'any';
  * Returns the current configuration purpose, which is either "client" or "server".
  */
 function getConfigPurpose() {
-    if(process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
         return CONFIG_PURPOSE_SERVER;
     }
     return CONFIG_PURPOSE_CLIENT;
@@ -38,7 +38,7 @@ class FuncieConfig {
 /**
  * Returns a new FuncieConfig instance based on the following environment variables:
  *	- FUNCIE_APPLICATION_ID (required)
- *	- FUNCIE_CLIENT_BASTION_ENDPOINT (required for client)
+ *	- FUNCIE_CLIENT_BASTION_ENDPOINT (optional; defaults to http://127.0.0.1:24193)
  *	- FUNCIE_SERVER_BASTION_ENDPOINT (required for server)
  *	- FUNCIE_LISTEN_ADDRESS (optional; defaults to localhost on a random port)
  *
