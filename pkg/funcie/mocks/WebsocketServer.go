@@ -5,7 +5,7 @@ package mocks
 import (
 	http "net/http"
 
-	publisher "github.com/Kapps/funcie/pkg/funcie/transports/ws/publisher"
+	publisher "github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
 	mock "github.com/stretchr/testify/mock"
 
 	websocket "nhooyr.io/websocket"

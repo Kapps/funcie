@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/common"
 	"log"
 	"log/slog"
 	ws "nhooyr.io/websocket"

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws/common"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/common"
 	"log"
 	"net"
 	"net/http"

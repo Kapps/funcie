@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	consumer "github.com/Kapps/funcie/pkg/funcie/transports/ws/consumer"
+	consumer "github.com/Kapps/funcie/pkg/funcie/transports/websocket/consumer"
 
 	http "net/http"
 

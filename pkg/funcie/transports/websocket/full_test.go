@@ -1,10 +1,10 @@
-package ws_test
+package websocket_test
 
 import (
 	"context"
 	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws/consumer"
-	"github.com/Kapps/funcie/pkg/funcie/transports/ws/publisher"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/consumer"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	publisher "github.com/Kapps/funcie/pkg/funcie/transports/ws/publisher"
+	publisher "github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
 	mock "github.com/stretchr/testify/mock"
 )
 
