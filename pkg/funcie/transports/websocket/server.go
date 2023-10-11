@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"crypto/subtle"
 	"fmt"
 	"net/http"
@@ -17,8 +18,8 @@ type ServerOpt = func(*server)
 
 // Server allows accepting websocket connections.
 type Server interface {
-	// Accept accepts an incoming websocket connection.
-	Accept(rw http.ResponseWriter, r *http.Request, opts *ws.AcceptOptions) (Connection, error)
+	// Listen listens for websocket connections on the given address.
+	Listen(ctx context.Context, addr string) error
 }
 
 type server struct {
@@ -39,8 +40,18 @@ func NewServer(opts ...ServerOpt) Server {
 	return svr
 }
 
-func (s *server) Accept(rw http.ResponseWriter, r *http.Request, opts *ws.AcceptOptions) (Connection, error) {
+func (s *server) Listen(ctx context.Context, addr string) error {
+	srv := &http.Server{
+		Addr: addr,
+		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+
+		}),
+	}
+}
+
+func (s *server) accept(rw http.ResponseWriter, r *http.Request) (Connection, error) {
 	if err := s.authHandler(r); err != nil {
+		// TODO: Is this the best way to close the connection?
 		r.Close = true
 		r.Header.Set("Connection", "close")
 		_ = r.Body.Close()
@@ -60,6 +71,9 @@ func (s *server) Accept(rw http.ResponseWriter, r *http.Request, opts *ws.Accept
 
 // WithAuthorizationHandler sets the authorization handler for the server.
 func WithAuthorizationHandler(handler AuthorizationHandler) ServerOpt {
+	if handler == nil {
+		panic("authorization handler cannot be nil")
+	}
 	return func(s *server) {
 		s.authHandler = handler
 	}
@@ -68,23 +82,21 @@ func WithAuthorizationHandler(handler AuthorizationHandler) ServerOpt {
 // WithBasicAuthorizationHandler sets the authorization handler for the server to a basic authorization handler.
 // The token is the expected value of the Authorization header, with the kind "Basic".
 func WithBasicAuthorizationHandler(token string) ServerOpt {
-	return func(s *server) {
-		s.authHandler = func(r *http.Request) error {
-			auth := r.Header.Get("Authorization")
-			kind, value, found := strings.Cut(auth, " ")
-			if !found {
-				return fmt.Errorf("authorization header required")
-			}
-
-			if kind != "Basic" {
-				return fmt.Errorf("invalid authorization header")
-			}
-
-			if subtle.ConstantTimeCompare([]byte(value), []byte(token)) != 1 {
-				return fmt.Errorf("invalid authorization token")
-			}
-
-			return nil
+	return WithAuthorizationHandler(func(r *http.Request) error {
+		auth := r.Header.Get("Authorization")
+		kind, value, found := strings.Cut(auth, " ")
+		if !found {
+			return fmt.Errorf("authorization header required")
 		}
-	}
+
+		if kind != "Basic" {
+			return fmt.Errorf("invalid authorization header")
+		}
+
+		if subtle.ConstantTimeCompare([]byte(value), []byte(token)) != 1 {
+			return fmt.Errorf("invalid authorization token")
+		}
+
+		return nil
+	})
 }
