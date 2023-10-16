@@ -2,19 +2,12 @@ package websocket
 
 import (
 	"context"
-	"crypto/subtle"
+	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	ws "nhooyr.io/websocket"
-	"strings"
 )
-
-// AuthorizationHandler is a function that handles authorization for a websocket connection.
-// If the function returns an error, the connection will be closed and no requests accepted.
-type AuthorizationHandler = func(r *http.Request) error
-
-// ServerOpt is a function that modifies a websocket server.
-type ServerOpt = func(*server)
 
 // Server allows accepting websocket connections.
 type Server interface {
@@ -23,80 +16,65 @@ type Server interface {
 }
 
 type server struct {
-	authHandler AuthorizationHandler
+	acceptor Acceptor
+	logger   *slog.Logger
 }
 
-// NewServer creates a new websocket server with the given options.
-// If no authorization handler is provided, all connections will be accepted.
-// It is strongly recommended to provide an authorization handler.
-func NewServer(opts ...ServerOpt) Server {
-	svr := &server{}
-	for _, opt := range opts {
-		opt(svr)
+// NewServer creates a new websocket server with the given acceptor.
+func NewServer(acceptor Acceptor, logger *slog.Logger) Server {
+	return &server{
+		acceptor: acceptor,
+		logger:   logger,
 	}
-	if svr.authHandler == nil {
-		svr.authHandler = func(r *http.Request) error { return nil }
-	}
-	return svr
 }
 
 func (s *server) Listen(ctx context.Context, addr string) error {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			conn, err := s.acceptor.Accept(ctx, rw, r)
+			if err != nil {
+				// TODO: Is this the right way to close the connection?
+				r.Close = true
+				_ = r.Body.Close()
+				rw.WriteHeader(http.StatusBadRequest)
+				_, _ = rw.Write([]byte(fmt.Sprintf("failed to accept connection: %v", err)))
 
+				s.logger.Error("Failed to accept connection", err, "remote", r.RemoteAddr)
+				return
+			}
+
+			defer func() {
+				err := conn.Close(ws.StatusNormalClosure, "")
+				slog.Info("Closed connection", "err", err, "remote", r.RemoteAddr)
+			}()
+
+			s.logger.Info("Accepted connection", "remote", r.RemoteAddr)
 		}),
 	}
+
+	err := srv.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("listening: %w", err)
+	}
+
+	return nil
 }
 
-func (s *server) accept(rw http.ResponseWriter, r *http.Request) (Connection, error) {
-	if err := s.authHandler(r); err != nil {
-		// TODO: Is this the best way to close the connection?
-		r.Close = true
-		r.Header.Set("Connection", "close")
-		_ = r.Body.Close()
-		rw.WriteHeader(http.StatusUnauthorized)
-		rw.Write([]byte("Unauthorized"))
-		return nil, fmt.Errorf("authorizing connection: %w", err)
-	}
+func (s *server) readLoop(ctx context.Context, conn Connection) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			var message interface{}
+			err := conn.Read(ctx, &message)
+			if err != nil {
+				s.logger.Error("Failed to read message", err)
+				return
+			}
 
-	socket, err := ws.Accept(rw, r, opts)
-	if err != nil {
-		return nil, fmt.Errorf("accepting connection: %w", err)
-	}
-
-	conn := NewConnection(socket)
-	return conn, nil
-}
-
-// WithAuthorizationHandler sets the authorization handler for the server.
-func WithAuthorizationHandler(handler AuthorizationHandler) ServerOpt {
-	if handler == nil {
-		panic("authorization handler cannot be nil")
-	}
-	return func(s *server) {
-		s.authHandler = handler
-	}
-}
-
-// WithBasicAuthorizationHandler sets the authorization handler for the server to a basic authorization handler.
-// The token is the expected value of the Authorization header, with the kind "Basic".
-func WithBasicAuthorizationHandler(token string) ServerOpt {
-	return WithAuthorizationHandler(func(r *http.Request) error {
-		auth := r.Header.Get("Authorization")
-		kind, value, found := strings.Cut(auth, " ")
-		if !found {
-			return fmt.Errorf("authorization header required")
+			s.logger.Info("Received message", "message", message)
 		}
-
-		if kind != "Basic" {
-			return fmt.Errorf("invalid authorization header")
-		}
-
-		if subtle.ConstantTimeCompare([]byte(value), []byte(token)) != 1 {
-			return fmt.Errorf("invalid authorization token")
-		}
-
-		return nil
-	})
+	}
 }
