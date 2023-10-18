@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/consumer"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ func TestWS_End2End_Subscribe(t *testing.T) {
 	t.Parallel()
 
 	go func() {
-		err := publisher.Listen(8086)
+		err := publisherold.Listen(8086)
 		require.NoError(t, err)
 	}()
 
