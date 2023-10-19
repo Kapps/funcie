@@ -23,7 +23,7 @@ func (_m *ClientManager) EXPECT() *ClientManager_Expecter {
 }
 
 // AddClient provides a mock function with given fields: conn
-func (_m *ClientManager) AddClient(conn publisher.Client) {
+func (_m *ClientManager) AddClient(conn publisher.Clien\=-0[96]) {
 	_m.Called(conn)
 }
 

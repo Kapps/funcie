@@ -19,9 +19,8 @@ type AcceptorOpt = func(*acceptor)
 // Acceptor allows accepting websocket connections from an existing HTTP request.
 type Acceptor interface {
 	// Accept accepts a websocket connection from the given HTTP request.
-	// In case of an error, it is the responsibility of the caller to close the connection.
-	// If no error, the returned connection must be closed by the caller.
-	// The context is used for the lifetime of the connection.
+	// It is the responsibility of the caller to close the connection.
+	// If the connection is not accepted, the acceptor will write an error to the response writer.
 	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (Connection, error)
 }
 
@@ -49,17 +48,25 @@ func NewAcceptor(opts ...AcceptorOpt) Acceptor {
 	return acc
 }
 
-func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (Connection, error) {
+func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn Connection, err error) {
+	defer func() {
+		if err != nil {
+			rw.Header().Set("Connection", "close")
+			_ = req.Body.Close()
+		}
+	}()
 	if err := acc.authHandler(ctx, req); err != nil {
+		rw.WriteHeader(http.StatusUnauthorized)
 		return nil, fmt.Errorf("authorizing connection: %w", err)
 	}
 
 	socket, err := ws.Accept(rw, req, acc.acceptOpts)
 	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
 		return nil, fmt.Errorf("accepting connection: %w", err)
 	}
 
-	conn := NewConnection(socket)
+	conn = NewConnection(socket)
 	return conn, nil
 }
 
@@ -73,9 +80,9 @@ func WithAuthorizationHandler(handler AuthorizationHandler) AcceptorOpt {
 	}
 }
 
-// WithBasicAuthorizationHandler sets the authorization handler for the server to a basic authorization handler.
-// The token is the expected value of the Authorization header, with the kind "Basic".
-func WithBasicAuthorizationHandler(token string) AcceptorOpt {
+// WithBearerAuthorizationHandler sets the authorization handler for the server to a bearer authorization handler.
+// The token is the expected value of the Authorization header, with the kind "Bearer".
+func WithBearerAuthorizationHandler(token string) AcceptorOpt {
 	return WithAuthorizationHandler(func(ctx context.Context, req *http.Request) error {
 		auth := req.Header.Get("Authorization")
 		kind, value, found := strings.Cut(auth, " ")
@@ -83,7 +90,7 @@ func WithBasicAuthorizationHandler(token string) AcceptorOpt {
 			return fmt.Errorf("authorization header required")
 		}
 
-		if kind != "Basic" {
+		if kind != "Bearer" {
 			return fmt.Errorf("invalid authorization header")
 		}
 

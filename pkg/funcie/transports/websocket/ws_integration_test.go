@@ -1,24 +1,20 @@
-package websocket
+package websocket_test
 
 import (
-	"crypto/rand"
+	"github.com/go-faker/faker/v4"
 	"testing"
 )
 
 func TestIntegration(t *testing.T) {
 	/*authToken := newAuthToken()
 
-	server := NewServer(WithBasicAuthorizationHandler(authToken))
+	server := NewServer(WithBearerAuthorizationHandler(authToken))
 	go func() {
 
 	}*/
 }
 
 func newAuthToken() string {
-	authToken := make([]byte, 32)
-	_, err := rand.Read(authToken)
-	if err != nil {
-		panic(err)
-	}
-	return string(authToken)
+	res := faker.Jwt()
+	return res
 }

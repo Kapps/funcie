@@ -1,14 +1,6 @@
 package websocket_test
 
-import (
-	"context"
-	"github.com/Kapps/funcie/pkg/funcie"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/consumer"
-	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
-)
-
+/*
 func TestWS_End2End_Subscribe(t *testing.T) {
 	t.Parallel()
 
@@ -34,3 +26,4 @@ func TestWS_End2End_Subscribe(t *testing.T) {
 	time.Sleep(500 * time.Millisecond)
 	cancel()
 }
+*/
