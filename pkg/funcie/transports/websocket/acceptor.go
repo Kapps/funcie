@@ -52,6 +52,7 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 	defer func() {
 		if err != nil {
 			rw.Header().Set("Connection", "close")
+			req.Close = true
 			_ = req.Body.Close()
 		}
 	}()
