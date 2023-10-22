@@ -1,9 +1,10 @@
-package websocket
+package publisher
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"log/slog"
 	"net/http"
 	ws "nhooyr.io/websocket"
@@ -61,7 +62,7 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 	return nil
 }
 
-func (s *server) readLoop(ctx context.Context, conn Connection) {
+func (s *server) readLoop(ctx context.Context, conn websocket.Connection) {
 	for {
 		select {
 		case <-ctx.Done():

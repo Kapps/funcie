@@ -1,9 +1,10 @@
-package websocket
+package publisher
 
 import (
 	"context"
 	"crypto/subtle"
 	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"net/http"
 	ws "nhooyr.io/websocket"
 	"strings"
@@ -21,7 +22,7 @@ type Acceptor interface {
 	// Accept accepts a websocket connection from the given HTTP request.
 	// It is the responsibility of the caller to close the connection.
 	// If the connection is not accepted, the acceptor will write an error to the response writer.
-	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (Connection, error)
+	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (websocket.Connection, error)
 }
 
 type acceptor struct {
@@ -48,7 +49,7 @@ func NewAcceptor(opts ...AcceptorOpt) Acceptor {
 	return acc
 }
 
-func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn Connection, err error) {
+func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn websocket.Connection, err error) {
 	defer func() {
 		if err != nil {
 			rw.Header().Set("Connection", "close")
@@ -67,7 +68,7 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 		return nil, fmt.Errorf("accepting connection: %w", err)
 	}
 
-	conn = NewConnection(socket)
+	conn = websocket.NewConnection(socket)
 	return conn, nil
 }
 

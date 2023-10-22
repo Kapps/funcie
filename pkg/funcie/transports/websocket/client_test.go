@@ -2,6 +2,7 @@ package websocket_test
 
 import (
 	"context"
+	"github.com/Kapps/funcie/pkg/funcie/testutils"
 	. "github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -15,7 +16,7 @@ func TestClient_Dial(t *testing.T) {
 	ctx := context.Background()
 	client := NewClient()
 
-	srv := createTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+	srv := testutils.CreateTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 		socket, err := ws.Accept(w, r, nil)
 		require.NoError(t, err)
 		require.NotNil(t, socket)

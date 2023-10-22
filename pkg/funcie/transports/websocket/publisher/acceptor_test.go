@@ -1,9 +1,11 @@
-package websocket_test
+package publisher_test
 
 import (
 	"context"
 	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
+	"github.com/Kapps/funcie/pkg/funcie/testutils"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
+	"github.com/go-faker/faker/v4"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
@@ -14,14 +16,14 @@ func TestAcceptor_Accept(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	token := newAuthToken()
-	opts := []websocket.AcceptorOpt{
-		websocket.WithBearerAuthorizationHandler(token),
+	token := faker.Jwt()
+	opts := []publisher.AcceptorOpt{
+		publisher.WithBearerAuthorizationHandler(token),
 	}
-	acceptor := websocket.NewAcceptor(opts...)
+	acceptor := publisher.NewAcceptor(opts...)
 
 	t.Run("bearer auth (valid token)", func(t *testing.T) {
-		srv := createTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		srv := testutils.CreateTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 			conn, err := acceptor.Accept(ctx, w, r)
 			require.NoError(t, err)
 			require.NotNil(t, conn)
@@ -35,7 +37,7 @@ func TestAcceptor_Accept(t *testing.T) {
 	})
 
 	t.Run("bearer auth (invalid token)", func(t *testing.T) {
-		srv := createTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		srv := testutils.CreateTestServer(t, func(w http.ResponseWriter, r *http.Request) {
 			conn, err := acceptor.Accept(ctx, w, r)
 			require.Error(t, err)
 			require.Nil(t, conn)
@@ -47,15 +49,6 @@ func TestAcceptor_Accept(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		require.NoError(t, resp.Body.Close())
 	})
-}
-
-func createTestServer(t *testing.T, handler func(w http.ResponseWriter, r *http.Request)) *httptest.Server {
-	t.Helper()
-
-	srv := httptest.NewServer(http.HandlerFunc(handler))
-	t.Cleanup(srv.Close)
-
-	return srv
 }
 
 func createRequest(t *testing.T, srv *httptest.Server, token string) *http.Request {
