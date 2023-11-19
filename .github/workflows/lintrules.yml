@@ -1,0 +1,28 @@
+name: Rules Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2 # this part is important!
+
+      - name: Install Lint Rules
+        run: |
+          curl -fsSL https://www.lintrule.com/install.sh | bash
+
+      - name: Run Lint Rules Check
+        run: |
+          rules check --secret "${{ secrets.LINTRULE_SECRET }}"
+
