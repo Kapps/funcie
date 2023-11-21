@@ -17,10 +17,10 @@ func TestAcceptor_Accept(t *testing.T) {
 
 	ctx := context.Background()
 	token := faker.Jwt()
-	opts := []publisher.AcceptorOpt{
-		publisher.WithBearerAuthorizationHandler(token),
+	opts := publisher.AcceptorOptions{
+		AuthorizationHandler: publisher.BearerAuthorizationHandler(token),
 	}
-	acceptor := publisher.NewAcceptor(opts...)
+	acceptor := publisher.NewAcceptor(opts)
 
 	t.Run("bearer auth (valid token)", func(t *testing.T) {
 		srv := testutils.CreateTestServer(t, func(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +62,7 @@ func createRequest(t *testing.T, srv *httptest.Server, token string) *http.Reque
 	request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
 	request.Header.Set("Sec-WebSocket-Version", "13")
 	request.Header.Set("Sec-WebSocket-Protocol", "funcie")
+	request.Header.Set("X-Funcie-App", "app")
 
 	return request
 }

@@ -2,218 +2,102 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/common"
-	"log"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"log/slog"
 	ws "nhooyr.io/websocket"
 )
 
-type wsConsumer struct {
-	URL       string
-	wsClient  WebsocketClient
-	websocket Websocket
-	connected bool
+type consumer struct {
+	serverUrl string
 	router    utils.ClientHandlerRouter
+	client    Client
+	logger    *slog.Logger
+
+	conn      websocket.Connection
+	connected bool
 }
 
-// NewConsumer creates a new Websocket consumer that consumes messages from the given URL.
-func NewConsumer(url string) funcie.Consumer {
-	return &wsConsumer{
-		URL:      url,
-		wsClient: &WebsocketClientWrapper{},
-		router:   utils.NewClientHandlerRouter(),
+// NewConsumer creates a new consumer that consumes messages from the given URL.
+func NewConsumer(serverUrl string, router utils.ClientHandlerRouter, client Client, logger *slog.Logger) funcie.Consumer {
+	return &consumer{
+		serverUrl: serverUrl,
+		router:    router,
+		client:    client,
+		logger:    logger,
 	}
 }
 
-// NewConsumerWithWS creates a new Websocket consumer that consumes messages from the given URL, with a given Websocket.
-func NewConsumerWithWS(wsClient WebsocketClient, url string, router utils.ClientHandlerRouter) funcie.Consumer {
-	return &wsConsumer{
-		wsClient: wsClient,
-		URL:      url,
-		router:   router,
-	}
-}
-
-func (c *wsConsumer) Connect(ctx context.Context) error {
-	var err error
-	c.websocket, err = c.connectSocket(ctx)
+func (c *consumer) Connect(ctx context.Context) error {
+	conn, err := c.client.Dial(ctx, c.serverUrl)
 	if err != nil {
-		return err
+		return fmt.Errorf("dialing %v: %w", c.serverUrl, err)
 	}
 
-	go func() {
-		select {
-		case <-ctx.Done():
-			err := c.websocket.Close(ws.StatusNormalClosure, "exiting consumer")
-			c.connected = false
-			if err != nil {
-				log.Fatalf("error closing Websocket, was probably shutting down anyhow: %v", err)
-			}
-		}
-	}()
-
+	c.conn = conn
 	c.connected = true
 	return nil
 }
 
-func (c *wsConsumer) connectSocket(ctx context.Context) (Websocket, error) {
-	conn, _, err := c.wsClient.Dial(ctx, c.URL, &ws.DialOptions{
-		Subprotocols: []string{"funcie"},
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("error dialing Websocket: %w", err)
-	}
-
-	return conn, nil
-}
-
-func (c *wsConsumer) Subscribe(ctx context.Context, application string, handler funcie.Handler) error {
+func (c *consumer) Consume(ctx context.Context) error {
 	if !c.connected {
 		return fmt.Errorf("not connected")
 	}
 
-	r := common.ClientToServerMessage{
-		Application: application,
-		RequestType: common.ClientToServerMessageRequestTypeSubscribe,
-	}
-
-	jsonValue, err := json.Marshal(r)
-	if err != nil {
-		return fmt.Errorf("error marshalling JSON: %w", err)
-	}
-
-	err = c.websocket.Write(ctx, ws.MessageText, jsonValue)
-	if err != nil {
-		return fmt.Errorf("error writing to Websocket: %w", err)
-	}
-
-	err = c.router.AddClientHandler(application, handler)
-	if err != nil {
-		return fmt.Errorf("error adding handler: %w", err)
-	}
-
-	return nil
-}
-
-func (c *wsConsumer) Unsubscribe(ctx context.Context, channel string) error {
-	if !c.connected {
-		return fmt.Errorf("not connected")
-	}
-
-	r := common.ClientToServerMessage{
-		Application: channel,
-		RequestType: common.ClientToServerMessageRequestTypeUnsubscribe,
-	}
-
-	jsonValue, err := json.Marshal(r)
-	if err != nil {
-		return fmt.Errorf("error marshalling JSON: %w", err)
-	}
-
-	err = c.websocket.Write(ctx, ws.MessageText, jsonValue)
-	if err != nil {
-		return fmt.Errorf("error writing to Websocket: %w", err)
-	}
-
-	err = c.router.RemoveClientHandler(channel)
-	if err != nil {
-		return fmt.Errorf("error removing handler: %w", err)
-	}
-
-	return nil
-}
-
-// Consume starts the consume loop, reading from the Websocket and passing it to the router for handling.
-func (c *wsConsumer) Consume(ctx context.Context) error {
-	messageChannel := make(chan *funcie.Message, 10)
-
-	var readError error = nil
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				slog.WarnContext(ctx, "context cancelled", "err", ctx.Err())
-				close(messageChannel)
-				return
-			default:
-				message, err := readMessage(ctx, c.websocket)
-				if err != nil {
-					slog.ErrorContext(ctx, "error reading message", err)
-					readError = err
-					close(messageChannel)
-					return
-				}
-
-				messageChannel <- message
-			}
+	defer func() {
+		c.connected = false
+		if err := c.conn.Close(ws.StatusAbnormalClosure, "exiting consumer"); err != nil {
+			c.logger.WarnContext(ctx, "error closing Websocket", "error", err)
 		}
 	}()
 
-	for message := range messageChannel {
-		response, err := c.router.Handle(ctx, message)
+	for ctx.Err() == nil {
+		var msg funcie.Message
+		err := c.conn.Read(ctx, &msg)
 		if err != nil {
-			return fmt.Errorf("error handling message: %w", err)
+			return fmt.Errorf("reading message: %w", err)
 		}
 
-		responseData, err := formatResponse(response)
+		c.logger.DebugContext(ctx, "received message", "message", msg)
+
+		resp, err := c.router.Handle(ctx, &msg)
 		if err != nil {
-			return fmt.Errorf("error formatting response: %w", err)
+			return fmt.Errorf("handling message: %w", err)
 		}
 
-		if err := c.websocket.Write(ctx, ws.MessageText, []byte(responseData)); err != nil {
-			return fmt.Errorf("error writing message: %w", err)
+		if resp != nil {
+			err = c.conn.Write(ctx, resp)
+			if err != nil {
+				return fmt.Errorf("writing response: %w", err)
+			}
 		}
 	}
 
-	return readError
+	return nil
 }
 
-func readMessage(ctx context.Context, conn Websocket) (*funcie.Message, error) {
-	messageType, message, err := conn.Read(ctx)
-	if err != nil {
-		return nil, err
+func (c *consumer) Subscribe(ctx context.Context, applicationId string, handler funcie.Handler) error {
+	if !c.connected {
+		return fmt.Errorf("not connected")
 	}
 
-	if messageType != ws.MessageText {
-		return nil, fmt.Errorf("invalid message type: %v", messageType)
+	if err := c.router.AddClientHandler(applicationId, handler); err != nil {
+		return fmt.Errorf("adding client handler: %w", err)
 	}
 
-	msg, err := parseMessage(string(message))
-	if err != nil {
-		return nil, err
-	}
-
-	return msg, nil
+	return nil
 }
 
-func parseMessage(message string) (*funcie.Message, error) {
-	var msg common.ServerToClientMessage
-	if err := json.Unmarshal([]byte(message), &msg); err != nil {
-		return nil, err
+func (c *consumer) Unsubscribe(ctx context.Context, applicationId string) error {
+	if !c.connected {
+		return fmt.Errorf("not connected")
 	}
 
-	if msg.RequestType == common.ServerToClientMessageRequestTypeRequest {
-		return msg.Message, nil
+	if err := c.router.RemoveClientHandler(applicationId); err != nil {
+		return fmt.Errorf("removing client handler: %w", err)
 	}
 
-	return nil, fmt.Errorf("unsupported server to client message type: %v", msg.RequestType)
-}
-
-func formatResponse(response *funcie.Response) (string, error) {
-	msg := &common.ClientToServerMessage{
-		RequestType: common.ClientToServerMessageRequestTypeResponse,
-		Response:    response,
-	}
-
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
+	return nil
 }

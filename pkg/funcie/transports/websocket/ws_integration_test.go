@@ -1,14 +1,14 @@
 package websocket_test
 
+/*
 import (
+	"github.com/go-faker/faker/v4"
 	"testing"
 )
 
 func TestIntegration(t *testing.T) {
-	/*authToken := newAuthToken()
+	authToken := faker.Jwt()
 
-	server := NewServer(WithBearerAuthorizationHandler(authToken))
-	go func() {
 
-	}*/
 }
+*/

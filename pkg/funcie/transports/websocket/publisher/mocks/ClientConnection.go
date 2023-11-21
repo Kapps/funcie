@@ -26,6 +26,47 @@ func (_m *ClientConnection) EXPECT() *ClientConnection_Expecter {
 	return &ClientConnection_Expecter{mock: &_m.Mock}
 }
 
+// ApplicationId provides a mock function with given fields:
+func (_m *ClientConnection) ApplicationId() string {
+	ret := _m.Called()
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func() string); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	return r0
+}
+
+// ClientConnection_ApplicationId_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplicationId'
+type ClientConnection_ApplicationId_Call struct {
+	*mock.Call
+}
+
+// ApplicationId is a helper method to define mock.On call
+func (_e *ClientConnection_Expecter) ApplicationId() *ClientConnection_ApplicationId_Call {
+	return &ClientConnection_ApplicationId_Call{Call: _e.mock.On("ApplicationId")}
+}
+
+func (_c *ClientConnection_ApplicationId_Call) Run(run func()) *ClientConnection_ApplicationId_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *ClientConnection_ApplicationId_Call) Return(_a0 string) *ClientConnection_ApplicationId_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *ClientConnection_ApplicationId_Call) RunAndReturn(run func() string) *ClientConnection_ApplicationId_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Close provides a mock function with given fields: code, reason
 func (_m *ClientConnection) Close(code websocket.StatusCode, reason string) error {
 	ret := _m.Called(code, reason)

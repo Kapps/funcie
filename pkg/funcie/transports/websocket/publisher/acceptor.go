@@ -14,42 +14,46 @@ import (
 // If the function returns an error, the connection will be closed and no requests accepted.
 type AuthorizationHandler = func(ctx context.Context, req *http.Request) error
 
-// AcceptorOpt is a function that modifies a websocket acceptor.
-type AcceptorOpt = func(*acceptor)
-
 // Acceptor allows accepting websocket connections from an existing HTTP request.
 type Acceptor interface {
 	// Accept accepts a websocket connection from the given HTTP request.
 	// It is the responsibility of the caller to close the connection.
 	// If the connection is not accepted, the acceptor will write an error to the response writer.
-	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (websocket.Connection, error)
+	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (ClientConnection, error)
 }
 
 type acceptor struct {
-	authHandler AuthorizationHandler
-	acceptOpts  *ws.AcceptOptions
+	opts AcceptorOptions
+}
+
+// AcceptorOptions are parameters for how to create a new websocket acceptor.
+// The zero value is a valid acceptor, but it is strongly recommended to provide an authorization handler.
+type AcceptorOptions struct {
+	// AuthorizationHandler is invoked on a new request to authorize the connection.
+	AuthorizationHandler AuthorizationHandler
+	// AcceptOptions are options for accepting the websocket connection, passed to the underlying provider.
+	// At a minimum, this must include a subprotocol of "funcie".
+	AcceptOptions *ws.AcceptOptions
 }
 
 // NewAcceptor creates a new websocket acceptor with the given options.
 // If no authorization handler is provided, all connections will be accepted.
 // It is strongly recommended to provide an authorization handler.
-func NewAcceptor(opts ...AcceptorOpt) Acceptor {
-	acc := &acceptor{}
-	for _, opt := range opts {
-		opt(acc)
+func NewAcceptor(opts AcceptorOptions) Acceptor {
+	if opts.AuthorizationHandler == nil {
+		opts.AuthorizationHandler = func(context.Context, *http.Request) error { return nil }
 	}
-	if acc.authHandler == nil {
-		acc.authHandler = func(context.Context, *http.Request) error { return nil }
-	}
-	if acc.acceptOpts == nil {
-		acc.acceptOpts = &ws.AcceptOptions{
+	if opts.AcceptOptions == nil {
+		opts.AcceptOptions = &ws.AcceptOptions{
 			Subprotocols: []string{"funcie"},
 		}
 	}
-	return acc
+	return &acceptor{
+		opts: opts,
+	}
 }
 
-func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn websocket.Connection, err error) {
+func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn ClientConnection, err error) {
 	defer func() {
 		if err != nil {
 			rw.Header().Set("Connection", "close")
@@ -57,35 +61,33 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 			_ = req.Body.Close()
 		}
 	}()
-	if err := acc.authHandler(ctx, req); err != nil {
+	if err := acc.opts.AuthorizationHandler(ctx, req); err != nil {
 		rw.WriteHeader(http.StatusUnauthorized)
 		return nil, fmt.Errorf("authorizing connection: %w", err)
 	}
 
-	socket, err := ws.Accept(rw, req, acc.acceptOpts)
+	app := req.Header.Get("X-Funcie-App")
+	if app == "" {
+		rw.WriteHeader(http.StatusBadRequest)
+		return nil, fmt.Errorf("missing X-Funcie-App header")
+	}
+
+	socket, err := ws.Accept(rw, req, acc.opts.AcceptOptions)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return nil, fmt.Errorf("accepting connection: %w", err)
 	}
 
-	conn = websocket.NewConnection(socket)
+	wsConn := websocket.NewConnection(socket)
+	conn = NewClientConnection(wsConn, app)
+
 	return conn, nil
 }
 
-// WithAuthorizationHandler sets the authorization handler for the acceptor.
-func WithAuthorizationHandler(handler AuthorizationHandler) AcceptorOpt {
-	if handler == nil {
-		panic("authorization handler cannot be nil")
-	}
-	return func(s *acceptor) {
-		s.authHandler = handler
-	}
-}
-
-// WithBearerAuthorizationHandler sets the authorization handler for the server to a bearer authorization handler.
+// BearerAuthorizationHandler returns an authorization handler for a bearer token.
 // The token is the expected value of the Authorization header, with the kind "Bearer".
-func WithBearerAuthorizationHandler(token string) AcceptorOpt {
-	return WithAuthorizationHandler(func(ctx context.Context, req *http.Request) error {
+func BearerAuthorizationHandler(token string) AuthorizationHandler {
+	return func(ctx context.Context, req *http.Request) error {
 		auth := req.Header.Get("Authorization")
 		kind, value, found := strings.Cut(auth, " ")
 		if !found {
@@ -101,16 +103,5 @@ func WithBearerAuthorizationHandler(token string) AcceptorOpt {
 		}
 
 		return nil
-	})
-}
-
-// WithAcceptOptions sets the accept options for the server.
-// These must include a subprotocol of "funcie".
-func WithAcceptOptions(opts *ws.AcceptOptions) AcceptorOpt {
-	if opts == nil {
-		panic("accept options cannot be nil")
-	}
-	return func(s *acceptor) {
-		s.acceptOpts = opts
 	}
 }

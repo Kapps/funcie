@@ -4,28 +4,38 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"log/slog"
 	"net/http"
 	ws "nhooyr.io/websocket"
+	"time"
 )
+
+// AcceptTimeout is the timeout for accepting a websocket connection.
+// This includes the time it takes to upgrade the connection and to receive the registration message.
+const AcceptTimeout = 30 * time.Second
 
 // Server allows accepting websocket connections.
 type Server interface {
 	// Listen listens for websocket connections on the given address.
 	Listen(ctx context.Context, addr string) error
+	// Close closes the server.
+	Close() error
 }
 
 type server struct {
 	acceptor Acceptor
 	logger   *slog.Logger
+	registry Registry
+	close    func() error
 }
 
 // NewServer creates a new websocket server with the given acceptor.
-func NewServer(acceptor Acceptor, logger *slog.Logger) Server {
+func NewServer(acceptor Acceptor, registry Registry, logger *slog.Logger) Server {
 	return &server{
 		acceptor: acceptor,
 		logger:   logger,
+		registry: registry,
+		close:    func() error { return errors.New("not listening") },
 	}
 }
 
@@ -33,6 +43,9 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			ctx, cancel := context.WithTimeout(ctx, AcceptTimeout)
+			defer cancel()
+
 			conn, err := s.acceptor.Accept(ctx, rw, r)
 			if err != nil {
 				// TODO: Is this the right way to close the connection?
@@ -45,13 +58,28 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 				return
 			}
 
-			defer func() {
-				err := conn.Close(ws.StatusNormalClosure, "")
-				slog.Info("Closed connection", "err", err, "remote", r.RemoteAddr)
-			}()
-
 			s.logger.Info("Accepted connection", "remote", r.RemoteAddr)
+
+			if err := s.registry.Register(ctx, conn); err != nil {
+				s.logger.Error("Failed to register connection", err)
+				closeErr := conn.Close(ws.StatusInternalError, "failed to register connection")
+				if closeErr != nil {
+					s.logger.Error("Failed to close connection", closeErr)
+				}
+
+				return
+			}
+
+			s.logger.Info("Registered connection", "remote", r.RemoteAddr)
 		}),
+	}
+
+	s.close = func() error {
+		if err := srv.Shutdown(ctx); err != nil {
+			return fmt.Errorf("shutting down: %w", err)
+		}
+		s.close = func() error { return errors.New("not listening") }
+		return nil
 	}
 
 	err := srv.ListenAndServe()
@@ -62,20 +90,6 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 	return nil
 }
 
-func (s *server) readLoop(ctx context.Context, conn websocket.Connection) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			var message interface{}
-			err := conn.Read(ctx, &message)
-			if err != nil {
-				s.logger.Error("Failed to read message", err)
-				return
-			}
-
-			s.logger.Info("Received message", "message", message)
-		}
-	}
+func (s *server) Close() error {
+	return s.close()
 }

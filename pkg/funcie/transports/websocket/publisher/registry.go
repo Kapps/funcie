@@ -10,7 +10,7 @@ import (
 // Registry is a registry for websocket connections.
 type Registry interface {
 	// Register registers a websocket connection for the given application.
-	Register(ctx context.Context, appId string, conn ClientConnection) error
+	Register(ctx context.Context, conn ClientConnection) error
 	// Unregister unregisters a websocket connection.
 	Unregister(ctx context.Context, appId string) error
 	// AcquireExclusive locks and returns a connection for the given application ID.
@@ -40,11 +40,14 @@ func NewRegistry(logger *slog.Logger) Registry {
 	}
 }
 
-func (r *registry) Register(ctx context.Context, appId string, conn ClientConnection) error {
+func (r *registry) Register(ctx context.Context, conn ClientConnection) error {
 	wrapper := &connectionWrapper{
 		conn: conn,
 		lock: sync.Mutex{},
 	}
+
+	appId := conn.ApplicationId()
+
 	if existing, loaded := r.connections.Swap(appId, wrapper); loaded {
 		// If a connection is already registered for this application, we'll close the old connection.
 		// The new connection will be registered instead.
@@ -90,7 +93,6 @@ func (r *registry) ReleaseExclusive(ctx context.Context, appId string, conn Clie
 	if existing, loaded := r.connections.Load(appId); loaded {
 		if conn != existing.(*connectionWrapper).conn {
 			// This connection is not the one we locked, so we'll just ignore it.
-
 			r.logger.Error("Attempted to release exclusive lock for an old connection", "appId", appId)
 		} else {
 			wrapper := existing.(*connectionWrapper)

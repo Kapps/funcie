@@ -26,7 +26,7 @@ func TestClientConn_Send(t *testing.T) {
 		require.NoError(t, err)
 
 		conn := websocket.NewConnection(socket)
-		clientConn := publisher.NewClientConnection(conn)
+		clientConn := publisher.NewClientConnection(conn, "app")
 
 		received, err := clientConn.Send(ctx, req)
 		require.NoError(t, err)

@@ -15,15 +15,19 @@ type ClientConnection interface {
 
 	// Send sends a message to the client, and waits for a response.
 	Send(ctx context.Context, message *funcie.Message) (*funcie.Response, error)
+
+	// ApplicationId returns the application ID of the client.
+	ApplicationId() string
 }
 
 type clientConn struct {
 	websocket.Connection
+	applicationId string
 }
 
 // NewClientConnection creates a new ClientConnection from a websocket connection.
-func NewClientConnection(conn websocket.Connection) ClientConnection {
-	return &clientConn{conn}
+func NewClientConnection(conn websocket.Connection, applicationId string) ClientConnection {
+	return &clientConn{conn, applicationId}
 }
 
 func (c *clientConn) Send(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
@@ -39,4 +43,8 @@ func (c *clientConn) Send(ctx context.Context, message *funcie.Message) (*funcie
 	}
 
 	return resp, nil
+}
+
+func (c *clientConn) ApplicationId() string {
+	return c.applicationId
 }
