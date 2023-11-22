@@ -54,7 +54,7 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 				rw.WriteHeader(http.StatusBadRequest)
 				_, _ = rw.Write([]byte(fmt.Sprintf("failed to accept connection: %v", err)))
 
-				s.logger.Error("Failed to accept connection", err, "remote", r.RemoteAddr)
+				s.logger.Error("Failed to accept connection", "error", err, "remote", r.RemoteAddr)
 				return
 			}
 
