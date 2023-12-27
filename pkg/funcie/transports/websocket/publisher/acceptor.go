@@ -66,12 +66,6 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 		return nil, fmt.Errorf("authorizing connection: %w", err)
 	}
 
-	app := req.Header.Get("X-Funcie-App")
-	if app == "" {
-		rw.WriteHeader(http.StatusBadRequest)
-		return nil, fmt.Errorf("missing X-Funcie-App header")
-	}
-
 	socket, err := ws.Accept(rw, req, acc.opts.AcceptOptions)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -79,7 +73,7 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 	}
 
 	wsConn := websocket.NewConnection(socket)
-	conn = NewClientConnection(wsConn, app)
+	conn = NewClientConnection(wsConn)
 
 	return conn, nil
 }

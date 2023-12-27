@@ -23,30 +23,25 @@ type Registry interface {
 	ReleaseExclusive(ctx context.Context, appId string, conn ClientConnection) error
 }
 
-type connectionWrapper struct {
-	conn ClientConnection
-	lock sync.Mutex
-}
-
 type registry struct {
-	connections sync.Map
-	logger      *slog.Logger
+	connections ConnectionStore
+
+	logger *slog.Logger
 }
 
 // NewRegistry creates a new websocket registry.
-func NewRegistry(logger *slog.Logger) Registry {
+func NewRegistry(connectionStore ConnectionStore, logger *slog.Logger) Registry {
 	return &registry{
-		logger: logger,
+		logger:      logger,
+		connections: connectionStore,
 	}
 }
 
-func (r *registry) Register(ctx context.Context, conn ClientConnection) error {
+func (r *registry) Register(ctx context.Context, conn ClientConnection, appId string) error {
 	wrapper := &connectionWrapper{
 		conn: conn,
 		lock: sync.Mutex{},
 	}
-
-	appId := conn.ApplicationId()
 
 	if existing, loaded := r.connections.Swap(appId, wrapper); loaded {
 		// If a connection is already registered for this application, we'll close the old connection.

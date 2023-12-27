@@ -62,7 +62,6 @@ func createRequest(t *testing.T, srv *httptest.Server, token string) *http.Reque
 	request.Header.Set("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
 	request.Header.Set("Sec-WebSocket-Version", "13")
 	request.Header.Set("Sec-WebSocket-Protocol", "funcie")
-	request.Header.Set("X-Funcie-App", "app")
 
 	return request
 }
