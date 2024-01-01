@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
+	"log/slog"
 	"net/http"
 	ws "nhooyr.io/websocket"
 	"strings"
@@ -13,6 +14,9 @@ import (
 // AuthorizationHandler is a function that handles authorization for a websocket connection.
 // If the function returns an error, the connection will be closed and no requests accepted.
 type AuthorizationHandler = func(ctx context.Context, req *http.Request) error
+
+// UpgradeHandler is a function that handles upgrading an HTTP request to a websocket connection.
+type UpgradeHandler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (ClientConnection, error)
 
 // Acceptor allows accepting websocket connections from an existing HTTP request.
 type Acceptor interface {
@@ -34,6 +38,9 @@ type AcceptorOptions struct {
 	// AcceptOptions are options for accepting the websocket connection, passed to the underlying provider.
 	// At a minimum, this must include a subprotocol of "funcie".
 	AcceptOptions *ws.AcceptOptions
+	// UpgradeHandler is invoked to upgrade the HTTP request to a websocket connection.
+	// If not provided, the default upgrade handler will be used.
+	UpgradeHandler UpgradeHandler
 }
 
 // NewAcceptor creates a new websocket acceptor with the given options.
@@ -47,6 +54,9 @@ func NewAcceptor(opts AcceptorOptions) Acceptor {
 		opts.AcceptOptions = &ws.AcceptOptions{
 			Subprotocols: []string{"funcie"},
 		}
+	}
+	if opts.UpgradeHandler == nil {
+		opts.UpgradeHandler = DefaultUpgradeHandler
 	}
 	return &acceptor{
 		opts: opts,
@@ -62,18 +72,15 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 		}
 	}()
 	if err := acc.opts.AuthorizationHandler(ctx, req); err != nil {
-		rw.WriteHeader(http.StatusUnauthorized)
-		return nil, fmt.Errorf("authorizing connection: %w", err)
-	}
-
-	socket, err := ws.Accept(rw, req, acc.opts.AcceptOptions)
-	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return nil, fmt.Errorf("accepting connection: %w", err)
 	}
 
-	wsConn := websocket.NewConnection(socket)
-	conn = NewClientConnection(wsConn)
+	conn, err = acc.opts.UpgradeHandler(ctx, rw, req, acc.opts.AcceptOptions)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		return nil, fmt.Errorf("accepting connection: %w", err)
+	}
 
 	return conn, nil
 }
@@ -97,5 +104,18 @@ func BearerAuthorizationHandler(token string) AuthorizationHandler {
 		}
 
 		return nil
+	}
+}
+
+// DefaultUpgradeHandler is the default upgrade handler for a websocket connection.
+func DefaultUpgradeHandler(requestHandler RequestHandler, responseNotifier ResponseNotifier, logger *slog.Logger) UpgradeHandler {
+	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (ClientConnection, error) {
+		socket, err := ws.Accept(rw, req, opts)
+		if err != nil {
+			return nil, fmt.Errorf("accepting websocket connection: %w", err)
+		}
+
+		wsConn := websocket.NewConnection(socket)
+		conn := NewClientConnection(ctx, wsConn, requestHandler, responseNotifier)
 	}
 }

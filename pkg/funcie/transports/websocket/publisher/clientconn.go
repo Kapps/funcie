@@ -7,7 +7,6 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"log/slog"
-	"sync"
 )
 
 // While this is a simple wrapper, it makes testing quite a bit easier.
@@ -25,18 +24,25 @@ type ClientConnection interface {
 
 type clientConn struct {
 	websocket.Connection
-	logger         *slog.Logger
-	requestHandler RequestHandler
-	awaitedReplies sync.Map
+	logger           *slog.Logger
+	requestHandler   RequestHandler
+	responseNotifier ResponseNotifier
 }
 
 // NewClientConnection creates a new ClientConnection from a websocket connection.
 // The context will be used for all operations on the connection.
-func NewClientConnection(ctx context.Context, conn websocket.Connection, requestHandler RequestHandler, logger *slog.Logger) ClientConnection {
+func NewClientConnection(
+	ctx context.Context,
+	conn websocket.Connection,
+	requestHandler RequestHandler,
+	responseNotifier ResponseNotifier,
+	logger *slog.Logger,
+) ClientConnection {
 	c := &clientConn{
-		Connection:     conn,
-		logger:         logger,
-		requestHandler: requestHandler,
+		Connection:       conn,
+		logger:           logger,
+		requestHandler:   requestHandler,
+		responseNotifier: responseNotifier,
 	}
 
 	go c.readLoop(ctx)
@@ -45,8 +51,6 @@ func NewClientConnection(ctx context.Context, conn websocket.Connection, request
 }
 
 func (c *clientConn) Send(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
-	c.awaitedReplies[message.ID] = make(chan *funcie.Response)
-
 	err := c.Write(ctx, message)
 	if err != nil {
 		return nil, fmt.Errorf("writing message: %w", err)
@@ -54,13 +58,9 @@ func (c *clientConn) Send(ctx context.Context, message *funcie.Message) (*funcie
 
 	c.logger.DebugContext(ctx, "Sent request", "message", message.ID)
 
-	resp := <-c.awaitedReplies[message.ID]
-	delete(c.awaitedReplies, msg.ID)
-
-	var resp *funcie.Response
-	err = c.Read(ctx, &resp)
+	resp, err := c.responseNotifier.WaitForResponse(ctx, message.ID)
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return nil, fmt.Errorf("waiting for response: %w", err)
 	}
 
 	return resp, nil
@@ -101,8 +101,10 @@ func (c *clientConn) processMessage(ctx context.Context, envelope *websocket.Env
 	case websocket.PayloadKindResponse:
 		return c.processResponse(ctx, envelope)
 	default:
-		return fmt.Errorf("invalid message type: %v", envelope.Type)
+		return fmt.Errorf("invalid message type: %v", envelope.Kind)
 	}
+
+	return nil
 }
 
 func (c *clientConn) processRequest(ctx context.Context, envelope *websocket.Envelope) error {
@@ -151,9 +153,7 @@ func (c *clientConn) processResponse(ctx context.Context, envelope *websocket.En
 
 	c.logger.DebugContext(ctx, "Received response", "message", msg)
 
-	c.awaitedReplies[msg.ID] <- msg
-
-	close(c.awaitedReplies[msg.ID])
+	c.responseNotifier.Notify(ctx, msg)
 
 	return nil
 }

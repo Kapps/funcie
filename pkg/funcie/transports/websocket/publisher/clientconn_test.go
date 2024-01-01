@@ -4,51 +4,59 @@ import (
 	"context"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
-	"github.com/Kapps/funcie/pkg/funcie/testutils"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/mocks"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
-	"github.com/stretchr/testify/require"
-	"net/http"
-	ws "nhooyr.io/websocket"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
-func TestClientConn_Send(t *testing.T) {
+func TestClientConn_ReadLoop(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-
 	req := funcie.NewMessage("app", messages.MessageKindForwardRequest, []byte("\"input\""))
 	resp := funcie.NewResponse(req.ID, []byte("\"output\""), nil)
 
-	srv := testutils.CreateTestServer(t, func(w http.ResponseWriter, r *http.Request) {
-		socket, err := ws.Accept(w, r, nil)
-		require.NoError(t, err)
+	var activeHandler func(ctx context.Context, conn publisher.ClientConnection, msg *funcie.Message) (*funcie.Response, error)
+	mockConn := mocks.NewConnection(t)
+	mockNotifier := publisher.NewResponseNotifier() // TODO: Mock
 
-		conn := websocket.NewConnection(socket)
-		clientConn := publisher.NewClientConnection(conn)
-
-		received, err := clientConn.Send(ctx, req)
-		require.NoError(t, err)
-
-		require.Equal(t, resp.ID, received.ID)
-
-		require.NoError(t, clientConn.Close(ws.StatusNormalClosure, ""))
+	mockHandler := publisher.RequestHandler(func(ctx context.Context, conn publisher.ClientConnection, msg *funcie.Message) (*funcie.Response, error) {
+		return activeHandler(ctx, conn, msg)
 	})
+	conn := publisher.NewClientConnection(
+		ctx,
+		mockConn,
+		mockHandler,
 
-	client, _, err := ws.Dial(ctx, srv.URL, nil)
-	require.NoError(t, err)
+	)
 
-	conn := websocket.NewConnection(client)
+	messages := make(chan *websocket.Envelope)
 
-	var incoming funcie.Message
-	err = conn.Read(ctx, &incoming)
-	require.NoError(t, err)
+	mockConn.EXPECT().Read(ctx, mock.Anything).
+		RunAndReturn(func(ctx context.Context, payload interface{}) error {
+			msg := payload.(*websocket.Envelope)
+			*msg = *<- messages
+			return nil
+		})
 
-	require.Equal(t, req.ID, incoming.ID)
+	t.Run("request with nil response", func(t *testing.T) {
+		mockConn.EXPECT().Write(ctx, req).Return(nil)
 
-	err = conn.Write(ctx, resp)
-	require.NoError(t, err)
+		c := websocket.NewClientConnection(ctx, mockConn, nil, nil, nil)
 
-	require.NoError(t, conn.Close(ws.StatusNormalClosure, ""))
+		go c.ReadLoop(ctx)
+
+		messages <- req
+
+		resp, err := c.Send(ctx, req)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if resp != nil {
+			t.Errorf("expected nil response, got %v", resp)
+		}
+	}
 }
