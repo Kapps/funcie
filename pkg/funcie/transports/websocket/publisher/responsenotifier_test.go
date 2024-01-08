@@ -80,7 +80,7 @@ func TestResponseNotifier_WaitForNonExistingMessageID(t *testing.T) {
 
 	resp, err := respNotifier.WaitForResponse(ctx, "non-existing")
 	require.Nil(t, resp)
-	require.NoError(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestResponseNotifier_ConcurrentCalls(t *testing.T) {

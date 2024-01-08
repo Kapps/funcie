@@ -10,10 +10,10 @@ import (
 func TestMemoryConnectionStore(t *testing.T) {
 	t.Parallel()
 
-	store := publisher.NewMemoryConnectionStore()
-
 	t.Run("register and get connection", func(t *testing.T) {
 		t.Parallel()
+
+		store := publisher.NewMemoryConnectionStore()
 		appID := "test-app"
 		mockConn := wsMocks.NewConnection(t)
 
@@ -27,6 +27,8 @@ func TestMemoryConnectionStore(t *testing.T) {
 
 	t.Run("unregister connection", func(t *testing.T) {
 		t.Parallel()
+
+		store := publisher.NewMemoryConnectionStore()
 		appID := "test-app"
 		mockConn := wsMocks.NewConnection(t)
 
@@ -43,6 +45,8 @@ func TestMemoryConnectionStore(t *testing.T) {
 
 	t.Run("get connection for unregistered app", func(t *testing.T) {
 		t.Parallel()
+
+		store := publisher.NewMemoryConnectionStore()
 		appID := "non-existent-app"
 
 		retrievedConn, err := store.GetConnection(appID)

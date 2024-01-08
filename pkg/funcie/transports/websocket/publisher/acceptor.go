@@ -74,14 +74,14 @@ func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *ht
 		}
 	}()
 	if err := acc.opts.AuthorizationHandler(ctx, req); err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		return nil, fmt.Errorf("accepting connection: %w", err)
+		rw.WriteHeader(http.StatusUnauthorized)
+		return nil, fmt.Errorf("authorizing connection: %w", err)
 	}
 
 	conn, err = acc.opts.UpgradeHandler(ctx, rw, req, acc.opts.AcceptOptions)
 	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		return nil, fmt.Errorf("accepting connection: %w", err)
+		rw.WriteHeader(http.StatusBadRequest)
+		return nil, fmt.Errorf("upgrading connection: %w", err)
 	}
 
 	return conn, nil
