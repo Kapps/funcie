@@ -18,6 +18,10 @@ import (
 // This includes the time it takes to upgrade the connection and to receive the registration message.
 const AcceptTimeout = 30 * time.Second
 
+// ResponseTimeout is the timeout for waiting for a response to a request.
+// If a response is not received within this time, the request will be considered failed.
+const ResponseTimeout = 10 * time.Minute
+
 // Server is responsible for managing all connections and communicating with them.
 type Server interface {
 	// Listen begins listening for websocket connections on the given address.
@@ -26,7 +30,7 @@ type Server interface {
 	Close() error
 	// SendMessage sends a message to the application it is intended for.
 	// If no connection is found for the given application, ErrNoConnection is returned.
-	SendMessage(ctx context.Context, message *funcie.Message) error
+	SendMessage(ctx context.Context, message *funcie.Message) (*funcie.Response, error)
 }
 
 type server struct {
@@ -106,15 +110,19 @@ func (s *server) Close() error {
 	return nil
 }
 
-func (s *server) SendMessage(ctx context.Context, message *funcie.Message) error {
+func (s *server) SendMessage(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	s.logger.DebugContext(ctx, "Sending message", "message", message.ID, "application", message.Application)
+
 	conn, err := s.connStore.GetConnection(message.Application)
 	if err != nil {
-		return fmt.Errorf("getting connection for app %v: %w", message.Application, err)
+		return nil, fmt.Errorf("getting connection for app %v: %w", message.Application, err)
 	}
+
+	s.logger.DebugContext(ctx, "Got connection", "message", message.ID, "application", message.Application)
 
 	payload, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf("marshalling message: %w", err)
+		return nil, fmt.Errorf("marshalling message: %w", err)
 	}
 
 	jsonPayload := json.RawMessage(payload)
@@ -124,10 +132,17 @@ func (s *server) SendMessage(ctx context.Context, message *funcie.Message) error
 		Data: &jsonPayload,
 	})
 	if err != nil {
-		return fmt.Errorf("writing message: %w", err)
+		return nil, fmt.Errorf("writing message: %w", err)
 	}
 
-	return nil
+	// TODO: If the connection closes, we should stop waiting early.
+
+	resp, err := s.responseNotifier.WaitForResponse(ctx, message.ID)
+	if err != nil {
+		return nil, fmt.Errorf("waiting for response: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (s *server) readLoop(ctx context.Context, conn websocket.Connection) {

@@ -1,20 +1,27 @@
 package publisher
 
-/*
-import "github.com/Kapps/funcie/pkg/funcie"
+import (
+	"context"
+	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie"
+)
 
 type websocketPublisher struct {
-	connStore ConnectionStore
+	server Server
 }
 
 // NewWebsocketPublisher creates a publisher that communicates over websockets.
-func NewWebsocketPublisher(connStore ConnectionStore) funcie.Publisher {
+func NewWebsocketPublisher(server Server) funcie.Publisher {
 	return &websocketPublisher{
-		connStore: ConnectionStore(),
+		server: server,
 	}
 }
 
-func (w *websocketPublisher) Publish(message *funcie.Message) (*funcie.Response, error) {
-	w.connStore.GetConnection()
+func (w *websocketPublisher) Publish(ctx context.Context, message *funcie.Message) (*funcie.Response, error) {
+	resp, err := w.server.SendMessage(ctx, message)
+	if err != nil {
+		return nil, fmt.Errorf("sending message: %w", err)
+	}
+
+	return resp, nil
 }
-*/
