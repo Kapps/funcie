@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
-	"log/slog"
 	"net/http"
 	ws "nhooyr.io/websocket"
 	"strings"
@@ -16,14 +15,14 @@ import (
 type AuthorizationHandler = func(ctx context.Context, req *http.Request) error
 
 // UpgradeHandler is a function that handles upgrading an HTTP request to a websocket connection.
-type UpgradeHandler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (ClientConnection, error)
+type UpgradeHandler = func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (websocket.Connection, error)
 
 // Acceptor allows accepting websocket connections from an existing HTTP request.
 type Acceptor interface {
 	// Accept accepts a websocket connection from the given HTTP request.
 	// It is the responsibility of the caller to close the connection.
 	// If the connection is not accepted, the acceptor will write an error to the response writer.
-	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (ClientConnection, error)
+	Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (websocket.Connection, error)
 }
 
 type acceptor struct {
@@ -31,24 +30,27 @@ type acceptor struct {
 }
 
 // AcceptorOptions are parameters for how to create a new websocket acceptor.
-// The zero value is a valid acceptor, but it is strongly recommended to provide an authorization handler.
+// The zero value is not a valid acceptor as an authorization handler is required.
 type AcceptorOptions struct {
 	// AuthorizationHandler is invoked on a new request to authorize the connection.
+	// If the function returns an error, the connection will be closed and no requests accepted.
+	// The zero value is not valid and will cause NewAcceptor to panic.
 	AuthorizationHandler AuthorizationHandler
 	// AcceptOptions are options for accepting the websocket connection, passed to the underlying provider.
 	// At a minimum, this must include a subprotocol of "funcie".
+	// The zero value is valid and will be replaced with a default set of options.
 	AcceptOptions *ws.AcceptOptions
 	// UpgradeHandler is invoked to upgrade the HTTP request to a websocket connection.
-	// If not provided, the default upgrade handler will be used.
+	// The zero value is valid and will be replaced with the default upgrade handler.
 	UpgradeHandler UpgradeHandler
 }
 
 // NewAcceptor creates a new websocket acceptor with the given options.
-// If no authorization handler is provided, all connections will be accepted.
-// It is strongly recommended to provide an authorization handler.
+// While for most fields the zero value is valid, an authorization handler is required.
+// If no authorization handler is provided, this method will panic.
 func NewAcceptor(opts AcceptorOptions) Acceptor {
 	if opts.AuthorizationHandler == nil {
-		opts.AuthorizationHandler = func(context.Context, *http.Request) error { return nil }
+		panic("acceptor authorization handler required")
 	}
 	if opts.AcceptOptions == nil {
 		opts.AcceptOptions = &ws.AcceptOptions{
@@ -56,14 +58,14 @@ func NewAcceptor(opts AcceptorOptions) Acceptor {
 		}
 	}
 	if opts.UpgradeHandler == nil {
-		opts.UpgradeHandler = DefaultUpgradeHandler
+		opts.UpgradeHandler = DefaultUpgradeHandler()
 	}
 	return &acceptor{
 		opts: opts,
 	}
 }
 
-func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn ClientConnection, err error) {
+func (acc *acceptor) Accept(ctx context.Context, rw http.ResponseWriter, req *http.Request) (conn websocket.Connection, err error) {
 	defer func() {
 		if err != nil {
 			rw.Header().Set("Connection", "close")
@@ -108,14 +110,14 @@ func BearerAuthorizationHandler(token string) AuthorizationHandler {
 }
 
 // DefaultUpgradeHandler is the default upgrade handler for a websocket connection.
-func DefaultUpgradeHandler(requestHandler RequestHandler, responseNotifier ResponseNotifier, logger *slog.Logger) UpgradeHandler {
-	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (ClientConnection, error) {
+func DefaultUpgradeHandler() UpgradeHandler {
+	return func(ctx context.Context, rw http.ResponseWriter, req *http.Request, opts *ws.AcceptOptions) (websocket.Connection, error) {
 		socket, err := ws.Accept(rw, req, opts)
 		if err != nil {
 			return nil, fmt.Errorf("accepting websocket connection: %w", err)
 		}
 
 		wsConn := websocket.NewConnection(socket)
-		conn := NewClientConnection(ctx, wsConn, requestHandler, responseNotifier)
+		return wsConn, nil
 	}
 }

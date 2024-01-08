@@ -2,11 +2,15 @@ package publisher
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/Kapps/funcie/pkg/funcie/messages"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"log/slog"
 	"net/http"
-	ws "nhooyr.io/websocket"
+	nhws "nhooyr.io/websocket"
 	"time"
 )
 
@@ -14,29 +18,42 @@ import (
 // This includes the time it takes to upgrade the connection and to receive the registration message.
 const AcceptTimeout = 30 * time.Second
 
-// Server allows accepting websocket connections.
+// Server is responsible for managing all connections and communicating with them.
 type Server interface {
-	// Listen listens for websocket connections on the given address.
+	// Listen begins listening for websocket connections on the given address.
 	Listen(ctx context.Context, addr string) error
 	// Close closes the server.
 	Close() error
+	// SendMessage sends a message to the application it is intended for.
+	// If no connection is found for the given application, ErrNoConnection is returned.
+	SendMessage(ctx context.Context, message *funcie.Message) error
 }
 
 type server struct {
-	acceptor Acceptor
-	logger   *slog.Logger
-	registry Registry
-	close    func() error
+	connStore        ConnectionStore
+	responseNotifier ResponseNotifier
+	acceptor         Acceptor
+	close            func() error
+	logger           *slog.Logger
 }
 
-// NewServer creates a new websocket server with the given acceptor.
-func NewServer(acceptor Acceptor, registry Registry, logger *slog.Logger) Server {
-	return &server{
-		acceptor: acceptor,
-		logger:   logger,
-		registry: registry,
-		close:    func() error { return errors.New("not listening") },
+// NewServer returns a new websocket server.
+// The server will not listen for connections until Listen is called.
+func NewServer(
+	connStore ConnectionStore,
+	responseNotifier ResponseNotifier,
+	acceptor Acceptor,
+	logger *slog.Logger,
+) Server {
+	srv := &server{
+		connStore:        connStore,
+		responseNotifier: responseNotifier,
+		acceptor:         acceptor,
+		logger:           logger,
+		close:            func() error { return errors.New("not listening") },
 	}
+
+	return srv
 }
 
 func (s *server) Listen(ctx context.Context, addr string) error {
@@ -45,6 +62,8 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(ctx, AcceptTimeout)
 			defer cancel()
+
+			s.logger.Info("Received connection", "remote", r.RemoteAddr)
 
 			conn, err := s.acceptor.Accept(ctx, rw, r)
 			if err != nil {
@@ -60,17 +79,7 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 
 			s.logger.Info("Accepted connection", "remote", r.RemoteAddr)
 
-			if err := s.registry.Register(ctx, conn); err != nil {
-				s.logger.Error("Failed to register connection", err)
-				closeErr := conn.Close(ws.StatusInternalError, "failed to register connection")
-				if closeErr != nil {
-					s.logger.Error("Failed to close connection", closeErr)
-				}
-
-				return
-			}
-
-			s.logger.Info("Registered connection", "remote", r.RemoteAddr)
+			go s.readLoop(ctx, conn)
 		}),
 	}
 
@@ -91,5 +100,149 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 }
 
 func (s *server) Close() error {
-	return s.close()
+	if err := s.close(); err != nil {
+		return fmt.Errorf("closing: %w", err)
+	}
+	return nil
+}
+
+func (s *server) SendMessage(ctx context.Context, message *funcie.Message) error {
+	conn, err := s.connStore.GetConnection(message.Application)
+	if err != nil {
+		return fmt.Errorf("getting connection for app %v: %w", message.Application, err)
+	}
+
+	payload, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("marshalling message: %w", err)
+	}
+
+	jsonPayload := json.RawMessage(payload)
+
+	err = conn.Write(ctx, &websocket.Envelope{
+		Kind: websocket.PayloadKindRequest,
+		Data: &jsonPayload,
+	})
+	if err != nil {
+		return fmt.Errorf("writing message: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) readLoop(ctx context.Context, conn websocket.Connection) {
+	closeConn := func(reason string) {
+		if err := conn.Close(nhws.StatusNormalClosure, reason); err != nil {
+			s.logger.ErrorContext(ctx, "Error closing connection", "error", err)
+		}
+	}
+	for {
+		s.logger.DebugContext(ctx, "Waiting for next message")
+
+		envelope, err := s.readNextMessage(ctx, conn)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "Error reading message; closing connection", "error", err)
+			closeConn("error reading message")
+			break
+		}
+
+		err = s.processMessage(ctx, envelope, conn)
+		if err != nil {
+			s.logger.ErrorContext(ctx, "Error processing message; closing connection", "error", err)
+			closeConn("error processing message")
+			break
+		}
+	}
+}
+
+func (s *server) readNextMessage(ctx context.Context, conn websocket.Connection) (*websocket.Envelope, error) {
+	var msg websocket.Envelope
+	err := conn.Read(ctx, &msg)
+	if err != nil {
+		return nil, fmt.Errorf("reading message: %w", err)
+	}
+
+	return &msg, nil
+}
+
+func (s *server) processMessage(ctx context.Context, envelope *websocket.Envelope, conn websocket.Connection) error {
+	switch envelope.Kind {
+	case websocket.PayloadKindRequest:
+		return s.processRequest(ctx, envelope, conn)
+	case websocket.PayloadKindResponse:
+		return s.processResponse(ctx, envelope)
+	default:
+		return fmt.Errorf("invalid message type: %v", envelope.Kind)
+	}
+
+	return nil
+}
+
+func (s *server) processRequest(ctx context.Context, envelope *websocket.Envelope, conn websocket.Connection) error {
+	var msg *funcie.Message
+	err := json.Unmarshal(*envelope.Data, &msg)
+	if err != nil {
+		return fmt.Errorf("unmarshalling message: %w", err)
+	}
+
+	s.logger.DebugContext(ctx, "Received request", "message", msg)
+
+	resp, err := s.requestHandler(ctx, conn, msg)
+	if err != nil {
+		// TODO: Should we send an error response?
+		return fmt.Errorf("handling request: %w", err)
+	}
+
+	if resp == nil {
+		return nil
+	}
+
+	responsePayload, err := json.Marshal(resp)
+	if err != nil {
+		return fmt.Errorf("marshalling response: %w", err)
+	}
+
+	jsonPayload := json.RawMessage(responsePayload)
+
+	err = conn.Write(ctx, &websocket.Envelope{
+		Kind: websocket.PayloadKindResponse,
+		Data: &jsonPayload,
+	})
+	if err != nil {
+		return fmt.Errorf("writing response: %w", err)
+	}
+
+	return nil
+}
+
+func (s *server) processResponse(ctx context.Context, envelope *websocket.Envelope) error {
+	var msg *funcie.Response
+	err := json.Unmarshal(*envelope.Data, &msg)
+	if err != nil {
+		return fmt.Errorf("unmarshalling message: %w", err)
+	}
+
+	s.logger.DebugContext(ctx, "Received response", "message", msg)
+
+	s.responseNotifier.Notify(ctx, msg)
+
+	return nil
+}
+
+func (s *server) requestHandler(ctx context.Context, conn websocket.Connection, msg *funcie.Message) (*funcie.Response, error) {
+	switch msg.Kind {
+	case messages.MessageKindRegister:
+		s.connStore.RegisterConnection(msg.Application, conn)
+		s.logger.InfoContext(ctx, "Registered connection", "application", msg.Application)
+		return nil, nil
+	case messages.MessageKindDeregister:
+		_, err := s.connStore.UnregisterConnection(msg.Application)
+		if err != nil {
+			return nil, fmt.Errorf("unregistering connection: %w", err)
+		}
+		s.logger.InfoContext(ctx, "Unregistered connection", "application", msg.Application)
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("invalid client to server message type: %v", msg.Kind)
+	}
 }

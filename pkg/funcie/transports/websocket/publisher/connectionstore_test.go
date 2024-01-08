@@ -1,8 +1,8 @@
 package publisher_test
 
 import (
+	wsMocks "github.com/Kapps/funcie/pkg/funcie/transports/websocket/mocks"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
-	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher/mocks"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -15,34 +15,39 @@ func TestMemoryConnectionStore(t *testing.T) {
 	t.Run("register and get connection", func(t *testing.T) {
 		t.Parallel()
 		appID := "test-app"
-		mockConn := mocks.NewClientConnection(t)
+		mockConn := wsMocks.NewConnection(t)
 
 		store.RegisterConnection(appID, mockConn)
-		retrievedConn := store.GetConnection(appID)
+		retrievedConn, err := store.GetConnection(appID)
 
-		require.NotNil(t, retrievedConn, "Expected non-nil connection")
-		require.Equal(t, mockConn, retrievedConn, "Expected retrieved connection to match registered connection")
+		require.NotNil(t, retrievedConn)
+		require.NoError(t, err)
+		require.Equal(t, mockConn, retrievedConn)
 	})
 
 	t.Run("unregister connection", func(t *testing.T) {
 		t.Parallel()
 		appID := "test-app"
-		mockConn := mocks.NewClientConnection(t)
+		mockConn := wsMocks.NewConnection(t)
 
 		store.RegisterConnection(appID, mockConn)
-		unregisteredConn := store.UnregisterConnection(appID)
+		unregisteredConn, err := store.UnregisterConnection(appID)
 
-		require.NotNil(t, unregisteredConn, "Expected non-nil connection on unregister")
-		require.Equal(t, mockConn, unregisteredConn, "Expected unregistered connection to match the original")
-		require.Nil(t, store.GetConnection(appID), "Expected nil connection after unregistering")
+		require.NotNil(t, unregisteredConn)
+		require.Equal(t, mockConn, unregisteredConn)
+
+		reretrieved, err := store.GetConnection(appID)
+		require.Nil(t, reretrieved)
+		require.ErrorIs(t, err, publisher.ErrNoConnection)
 	})
 
 	t.Run("get connection for unregistered app", func(t *testing.T) {
 		t.Parallel()
 		appID := "non-existent-app"
 
-		retrievedConn := store.GetConnection(appID)
+		retrievedConn, err := store.GetConnection(appID)
 
-		require.Nil(t, retrievedConn, "Expected nil connection for unregistered app")
+		require.Nil(t, retrievedConn)
+		require.ErrorIs(t, err, publisher.ErrNoConnection)
 	})
 }

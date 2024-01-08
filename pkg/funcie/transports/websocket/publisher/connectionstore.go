@@ -1,23 +1,27 @@
 package publisher
 
 import (
+	"fmt"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"sync"
 )
+
+var ErrNoConnection = fmt.Errorf("no connection found for this application")
 
 // ConnectionStore is a store for websocket connections to allow multiple applications to share the same connection.
 type ConnectionStore interface {
 	// GetConnection returns the connection for the given application.
 	// If no connection is found, returns nil.
-	GetConnection(app string) *ClientConnection
+	GetConnection(app string) (websocket.Connection, error)
 	// RegisterConnection registers the given connection for the given application, or associates an existing one.
-	RegisterConnection(app string, conn ClientConnection)
+	RegisterConnection(app string, conn websocket.Connection)
 	// UnregisterConnection unregisters the connection for the given application.
 	// Returns the connection that was unregistered, or nil if no connection was found.
-	UnregisterConnection(app string) *ClientConnection
+	UnregisterConnection(app string) (websocket.Connection, error)
 }
 
 type connectionWrapper struct {
-	conn ClientConnection
+	conn websocket.Connection
 	apps sync.Map
 }
 
@@ -31,16 +35,16 @@ func NewMemoryConnectionStore() ConnectionStore {
 	return &connections{}
 }
 
-func (c *connections) GetConnection(appId string) *ClientConnection {
+func (c *connections) GetConnection(appId string) (websocket.Connection, error) {
 	wrapper := c.getWrapperForConnection(appId, true)
 	if wrapper == nil {
-		return nil
+		return nil, ErrNoConnection
 	}
 
-	return &wrapper.conn
+	return wrapper.conn, nil
 }
 
-func (c *connections) RegisterConnection(appId string, conn ClientConnection) {
+func (c *connections) RegisterConnection(appId string, conn websocket.Connection) {
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
 
@@ -56,13 +60,13 @@ func (c *connections) RegisterConnection(appId string, conn ClientConnection) {
 	wrapper.apps.Store(appId, struct{}{})
 }
 
-func (c *connections) UnregisterConnection(appId string) *ClientConnection {
+func (c *connections) UnregisterConnection(appId string) (websocket.Connection, error) {
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
 
 	wrapper := c.getWrapperForConnection(appId, false)
 	if wrapper == nil {
-		return nil
+		return nil, ErrNoConnection
 	}
 
 	_, loaded := wrapper.apps.LoadAndDelete(appId)
@@ -71,7 +75,7 @@ func (c *connections) UnregisterConnection(appId string) *ClientConnection {
 	}
 
 	conn := wrapper.conn
-	return &conn
+	return conn, nil
 }
 
 func (c *connections) getWrapperForConnection(appId string, acquireLock bool) *connectionWrapper {

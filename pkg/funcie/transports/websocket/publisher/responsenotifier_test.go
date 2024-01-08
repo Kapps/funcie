@@ -75,7 +75,8 @@ func TestResponseNotifier_NotifyPanic(t *testing.T) {
 
 func TestResponseNotifier_WaitForNonExistingMessageID(t *testing.T) {
 	respNotifier := NewResponseNotifier()
-	ctx := context.Background()
+	ctx, cancelFn := context.WithTimeout(context.Background(), time.Millisecond*100)
+	defer cancelFn()
 
 	resp, err := respNotifier.WaitForResponse(ctx, "non-existing")
 	require.Nil(t, resp)

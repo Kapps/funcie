@@ -26,7 +26,7 @@ type responseNotifier struct {
 // NewResponseNotifier creates a new ResponseNotifier.
 func NewResponseNotifier() ResponseNotifier {
 	return &responseNotifier{
-		responses: make(map[string]chan *funcie.Response, 1),
+		responses: make(map[string]chan *funcie.Response),
 	}
 }
 
@@ -39,6 +39,7 @@ func (r *responseNotifier) Notify(ctx context.Context, resp *funcie.Response) {
 	select {
 	case ch <- resp:
 	default:
+		fmt.Println(len(ch))
 		panic(fmt.Errorf("response channel for message ID %s is full", resp.ID))
 	}
 }
@@ -48,8 +49,7 @@ func (r *responseNotifier) WaitForResponse(ctx context.Context, messageId string
 
 	select {
 	case resp := <-ch:
-		close(ch)
-		r.responses[messageId] = nil
+		r.closeResponseChannel(ctx, messageId)
 		return resp, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -67,7 +67,7 @@ func (r *responseNotifier) getResponseChannel(ctx context.Context, messageId str
 	// While WaitForResponse will usually create the channel, it's possible for the response to be received before
 	// WaitForResponse is called. In this case, we need to create the channel here.
 
-	ch := make(chan *funcie.Response)
+	ch := make(chan *funcie.Response, 1)
 	r.responses[messageId] = ch
 
 	return ch
@@ -80,7 +80,7 @@ func (r *responseNotifier) closeResponseChannel(ctx context.Context, messageId s
 	if res, ok := r.responses[messageId]; ok {
 		close(res)
 		r.responses[messageId] = nil
+	} else {
+		panic(fmt.Errorf("no response channel for message ID %s", messageId))
 	}
-
-	panic(fmt.Errorf("no response channel for message ID %s", messageId))
 }

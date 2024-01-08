@@ -20,7 +20,7 @@ func TestWebsocket_EndToEnd(t *testing.T) {
 		AuthorizationHandler: publisher.BearerAuthorizationHandler(authToken),
 	})
 	registry := publisher.NewRegistry(logger)
-	srv := publisher.NewServer(acceptor, registry, logger)
+	srv := publisher.NewListener(acceptor, registry, logger)
 	ctx := context.Background()
 	host := "localhost:8086"
 	endpoint := "http://" + host
