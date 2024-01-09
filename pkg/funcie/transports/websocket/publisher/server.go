@@ -8,7 +8,9 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
+	"github.com/google/uuid"
 	"log/slog"
+	"net"
 	"net/http"
 	nhws "nhooyr.io/websocket"
 	"time"
@@ -17,10 +19,6 @@ import (
 // AcceptTimeout is the timeout for accepting a websocket connection.
 // This includes the time it takes to upgrade the connection and to receive the registration message.
 const AcceptTimeout = 30 * time.Second
-
-// ResponseTimeout is the timeout for waiting for a response to a request.
-// If a response is not received within this time, the request will be considered failed.
-const ResponseTimeout = 10 * time.Minute
 
 // Server is responsible for managing all connections and communicating with them.
 type Server interface {
@@ -63,8 +61,14 @@ func NewServer(
 func (s *server) Listen(ctx context.Context, addr string) error {
 	srv := &http.Server{
 		Addr: addr,
+		BaseContext: func(_ net.Listener) context.Context {
+			return ctx
+		},
+		//ReadHeaderTimeout: AcceptTimeout,
+		//WriteTimeout:      AcceptTimeout,
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(ctx, AcceptTimeout)
+			rootContext := ctx
+			ctx, cancel := context.WithTimeout(r.Context(), AcceptTimeout)
 			defer cancel()
 
 			s.logger.Info("Received connection", "remote", r.RemoteAddr)
@@ -83,7 +87,7 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 
 			s.logger.Info("Accepted connection", "remote", r.RemoteAddr)
 
-			go s.readLoop(ctx, conn)
+			go s.readLoop(rootContext, conn)
 		}),
 	}
 
@@ -249,14 +253,30 @@ func (s *server) requestHandler(ctx context.Context, conn websocket.Connection, 
 	case messages.MessageKindRegister:
 		s.connStore.RegisterConnection(msg.Application, conn)
 		s.logger.InfoContext(ctx, "Registered connection", "application", msg.Application)
-		return nil, nil
+
+		registerPayload := messages.NewRegistrationResponsePayload(uuid.New())
+		resp := funcie.NewResponseWithPayload(msg.ID, registerPayload, nil)
+		untyped, err := funcie.MarshalResponsePayload(resp)
+		if err != nil {
+			return nil, fmt.Errorf("marshalling registratoin response payload: %w", err)
+		}
+
+		return untyped, nil
 	case messages.MessageKindDeregister:
 		_, err := s.connStore.UnregisterConnection(msg.Application)
 		if err != nil {
 			return nil, fmt.Errorf("unregistering connection: %w", err)
 		}
+
+		deregisterPayload := messages.NewDeregistrationResponsePayload()
+		resp := funcie.NewResponseWithPayload(msg.ID, deregisterPayload, nil)
+		untyped, err := funcie.MarshalResponsePayload(resp)
+		if err != nil {
+			return nil, fmt.Errorf("marshalling deregistration response payload: %w", err)
+		}
+
 		s.logger.InfoContext(ctx, "Unregistered connection", "application", msg.Application)
-		return nil, nil
+		return untyped, nil
 	default:
 		return nil, fmt.Errorf("invalid client to server message type: %v", msg.Kind)
 	}
