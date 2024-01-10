@@ -109,17 +109,29 @@ func (_c *Server_Listen_Call) RunAndReturn(run func(context.Context, string) err
 }
 
 // SendMessage provides a mock function with given fields: ctx, message
-func (_m *Server) SendMessage(ctx context.Context, message *funcie.MessageBase[json.RawMessage]) error {
+func (_m *Server) SendMessage(ctx context.Context, message *funcie.MessageBase[json.RawMessage]) (*funcie.ResponseBase[json.RawMessage], error) {
 	ret := _m.Called(ctx, message)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *funcie.MessageBase[json.RawMessage]) error); ok {
+	var r0 *funcie.ResponseBase[json.RawMessage]
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.MessageBase[json.RawMessage]) (*funcie.ResponseBase[json.RawMessage], error)); ok {
+		return rf(ctx, message)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *funcie.MessageBase[json.RawMessage]) *funcie.ResponseBase[json.RawMessage]); ok {
 		r0 = rf(ctx, message)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*funcie.ResponseBase[json.RawMessage])
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, *funcie.MessageBase[json.RawMessage]) error); ok {
+		r1 = rf(ctx, message)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Server_SendMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SendMessage'
@@ -141,12 +153,12 @@ func (_c *Server_SendMessage_Call) Run(run func(ctx context.Context, message *fu
 	return _c
 }
 
-func (_c *Server_SendMessage_Call) Return(_a0 error) *Server_SendMessage_Call {
-	_c.Call.Return(_a0)
+func (_c *Server_SendMessage_Call) Return(_a0 *funcie.ResponseBase[json.RawMessage], _a1 error) *Server_SendMessage_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Server_SendMessage_Call) RunAndReturn(run func(context.Context, *funcie.MessageBase[json.RawMessage]) error) *Server_SendMessage_Call {
+func (_c *Server_SendMessage_Call) RunAndReturn(run func(context.Context, *funcie.MessageBase[json.RawMessage]) (*funcie.ResponseBase[json.RawMessage], error)) *Server_SendMessage_Call {
 	_c.Call.Return(run)
 	return _c
 }
