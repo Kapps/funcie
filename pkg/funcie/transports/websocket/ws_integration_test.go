@@ -11,17 +11,25 @@ import (
 	"github.com/stretchr/testify/require"
 	"log/slog"
 	"testing"
+	"time"
 )
 
 func TestWebsocket_EndToEnd(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	t.Cleanup(cancel)
+
 	logger := slog.Default()
 	authToken := faker.Jwt()
+
+	connStore := publisher.NewMemoryConnectionStore()
+	responseNotifier := publisher.NewResponseNotifier()
 	acceptor := publisher.NewAcceptor(publisher.AcceptorOptions{
 		AuthorizationHandler: publisher.BearerAuthorizationHandler(authToken),
 	})
-	registry := publisher.NewRegistry(logger)
-	srv := publisher.NewListener(acceptor, registry, logger)
-	ctx := context.Background()
+
+	srv := publisher.NewServer(connStore, responseNotifier, acceptor, logger)
+	pub := publisher.NewWebsocketPublisher(srv)
+
 	host := "localhost:8086"
 	endpoint := "http://" + host
 	appId := faker.Word()
@@ -43,26 +51,21 @@ func TestWebsocket_EndToEnd(t *testing.T) {
 
 	require.NoError(t, cons.Connect(ctx))
 
-	// TODO: Subscribe doesn't really make sense given that the connection is for an application.
-
 	consumerMessages := make(chan *funcie.Message, 1)
 	require.NoError(t, cons.Subscribe(ctx, appId, func(ctx context.Context, msg *funcie.Message) (*funcie.Response, error) {
 		consumerMessages <- msg
 		return funcie.NewResponse(msg.ID, []byte("\"foo\""), nil), nil
 	}))
 
-	require.NoError(t, cons.Consume(ctx))
+	go func() {
+		err := cons.Consume(ctx)
+		require.ErrorIs(t, err, context.Canceled)
+	}()
 
-	conn, err := registry.AcquireExclusive(ctx, appId)
-	require.NoError(t, err)
-	require.NotNil(t, conn)
-
-	t.Cleanup(func() {
-		require.NoError(t, registry.ReleaseExclusive(ctx, appId, conn))
-	})
+	time.Sleep(100 * time.Millisecond)
 
 	message := funcie.NewMessage(appId, messages.MessageKindRegister, []byte("{}"))
-	resp, err := conn.Send(ctx, message)
+	resp, err := pub.Publish(ctx, message)
 	require.NoError(t, err)
 
 	require.Equal(t, "\"foo\"", resp.Data)
