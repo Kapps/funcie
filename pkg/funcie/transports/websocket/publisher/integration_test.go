@@ -141,7 +141,7 @@ func createIntegrationClient(t *testing.T, ctx context.Context) *ws.Conn {
 
 func createIntegrationServer(t *testing.T, ctx context.Context) *serverScaffold {
 	connStore := NewMemoryConnectionStore()
-	responseNotifier := NewResponseNotifier()
+	responseNotifier := websocket.NewResponseNotifier()
 	acceptor := NewAcceptor(AcceptorOptions{
 		AuthorizationHandler: BearerAuthorizationHandler("foo"),
 		UpgradeHandler:       DefaultUpgradeHandler(),
@@ -175,7 +175,7 @@ func createIntegrationServer(t *testing.T, ctx context.Context) *serverScaffold 
 
 type serverScaffold struct {
 	connStore        ConnectionStore
-	responseNotifier ResponseNotifier
+	responseNotifier websocket.ResponseNotifier
 	acceptor         Acceptor
 	close            func() error
 	logger           *slog.Logger

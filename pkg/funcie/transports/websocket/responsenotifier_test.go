@@ -1,10 +1,10 @@
-package publisher_test
+package websocket_test
 
 import (
 	"context"
 	"errors"
 	"github.com/Kapps/funcie/pkg/funcie"
-	. "github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
+	. "github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"

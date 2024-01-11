@@ -5,6 +5,7 @@ import (
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/messages"
 	"github.com/Kapps/funcie/pkg/funcie/transports/utils"
+	"github.com/Kapps/funcie/pkg/funcie/transports/websocket"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/consumer"
 	"github.com/Kapps/funcie/pkg/funcie/transports/websocket/publisher"
 	"github.com/go-faker/faker/v4"
@@ -22,7 +23,7 @@ func TestWebsocket_EndToEnd(t *testing.T) {
 	authToken := faker.Jwt()
 
 	connStore := publisher.NewMemoryConnectionStore()
-	responseNotifier := publisher.NewResponseNotifier()
+	responseNotifier := websocket.NewResponseNotifier()
 	acceptor := publisher.NewAcceptor(publisher.AcceptorOptions{
 		AuthorizationHandler: publisher.BearerAuthorizationHandler(authToken),
 	})

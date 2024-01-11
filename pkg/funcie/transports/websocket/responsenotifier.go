@@ -1,4 +1,4 @@
-package publisher
+package websocket
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// ResponseNotifier notifies a publisher that a response has been received for a message.
+// ResponseNotifier allows notifying callers when a response to their request has been received.
 type ResponseNotifier interface {
 	// Notify notifies the notifier that a response has been received.
 	// This method is non-blocking and may only be called once for each message ID.

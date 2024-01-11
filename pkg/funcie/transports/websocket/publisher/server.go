@@ -33,7 +33,7 @@ type Server interface {
 
 type server struct {
 	connStore        ConnectionStore
-	responseNotifier ResponseNotifier
+	responseNotifier websocket.ResponseNotifier
 	acceptor         Acceptor
 	close            func() error
 	logger           *slog.Logger
@@ -43,7 +43,7 @@ type server struct {
 // The server will not listen for connections until Listen is called.
 func NewServer(
 	connStore ConnectionStore,
-	responseNotifier ResponseNotifier,
+	responseNotifier websocket.ResponseNotifier,
 	acceptor Acceptor,
 	logger *slog.Logger,
 ) Server {
@@ -64,8 +64,8 @@ func (s *server) Listen(ctx context.Context, addr string) error {
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		//ReadHeaderTimeout: AcceptTimeout,
-		//WriteTimeout:      AcceptTimeout,
+		ReadHeaderTimeout: AcceptTimeout,
+		WriteTimeout:      AcceptTimeout,
 		Handler: http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			rootContext := ctx
 			ctx, cancel := context.WithTimeout(r.Context(), AcceptTimeout)
