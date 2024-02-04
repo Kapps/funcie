@@ -140,15 +140,17 @@ func createIntegrationClient(t *testing.T, ctx context.Context) *ws.Conn {
 }
 
 func createIntegrationServer(t *testing.T, ctx context.Context) *serverScaffold {
+	logger := slog.Default()
 	connStore := NewMemoryConnectionStore()
 	responseNotifier := websocket.NewResponseNotifier()
+	processor := NewMessageProcessor(connStore, logger)
+	exchange := websocket.NewExchange(responseNotifier, processor, logger)
 	acceptor := NewAcceptor(AcceptorOptions{
 		AuthorizationHandler: BearerAuthorizationHandler("foo"),
 		UpgradeHandler:       DefaultUpgradeHandler(),
 	})
-	logger := slog.Default()
 
-	srv := NewServer(connStore, responseNotifier, acceptor, logger)
+	srv := NewServer(connStore, exchange, acceptor, logger)
 
 	go func() {
 		err := srv.Listen(ctx, "localhost:8086")
