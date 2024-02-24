@@ -24,12 +24,14 @@ func TestWebsocket_EndToEnd(t *testing.T) {
 
 	connStore := publisher.NewMemoryConnectionStore()
 	responseNotifier := websocket.NewResponseNotifier()
+	messageProcessor := publisher.NewMessageProcessor(connStore, logger)
+	exchange := websocket.NewExchange(responseNotifier, messageProcessor, logger)
 	acceptor := publisher.NewAcceptor(publisher.AcceptorOptions{
 		AuthorizationHandler: publisher.BearerAuthorizationHandler(authToken),
 	})
 
-	srv := publisher.NewServer(connStore, responseNotifier, acceptor, logger)
-	pub := publisher.NewWebsocketPublisher(srv)
+	srv := publisher.NewServer(connStore, exchange, acceptor, logger)
+	pub := publisher.NewWebsocketPublisher(connStore, exchange, logger)
 
 	host := "localhost:8086"
 	endpoint := "http://" + host
@@ -44,7 +46,7 @@ func TestWebsocket_EndToEnd(t *testing.T) {
 		require.NoError(t, srv.Close())
 	})
 
-	consumerClient := consumer.NewClient(consumer.ClientOptions{
+	consumerClient := consumer.NewDialer(consumer.DialerOptions{
 		AuthToken: authToken,
 	})
 	router := utils.NewClientHandlerRouter()

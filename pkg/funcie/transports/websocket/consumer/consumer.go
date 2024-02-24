@@ -12,26 +12,28 @@ import (
 
 type consumer struct {
 	serverUrl string
-	router    utils.ClientHandlerRouter
-	client    Client
+	dialer    Dialer
+	exchange  websocket.Exchange
 	logger    *slog.Logger
+	router    utils.ClientHandlerRouter
 
 	conn      websocket.Connection
 	connected bool
 }
 
 // NewConsumer creates a new consumer that consumes messages from the given URL.
-func NewConsumer(serverUrl string, router utils.ClientHandlerRouter, client Client, logger *slog.Logger) funcie.Consumer {
+func NewConsumer(serverUrl string, exchange websocket.Exchange, router utils.ClientHandlerRouter, dialer Dialer, logger *slog.Logger) funcie.Consumer {
 	return &consumer{
 		serverUrl: serverUrl,
-		router:    router,
-		client:    client,
+		dialer:    dialer,
 		logger:    logger,
+		router:    router,
+		exchange:  exchange,
 	}
 }
 
 func (c *consumer) Connect(ctx context.Context) error {
-	conn, err := c.client.Dial(ctx, c.serverUrl)
+	conn, err := c.dialer.Dial(ctx, c.serverUrl)
 	if err != nil {
 		return fmt.Errorf("dialing %v: %w", c.serverUrl, err)
 	}
@@ -46,6 +48,14 @@ func (c *consumer) Consume(ctx context.Context) error {
 		return fmt.Errorf("not connected")
 	}
 
+	if err := c.exchange.RegisterConnection(ctx, c.conn); err != nil {
+		// If we fail to register the connection, we should close it.
+		if err := c.conn.Close(ws.StatusAbnormalClosure, "failed to register connection with exchange"); err != nil {
+			c.logger.WarnContext(ctx, "error closing Websocket", "error", err)
+		}
+		return fmt.Errorf("registering connection with excahnge: %w", err)
+	}
+
 	defer func() {
 		c.connected = false
 		if err := c.conn.Close(ws.StatusAbnormalClosure, "exiting consumer"); err != nil {
@@ -53,27 +63,7 @@ func (c *consumer) Consume(ctx context.Context) error {
 		}
 	}()
 
-	for ctx.Err() == nil {
-		var msg funcie.Message
-		err := c.conn.Read(ctx, &msg)
-		if err != nil {
-			return fmt.Errorf("reading message: %w", err)
-		}
-
-		c.logger.DebugContext(ctx, "received message", "message", msg)
-
-		resp, err := c.router.Handle(ctx, &msg)
-		if err != nil {
-			return fmt.Errorf("handling message: %w", err)
-		}
-
-		if resp != nil {
-			err = c.conn.Write(ctx, resp)
-			if err != nil {
-				return fmt.Errorf("writing response: %w", err)
-			}
-		}
-	}
+	<-ctx.Done()
 
 	return nil
 }

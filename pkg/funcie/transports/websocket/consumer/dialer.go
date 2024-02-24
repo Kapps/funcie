@@ -8,30 +8,30 @@ import (
 	ws "nhooyr.io/websocket"
 )
 
-// Client allows connecting to a websocket server.
-type Client interface {
+// Dialer allows connecting to a websocket server.
+type Dialer interface {
 	// Dial connects to the given URL.
 	Dial(ctx context.Context, url string) (websocket.Connection, error)
 }
 
-type client struct {
-	opts ClientOptions
+type dialer struct {
+	opts DialerOptions
 }
 
-// ClientOptions are options for the websocket client.
-type ClientOptions struct {
+// DialerOptions are options for the websocket client.
+type DialerOptions struct {
 	// AuthToken is the authentication token to use when connecting.
 	AuthToken string
 }
 
-// NewClient creates a new websocket client.
-func NewClient(opts ClientOptions) Client {
-	return &client{
+// NewDialer creates a new websocket client.
+func NewDialer(opts DialerOptions) Dialer {
+	return &dialer{
 		opts: opts,
 	}
 }
 
-func (c *client) Dial(ctx context.Context, url string) (websocket.Connection, error) {
+func (c *dialer) Dial(ctx context.Context, url string) (websocket.Connection, error) {
 	headers := http.Header{
 		"Sec-Websocket-Protocol": []string{"funcie"},
 	}

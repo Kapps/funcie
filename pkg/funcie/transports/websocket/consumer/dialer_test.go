@@ -14,7 +14,7 @@ func TestClient_Dial(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	client := NewClient(ClientOptions{
+	client := NewDialer(DialerOptions{
 		AuthToken: "token",
 	})
 

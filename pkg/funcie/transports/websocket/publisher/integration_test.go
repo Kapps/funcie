@@ -121,6 +121,71 @@ func TestIntegration_Register(t *testing.T) {
 	})
 }
 
+/*func TestIntegration_Send(t *testing.T) {
+	ctx := context.Background()
+
+	scaffold := createIntegrationServer(t, ctx)
+
+	t.Run("successful send", func(t *testing.T) {
+		conn := createIntegrationClient(t, ctx)
+		regMessage := funcie.NewMessage("foo", messages.MessageKindRegister, nil)
+		regPayload := json.RawMessage(funcie.MustSerialize(regMessage))
+
+		err := conn.Write(ctx, ws.MessageText, funcie.MustSerialize(&websocket.Envelope{
+			Kind: websocket.PayloadKindRequest,
+			Data: &regPayload,
+		}))
+		require.NoError(t, err)
+
+		time.Sleep(100 * time.Millisecond)
+
+		kind, respBytes, err := conn.Read(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, ws.MessageText, kind)
+
+		var resp websocket.Envelope
+		err = json.Unmarshal(respBytes, &resp)
+		require.NoError(t, err)
+
+		require.Equal(t, websocket.PayloadKindResponse, resp.Kind)
+
+		var regResp funcie.Response
+		err = json.Unmarshal(*resp.Data, &regResp)
+		require.NoError(t, err)
+
+		require.Equal(t, regResp.ID, regMessage.ID)
+
+		sendMessage := funcie.NewMessage("foo", messages.MessageKindForwardRequest, []byte("\"hello\""))
+		sendPayload := json.RawMessage(funcie.MustSerialize(sendMessage))
+
+		err = scaffold.connStore.
+		err = conn.Write(ctx, ws.MessageText, funcie.MustSerialize(&websocket.Envelope{
+			Kind: websocket.PayloadKindRequest,
+			Data: &sendPayload,
+		}))
+		require.NoError(t, err)
+
+		time.Sleep(100 * time.Millisecond)
+
+		kind, respBytes, err = conn.Read(ctx)
+		require.NoError(t, err)
+
+		require.Equal(t, ws.MessageText, kind)
+
+		err = json.Unmarshal(respBytes, &resp)
+		require.NoError(t, err)
+
+		require.Equal(t, websocket.PayloadKindResponse, resp.Kind)
+
+		var sendResp funcie.Response
+		err = json.Unmarshal(*resp.Data, &sendResp)
+		require.NoError(t, err)
+
+		require.Equal(t, sendResp.ID, sendMessage.ID)
+	})
+}*/
+
 func createIntegrationClient(t *testing.T, ctx context.Context) *ws.Conn {
 	conn, resp, err := ws.Dial(ctx, "ws://localhost:8086", &ws.DialOptions{
 		HTTPHeader: map[string][]string{
