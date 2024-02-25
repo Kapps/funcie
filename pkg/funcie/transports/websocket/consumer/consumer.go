@@ -38,6 +38,14 @@ func (c *consumer) Connect(ctx context.Context) error {
 		return fmt.Errorf("dialing %v: %w", c.serverUrl, err)
 	}
 
+	if err := c.exchange.RegisterConnection(ctx, c.conn); err != nil {
+		// If we fail to register the connection, we should close it.
+		if err := c.conn.Close(ws.StatusAbnormalClosure, "failed to register connection with exchange"); err != nil {
+			c.logger.WarnContext(ctx, "error closing Websocket", "error", err)
+		}
+		return fmt.Errorf("registering connection with excahnge: %w", err)
+	}
+
 	c.conn = conn
 	c.connected = true
 	return nil
@@ -46,14 +54,6 @@ func (c *consumer) Connect(ctx context.Context) error {
 func (c *consumer) Consume(ctx context.Context) error {
 	if !c.connected {
 		return fmt.Errorf("not connected")
-	}
-
-	if err := c.exchange.RegisterConnection(ctx, c.conn); err != nil {
-		// If we fail to register the connection, we should close it.
-		if err := c.conn.Close(ws.StatusAbnormalClosure, "failed to register connection with exchange"); err != nil {
-			c.logger.WarnContext(ctx, "error closing Websocket", "error", err)
-		}
-		return fmt.Errorf("registering connection with excahnge: %w", err)
 	}
 
 	defer func() {
