@@ -76,7 +76,7 @@ func (h *handler) Deregister(ctx context.Context, message messages.Deregistratio
 
 func (h *handler) ForwardRequest(ctx context.Context, request messages.ForwardRequestMessage) (*messages.ForwardRequestResponse, error) {
 	app, err := h.registry.GetApplication(ctx, request.Application)
-	if err == funcie.ErrApplicationNotFound {
+	if errors.Is(err, funcie.ErrApplicationNotFound) {
 		slog.WarnContext(ctx, "application not found in client registry", "application", request.Application)
 		// TODO: What should we return here?
 		return nil, err
