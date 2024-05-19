@@ -14,3 +14,7 @@ output "funcie_cluster_arn" {
 output "server_bastion_sg_id" {
   value = aws_security_group.server_bastion_sg.id
 }
+
+output "server_bastion_host" {
+  value = aws_instance.server_bastion.public_ip
+}
