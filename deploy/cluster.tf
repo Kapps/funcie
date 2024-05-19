@@ -1,3 +1,7 @@
+data "aws_ssm_parameter" "ecs_al2023_arm64_ami" {
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id"
+}
+
 data "aws_ami" "ecs_optimized_amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -20,19 +24,25 @@ resource "aws_eip" "bastion_eip" {
 resource "aws_launch_template" "bastion_launch_template" {
   name = "bastion-launch-template"
 
-  image_id      = data.aws_ami.ecs_optimized_amazon_linux.id
+  image_id      = data.aws_ssm_parameter.ecs_al2023_arm64_ami.value
   instance_type = "t4g.micro"
-  key_name      = var.bastion_public_key_path
+  key_name      = aws_key_pair.bastion_key.key_name
 
   iam_instance_profile {
     name = aws_iam_instance_profile.instance_profile.name
   }
 
   network_interfaces {
-    associate_public_ip_address = true
+    associate_public_ip_address = true # Even though we have an EIP, we still need this to be able to use the CLI to associate it
     security_groups             = [aws_security_group.server_bastion_sg.id]
 
     subnet_id = var.public_subnet_ids[0]
+  }
+
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+    http_endpoint               = "enabled"
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
@@ -50,9 +60,12 @@ resource "aws_launch_template" "bastion_launch_template" {
 }
 
 resource "aws_autoscaling_group" "bastion_asg" {
+  name = "${aws_launch_template.bastion_launch_template.name}-asg"
+
   desired_capacity = 1
   max_size         = 1
   min_size         = 1
+
   launch_template {
     id      = aws_launch_template.bastion_launch_template.id
     version = "$Latest"
@@ -109,4 +122,33 @@ resource "aws_iam_role_policy" "instance_policy" {
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "instance_profile"
   role = aws_iam_role.instance_role.name
+}
+
+resource "tls_private_key" "bastion_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "bastion_key" {
+  key_name   = "bastion-key"
+  public_key = tls_private_key.bastion_key.public_key_openssh
+
+}
+
+resource "null_resource" "asg_update_trigger" {
+  # This is a hack to force the ASG to use the latest launch template version
+  triggers = {
+    launch_template_version = aws_launch_template.bastion_launch_template.latest_version
+    user_data = base64encode(templatefile("${path.module}/userdata.sh", {
+      ECS_CLUSTER       = aws_ecs_cluster.funcie_cluster.name
+      EIP_ALLOCATION_ID = aws_eip.bastion_eip.id
+      REGION            = var.region
+    }))
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      aws autoscaling start-instance-refresh --auto-scaling-group-name ${aws_autoscaling_group.bastion_asg.name} --region ${var.region}
+    EOT
+  }
 }
