@@ -1,5 +1,5 @@
 locals {
-  redis_host = var.redis_host != "" ? var.redis_host : aws_elasticache_cluster.redis[0].cache_nodes.0.address
+  redis_host = var.redis_host != "" ? var.redis_host : "${aws_elasticache_cluster.redis[0].cache_nodes.0.address}:${aws_elasticache_cluster.redis[0].port}"
 }
 
 resource "aws_elasticache_cluster" "redis" {

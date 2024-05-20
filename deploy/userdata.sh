@@ -6,9 +6,6 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 # Get the instance ID using the token
 INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
 
-# Need to get the current one to disassociate it after associating the EIP (but need a public IP to do that)
-PUBLIC_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
-
 echo ECS_CLUSTER=${ECS_CLUSTER} >> /etc/ecs/ecs.config
 
 # SSH tunneling to Redis
@@ -37,9 +34,3 @@ if [ $SUCCESS -ne 1 ]; then
 fi
 
 echo "EIP associated with instance"
-
-if aws ec2 disassociate-address --public-ip $PUBLIC_IP --region $REGION; then
-  echo "Disassociated old EIP"
-else
-  echo "Failed to disassociate old EIP" >&2
-fi

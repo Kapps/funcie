@@ -1,15 +1,5 @@
 data "aws_ssm_parameter" "ecs_al2023_arm64_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id"
-}
-
-data "aws_ami" "ecs_optimized_amazon_linux" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-arm64-ebs"]
-  }
+  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
 }
 
 resource "aws_ecs_cluster" "funcie_cluster" {
@@ -25,7 +15,7 @@ resource "aws_launch_template" "bastion_launch_template" {
   name = "bastion-launch-template"
 
   image_id      = data.aws_ssm_parameter.ecs_al2023_arm64_ami.value
-  instance_type = "t4g.micro"
+  instance_type = "t3.micro"
   key_name      = aws_key_pair.bastion_key.key_name
 
   iam_instance_profile {
@@ -109,9 +99,23 @@ resource "aws_iam_role_policy" "instance_policy" {
       {
         Effect = "Allow",
         Action = [
+          "ecs:RegisterContainerInstance",
+          "ecs:DeregisterContainerInstance",
+          "ecs:DiscoverPollEndpoint",
+          "ecs:SubmitContainerStateChange",
+          "ecs:SubmitTaskStateChange",
+          "ecs:SubmitAttachmentStateChanges",
+          "ecs:SubmitInstanceStateChange",
+          "ecs:SubmitTaskStateChanges",
+          "ecs:Poll",
+          "ecs:StartTelemetrySession",
+          "ecs:UpdateContainerInstancesState",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
           "ec2:AssociateAddress",
+          "ec2:DisassociateAddress",
           "ec2:DescribeAddresses",
-          "ec2:DescribeInstances"
+          "ec2:DescribeInstances",
         ],
         Resource = "*"
       }
@@ -144,6 +148,7 @@ resource "null_resource" "asg_update_trigger" {
       EIP_ALLOCATION_ID = aws_eip.bastion_eip.id
       REGION            = var.region
     }))
+    instance_policy = aws_iam_role_policy.instance_policy.policy
   }
 
   provisioner "local-exec" {
