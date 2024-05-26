@@ -14,6 +14,10 @@ output "bastion_host_ip" {
   value = aws_eip.bastion_eip.public_ip
 }
 
+output "bastion_host_private_ip" {
+  value = aws_eip.bastion_eip.private_ip
+}
+
 output "bastion_private_key" {
   value     = tls_private_key.bastion_key.private_key_pem
   sensitive = true

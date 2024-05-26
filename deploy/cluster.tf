@@ -147,6 +147,7 @@ resource "null_resource" "asg_update_trigger" {
       ECS_CLUSTER       = aws_ecs_cluster.funcie_cluster.name
       EIP_ALLOCATION_ID = aws_eip.bastion_eip.id
       REGION            = var.region
+      FUNCIE_ENV        = var.funcie_env
     }))
     instance_policy = aws_iam_role_policy.instance_policy.policy
   }

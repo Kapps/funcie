@@ -13,8 +13,8 @@ variable "redis_host" {
   type        = string
 }
 
-variable "bastion_lb_arn" {
-  description = "The ARN for the load balancer created to be used for the bastion (generally listens on port 8082)."
+variable "bastion_host" {
+  description = "The IP or host to be used for the bastion (often <outputs.bastion_host>:8082 unless using a VPN)."
   type        = string
 }
 
@@ -23,10 +23,6 @@ data "archive_file" "zip" {
   source_dir  = "."
   output_path = "funciejs.zip"
   excludes    = [".terraform", "terraform.tfstate*", "*.tfvars", "deploy.tf", "README.md", "funciejs.zip", ".terraform.lock.hcl"]
-}
-
-data "aws_lb" "bastion_lb" {
-  arn = var.bastion_lb_arn
 }
 
 resource "aws_lambda_function" "funcie_js" {
@@ -45,7 +41,7 @@ resource "aws_lambda_function" "funcie_js" {
   environment {
     variables = {
       FUNCIE_REDIS_ADDR              = var.redis_host,
-      FUNCIE_SERVER_BASTION_ENDPOINT = "http://${data.aws_lb.bastion_lb.dns_name}:8082/dispatch",
+      FUNCIE_SERVER_BASTION_ENDPOINT = "http://${var.bastion_host}:8082/dispatch",
       FUNCIE_APPLICATION_ID          = "url"
       FUNCIE_LOG_LEVEL               = "debug"
     }

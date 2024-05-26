@@ -23,7 +23,8 @@ resource "aws_ecs_task_definition" "server_bastion_task" {
         { "name" : "FUNCIE_REDIS_ADDRESS", "value" : "${local.redis_host}" },
         { "name" : "FUNCIE_LISTEN_ADDRESS", "value" : "0.0.0.0:8082" },
         { "name" : "FUNCIE_LOG_LEVEL", "value" : "debug" },
-        { "name" : "FUNCIE_VERSION", "value" : "${local.version}" }
+        { "name" : "FUNCIE_VERSION", "value" : "${local.version}" },
+        { "name" : "FUNCIE_ENV", "value" : "${var.funcie_env}" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

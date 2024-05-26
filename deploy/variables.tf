@@ -29,3 +29,9 @@ variable "has_vpn" {
   type        = bool
   default     = false
 }
+
+variable "funcie_env" {
+  description = "An environment name to allow differentiating deployments and configuration. If you don't need multiple environments, you can use the default value."
+  type        = string
+  default     = "default"
+}
