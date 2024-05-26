@@ -6,9 +6,32 @@ resource "aws_ecs_cluster" "funcie_cluster" {
   name = "funcie-cluster"
 }
 
-resource "aws_eip" "bastion_eip" {
-  # Don't explicitly attach here, because user_data will do it
-  domain = "vpc"
+data "aws_ip_ranges" "ec2_instance_connect" {
+  services = ["ec2_instance_connect"]
+  regions  = [var.region]
+}
+
+resource "aws_security_group" "ec2_instance_connect" {
+  name        = "ec2-instance-connect"
+  description = "Security group for EC2 Instance Connect"
+  vpc_id      = var.vpc_id
+
+  dynamic "ingress" {
+    for_each = data.aws_ip_ranges.ec2_instance_connect.cidr_blocks
+    content {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_launch_template" "bastion_launch_template" {
@@ -24,7 +47,7 @@ resource "aws_launch_template" "bastion_launch_template" {
 
   network_interfaces {
     associate_public_ip_address = true # Even though we have an EIP, we still need this to be able to use the CLI to associate it
-    security_groups             = [aws_security_group.server_bastion_sg.id]
+    security_groups             = [aws_security_group.server_bastion_sg.id, aws_security_group.ec2_instance_connect.id]
 
     subnet_id = var.public_subnet_ids[0]
   }
@@ -36,9 +59,9 @@ resource "aws_launch_template" "bastion_launch_template" {
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
-    ECS_CLUSTER       = aws_ecs_cluster.funcie_cluster.name
-    EIP_ALLOCATION_ID = aws_eip.bastion_eip.id
-    REGION            = var.region
+    ECS_CLUSTER = aws_ecs_cluster.funcie_cluster.name
+    REGION      = var.region
+    FUNCIE_ENV  = var.funcie_env
   }))
 
   tag_specifications {
@@ -68,8 +91,6 @@ resource "aws_autoscaling_group" "bastion_asg" {
     value               = "bastion-ec2-instance"
     propagate_at_launch = true
   }
-
-  depends_on = [aws_eip.bastion_eip]
 }
 
 resource "aws_iam_role" "instance_role" {
@@ -118,9 +139,22 @@ resource "aws_iam_role_policy" "instance_policy" {
           "ec2:DescribeInstances",
         ],
         Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:PutParameter",
+          "ssm:GetParameter",
+        ],
+        Resource = "arn:aws:ssm:*:*:parameter/funcie/*",
       }
-    ]
+    ],
   })
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_role_policy_attachment" {
+  role       = aws_iam_role.instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
 resource "aws_iam_instance_profile" "instance_profile" {
@@ -144,10 +178,9 @@ resource "null_resource" "asg_update_trigger" {
   triggers = {
     launch_template_version = aws_launch_template.bastion_launch_template.latest_version
     user_data = base64encode(templatefile("${path.module}/userdata.sh", {
-      ECS_CLUSTER       = aws_ecs_cluster.funcie_cluster.name
-      EIP_ALLOCATION_ID = aws_eip.bastion_eip.id
-      REGION            = var.region
-      FUNCIE_ENV        = var.funcie_env
+      ECS_CLUSTER = aws_ecs_cluster.funcie_cluster.name
+      REGION      = var.region
+      FUNCIE_ENV  = var.funcie_env
     }))
     instance_policy = aws_iam_role_policy.instance_policy.policy
   }

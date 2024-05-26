@@ -43,6 +43,7 @@ resource "aws_cloudwatch_log_group" "funcie_server_bastion_lg" {
   name = "/ecs/funcie-server-bastion"
 }
 
+
 resource "aws_security_group" "server_bastion_sg" {
   name        = "funcie-server-bastion-sg"
   description = "funcie-server-bastion-sg"

@@ -38,3 +38,9 @@ resource "aws_security_group" "redis" {
     cidr_blocks = ["10.0.0.0/8"] # TODO: Should depend on the VPC CIDR
   }
 }
+
+resource "aws_ssm_parameter" "redis_host" {
+  name  = "/funcie/${var.funcie_env}/redis_host"
+  type  = "String"
+  value = local.redis_host
+}
