@@ -39,7 +39,6 @@ resource "aws_launch_template" "bastion_launch_template" {
 
   image_id      = data.aws_ssm_parameter.ecs_al2023_arm64_ami.value
   instance_type = "t3.micro"
-  key_name      = aws_key_pair.bastion_key.key_name
 
   iam_instance_profile {
     name = aws_iam_instance_profile.instance_profile.name
@@ -160,17 +159,6 @@ resource "aws_iam_role_policy_attachment" "ssm_role_policy_attachment" {
 resource "aws_iam_instance_profile" "instance_profile" {
   name = "instance_profile"
   role = aws_iam_role.instance_role.name
-}
-
-resource "tls_private_key" "bastion_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "aws_key_pair" "bastion_key" {
-  key_name   = "bastion-key"
-  public_key = tls_private_key.bastion_key.public_key_openssh
-
 }
 
 resource "null_resource" "asg_update_trigger" {

@@ -9,12 +9,3 @@ output "server_bastion_sg_id" {
 output "redis_host" {
   value = local.redis_host
 }
-
-output "bastion_private_key" {
-  value     = tls_private_key.bastion_key.private_key_pem
-  sensitive = true
-}
-
-output "bastion_public_key" {
-  value = tls_private_key.bastion_key.public_key_openssh
-}
