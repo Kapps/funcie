@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"strings"
 )
 
 type ConnectCommand struct {
@@ -36,7 +37,7 @@ func (c *ConnectCommand) Run(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get Redis host: %w", err)
 		}
-		c.RemoteHost = host
+		c.RemoteHost = strings.Split(host, ":")[0]
 	}
 
 	if err := c.startTunnel(ctx); err != nil {
@@ -73,6 +74,8 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		Headers: map[string][]string{
 			"X-Amz-Security-Token": {*sess.TokenValue},
 		},
+		Output:     *sess,
+		InstanceId: instanceId,
 	}
 	err = c.tunneller.OpenTunnel(ctx, *sess.StreamUrl, c.LocalPort, opts)
 	if err != nil {

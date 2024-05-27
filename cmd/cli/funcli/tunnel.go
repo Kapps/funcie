@@ -3,6 +3,13 @@ package funcli
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/session-manager-plugin/src/datachannel"
+	"github.com/aws/session-manager-plugin/src/log"
+	"github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session"
+	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
+	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
+	"github.com/google/uuid"
 	"net/http"
 	ws "nhooyr.io/websocket"
 
@@ -13,7 +20,9 @@ import (
 // TunnelOptions provides optional arguments for creating a network tunnel.
 type TunnelOptions struct {
 	// Headers is a map of headers to send with the connection request.
-	Headers http.Header
+	Headers    http.Header
+	Output     ssm.StartSessionOutput
+	InstanceId string
 }
 
 // Tunneller is an interface for creating a tunnel to a remote host.
@@ -31,7 +40,24 @@ func NewWebhookTunneller() Tunneller {
 }
 
 func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPort int, opts *TunnelOptions) error {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%v", localPort))
+	ep, err := ssm.NewDefaultEndpointResolver().ResolveEndpoint("ca-central-1", ssm.EndpointResolverOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to resolve endpoint: %w", err)
+	}
+
+	ssmSession := &session.Session{
+		DataChannel: &datachannel.DataChannel{},
+		SessionId:   *opts.Output.SessionId,
+		StreamUrl:   *opts.Output.StreamUrl,
+		TokenValue:  *opts.Output.TokenValue,
+		Endpoint:    ep.URL,
+		ClientId:    fmt.Sprintf("funcie-%v", uuid.NewString()),
+		TargetId:    opts.InstanceId,
+	}
+
+	return ssmSession.Execute(log.Logger(false, ssmSession.ClientId))
+
+	/*listener, err := net.Listen("tcp", fmt.Sprintf(":%v", localPort))
 	if err != nil {
 		return fmt.Errorf("failed to dial local connection: %w", err)
 	}
@@ -65,7 +91,7 @@ func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPo
 			}
 			fmt.Println("Done forwarding connection")
 		}()
-	}
+	}*/
 }
 
 func (t *webhookTunnel) forward(ctx context.Context, localConn net.Conn, wsConn *ws.Conn) error {
