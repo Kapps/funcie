@@ -1,7 +1,7 @@
 
 resource "aws_ecs_task_definition" "server_bastion_task" {
   family                   = "funcie-server-bastion"
-  network_mode             = "bridge"
+  network_mode             = "awsvpc"
   requires_compatibilities = ["EC2"]
   cpu                      = "256"
   memory                   = "512"
@@ -70,6 +70,17 @@ resource "aws_ecs_service" "server_bastion_service" {
   task_definition = aws_ecs_task_definition.server_bastion_task.arn
   desired_count   = 1
   launch_type     = "EC2"
+
+  service_registries {
+    registry_arn   = aws_service_discovery_service.server_bastion.arn
+    container_name = "server-bastion-container"
+  }
+
+  network_configuration {
+    assign_public_ip = false
+    security_groups  = [aws_security_group.server_bastion_sg.id]
+    subnets          = var.private_subnet_ids
+  }
 }
 
 resource "aws_iam_role" "ecs_execution_role" {

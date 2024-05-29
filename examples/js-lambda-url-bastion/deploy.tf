@@ -3,11 +3,6 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "security_group_ids" {
-  description = "List of security group IDs for the Lambda function"
-  type        = list(string)
-}
-
 variable "redis_host" {
   description = "Address of the Redis host, including port"
   type        = string
@@ -18,11 +13,28 @@ variable "bastion_host" {
   type        = string
 }
 
+variable "vpc_id" {
+  description = "VPC ID for the Lambda function"
+  type        = string
+}
+
 data "archive_file" "zip" {
   type        = "zip"
   source_dir  = "."
   output_path = "funciejs.zip"
   excludes    = [".terraform", "terraform.tfstate*", "*.tfvars", "deploy.tf", "README.md", "funciejs.zip", ".terraform.lock.hcl"]
+}
+
+resource "aws_security_group" "lambda_sg" {
+  name   = "funcie-lambda-sg"
+  vpc_id = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_lambda_function" "funcie_js" {
@@ -36,7 +48,7 @@ resource "aws_lambda_function" "funcie_js" {
   timeout          = 30
   vpc_config {
     subnet_ids         = var.subnet_ids
-    security_group_ids = var.security_group_ids
+    security_group_ids = [aws_security_group.lambda_sg.id]
   }
   environment {
     variables = {

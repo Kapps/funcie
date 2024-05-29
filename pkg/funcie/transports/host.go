@@ -41,6 +41,8 @@ func NewHost(address string, messageProcessor MessageProcessor) Host {
 func (h *bastionHost) setHandlers() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/dispatch", h.processMessage)
+	mux.HandleFunc("/health", h.processHealthCheck)
+
 	h.httpServer.Handler = mux
 }
 
@@ -60,6 +62,10 @@ func (h *bastionHost) Close(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (h *bastionHost) processHealthCheck(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *bastionHost) processMessage(w http.ResponseWriter, r *http.Request) {
