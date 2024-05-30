@@ -1,7 +1,11 @@
 # Lambda URL Sample
 
 This is a very simple JavaScript example that uses Lambda Function URLs to return a JSON response.
-This sample uses the bastion deployed from the `deploy` folder, referencing the bastion IP by passing in the LB.
+This sample requires funcie to be deployed via the deploy folder in the root of the repository.
+
+## PREREQUISITES
+
+- To run this sample, you will need to have deployed the terraform in the `deploy` folder.
 
 To run this sample, create a `terraform.tfvars` file that contains values for the variables (according to `sample.tfvars`).
 Then deploy the Lambda using `terraform apply`.

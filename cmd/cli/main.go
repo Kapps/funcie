@@ -40,7 +40,6 @@ func main() {
 
 	parser.MustParse(os.Args[1:])
 
-	fmt.Printf("%+v", cli)
 	cmd := parser.Subcommand()
 	if cmd == nil {
 		parser.WriteHelp(os.Stdout)

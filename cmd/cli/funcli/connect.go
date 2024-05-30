@@ -67,9 +67,7 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		return fmt.Errorf("failed to start session: %w", err)
 	}
 
-	fmt.Printf("%+v", sess.StreamUrl)
-
-	fmt.Println("Session started:", *sess.SessionId, "Stream URL:", *sess.StreamUrl)
+	fmt.Println("Session started:", *sess.SessionId)
 	opts := &TunnelOptions{
 		Headers: map[string][]string{
 			"X-Amz-Security-Token": {*sess.TokenValue},
@@ -82,12 +80,12 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		return fmt.Errorf("failed to open tunnel: %w", err)
 	}
 
-	/*_, err = c.connectClient.TerminateSession(ctx, &ssm.TerminateSessionInput{
+	_, err = c.connectClient.TerminateSession(ctx, &ssm.TerminateSessionInput{
 		SessionId: sess.SessionId,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to terminate session: %w", err)
-	}*/
+	}
 
 	return nil
 }
