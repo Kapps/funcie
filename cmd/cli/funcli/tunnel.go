@@ -45,10 +45,11 @@ func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPo
 		DataChannel: &datachannel.DataChannel{},
 		SessionId:   *opts.Output.SessionId,
 		StreamUrl:   *opts.Output.StreamUrl,
-		TokenValue:  *opts.Output.TokenValue,
-		Endpoint:    ep.URL,
-		ClientId:    fmt.Sprintf("funcie-%v", uuid.NewString()),
-		TargetId:    opts.InstanceId,
+
+		TokenValue: *opts.Output.TokenValue,
+		Endpoint:   ep.URL,
+		ClientId:   fmt.Sprintf("funcie-%v", uuid.NewString()),
+		TargetId:   opts.InstanceId,
 	}
 
 	return ssmSession.Execute(log.Logger(false, ssmSession.ClientId))
