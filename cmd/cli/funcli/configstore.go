@@ -13,19 +13,15 @@ type ConfigStore interface {
 	GetConfigValue(ctx context.Context, key string) (string, error)
 }
 
-type SsmParameterStore interface {
-	GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error)
-}
-
 type configStore struct {
 	environment string
-	ssmClient   SsmParameterStore
+	ssmClient   SsmClient
 }
 
 // NewConfigStore creates a new ConfigStore.
-func NewConfigStore(environment string, ssmClient SsmParameterStore) ConfigStore {
+func NewConfigStore(config *CliConfig, ssmClient SsmClient) ConfigStore {
 	return &configStore{
-		environment: environment,
+		environment: config.Environment,
 		ssmClient:   ssmClient,
 	}
 }

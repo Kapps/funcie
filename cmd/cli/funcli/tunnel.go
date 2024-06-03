@@ -28,15 +28,18 @@ type Tunneller interface {
 }
 
 type webhookTunnel struct {
+	region string
 }
 
 // NewWebhookTunneller creates a new WebhookTunnel.
-func NewWebhookTunneller() Tunneller {
-	return &webhookTunnel{}
+func NewWebhookTunneller(conf *CliConfig) Tunneller {
+	return &webhookTunnel{
+		region: conf.Region,
+	}
 }
 
 func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPort int, opts *TunnelOptions) error {
-	ep, err := ssm.NewDefaultEndpointResolver().ResolveEndpoint("ca-central-1", ssm.EndpointResolverOptions{})
+	ep, err := ssm.NewDefaultEndpointResolver().ResolveEndpoint(t.region, ssm.EndpointResolverOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to resolve endpoint: %w", err)
 	}
