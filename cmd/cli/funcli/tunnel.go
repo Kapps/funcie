@@ -10,35 +10,36 @@ import (
 	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/portsession"
 	_ "github.com/aws/session-manager-plugin/src/sessionmanagerplugin/session/shellsession"
 	"github.com/google/uuid"
-	"net/http"
 )
 
-// TunnelOptions provides optional arguments for creating a network tunnel.
-type TunnelOptions struct {
-	// Headers is a map of headers to send with the connection request.
-	Headers    http.Header
-	Output     ssm.StartSessionOutput
-	InstanceId string
+// SsmTunnellerOptions contains the options for OpenTunnel using SSM.
+type SsmTunnellerOptions struct {
+	// Output is the output of the StartSession API call.
+	Output *ssm.StartSessionOutput
+	// InstanceID is the EC2 instance ID of the target instance.
+	InstanceID string
 }
 
 // Tunneller is an interface for creating a tunnel to a remote host.
 type Tunneller interface {
-	// OpenTunnel starts a tunnel to a remote host on the given port locally.
-	OpenTunnel(ctx context.Context, endpoint string, localPort int, opts *TunnelOptions) error
+	// OpenTunnel starts a tunnel to a remote host using the provider-specific options.
+	OpenTunnel(ctx context.Context, opts interface{}) error
 }
 
-type webhookTunnel struct {
+type ssmTunnel struct {
 	region string
 }
 
-// NewWebhookTunneller creates a new WebhookTunnel.
-func NewWebhookTunneller(conf *CliConfig) Tunneller {
-	return &webhookTunnel{
+// NewSsmTunneller creates a new WebhookTunnel.
+func NewSsmTunneller(conf *CliConfig) Tunneller {
+	return &ssmTunnel{
 		region: conf.Region,
 	}
 }
 
-func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPort int, opts *TunnelOptions) error {
+func (t *ssmTunnel) OpenTunnel(ctx context.Context, opts interface{}) error {
+	ssmOpts := opts.(*SsmTunnellerOptions)
+
 	ep, err := ssm.NewDefaultEndpointResolver().ResolveEndpoint(t.region, ssm.EndpointResolverOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to resolve endpoint: %w", err)
@@ -48,14 +49,13 @@ func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPo
 	channel.GetAgentVersion()
 	ssmSession := &session.Session{
 		DataChannel: &datachannel.DataChannel{},
-		SessionId:   *opts.Output.SessionId,
-		StreamUrl:   *opts.Output.StreamUrl,
-		TokenValue:  *opts.Output.TokenValue,
+		SessionId:   *ssmOpts.Output.SessionId,
+		StreamUrl:   *ssmOpts.Output.StreamUrl,
+		TokenValue:  *ssmOpts.Output.TokenValue,
 		Endpoint:    ep.URL,
 		ClientId:    fmt.Sprintf("funcie-%v", uuid.NewString()),
-		TargetId:    opts.InstanceId,
+		TargetId:    ssmOpts.InstanceID,
 	}
 
-	fmt.Println("Opening tunnel to", endpoint, "on port", localPort)
 	return ssmSession.Execute(log.Logger(false, ssmSession.ClientId))
 }

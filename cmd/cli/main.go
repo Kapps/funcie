@@ -72,7 +72,7 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 			funcli.NewConfigStore,
 			funcli.NewConnectCommand,
 			newCli,
-			funcli.NewWebhookTunneller,
+			funcli.NewSsmTunneller,
 			funcli.NewHttpConnectivityService,
 		),
 		fx.NopLogger,

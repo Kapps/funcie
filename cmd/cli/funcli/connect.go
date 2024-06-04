@@ -87,15 +87,11 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		return fmt.Errorf("failed to start session: %w", err)
 	}
 
-	fmt.Println("Session started:", *sess.SessionId)
-	opts := &TunnelOptions{
-		Headers: map[string][]string{
-			"X-Amz-Security-Token": {*sess.TokenValue},
-		},
-		Output:     *sess,
-		InstanceId: instanceId,
+	opts := &SsmTunnellerOptions{
+		Output:     sess,
+		InstanceID: instanceId,
 	}
-	err = c.tunneller.OpenTunnel(ctx, *sess.StreamUrl, conf.LocalPort, opts)
+	err = c.tunneller.OpenTunnel(ctx, opts)
 	if err != nil {
 		return fmt.Errorf("failed to open tunnel: %w", err)
 	}
