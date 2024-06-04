@@ -48,7 +48,8 @@ func TestWaitForConnectivity_ContextDone(t *testing.T) {
 		close(done)
 	}()
 
-	err := service.WaitForConnectivity(ctx, server.URL)
+	url := fmt.Sprintf("http://%s", server.Listener.Addr().String())
+	err := service.WaitForConnectivity(ctx, url)
 	require.Error(t, err)
 	require.True(t, errors.Is(err, context.DeadlineExceeded))
 
@@ -71,6 +72,7 @@ func TestWaitForConnectivity_DelayedServerStart(t *testing.T) {
 		server.Start()
 	}()
 
-	err := service.WaitForConnectivity(ctx, fmt.Sprintf("http://%s", server.Listener.Addr().String()))
+	url := fmt.Sprintf("http://%s", server.Listener.Addr().String())
+	err := service.WaitForConnectivity(ctx, url)
 	require.NoError(t, err)
 }

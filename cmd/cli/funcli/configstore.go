@@ -3,6 +3,7 @@ package funcli
 import (
 	"context"
 	"fmt"
+	aws2 "github.com/Kapps/funcie/cmd/cli/funcli/aws"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
@@ -13,19 +14,15 @@ type ConfigStore interface {
 	GetConfigValue(ctx context.Context, key string) (string, error)
 }
 
-type SsmParameterStore interface {
-	GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error)
-}
-
 type configStore struct {
 	environment string
-	ssmClient   SsmParameterStore
+	ssmClient   aws2.SsmClient
 }
 
 // NewConfigStore creates a new ConfigStore.
-func NewConfigStore(environment string, ssmClient SsmParameterStore) ConfigStore {
+func NewConfigStore(config *CliConfig, ssmClient aws2.SsmClient) ConfigStore {
 	return &configStore{
-		environment: environment,
+		environment: config.Environment,
 		ssmClient:   ssmClient,
 	}
 }

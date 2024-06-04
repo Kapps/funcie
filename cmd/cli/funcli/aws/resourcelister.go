@@ -3,8 +3,9 @@ package aws
 import (
 	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // Vpc provides some basic information about a VPC.
@@ -18,8 +19,6 @@ type Vpc struct {
 type Subnet struct {
 	// ID is the AWS representation of the Subnet ID (not the ARN).
 	Id string
-	// Name is a human-readable name for the Subnet.
-	Name string
 	// Public indicates whether the subnet is public or private.
 	Public bool
 	// VpcId is the ID of the VPC that the subnet is associated with.
@@ -28,23 +27,18 @@ type Subnet struct {
 
 // ResourceLister allows retrieving a list of AWS resources.
 type ResourceLister interface {
+	// ListVpcs returns a list of VPCs within the region configured in the client.
 	ListVpcs(ctx context.Context) ([]Vpc, error)
+	// ListSubnets returns a list of all Subnets within the region configured in the client, regardless of VPC.
 	ListSubnets(ctx context.Context) ([]Subnet, error)
 }
 
-// Ec2VpcClient is a minimal interface for the EC2 client.
-type Ec2VpcClient interface {
-	DescribeVpcs(ctx context.Context, params *ec2.DescribeVpcsInput) (*ec2.DescribeVpcsOutput, error)
-	DescribeSubnets(ctx context.Context, params *ec2.DescribeSubnetsInput) (*ec2.DescribeSubnetsOutput, error)
-	DescribeRouteTables(ctx context.Context, params *ec2.DescribeRouteTablesInput) (*ec2.DescribeRouteTablesOutput, error)
-}
-
 type awsResourceLister struct {
-	ec2Client Ec2VpcClient
+	ec2Client EC2Client
 }
 
 // NewAwsResourceLister creates a new ResourceLister that uses the provided EC2 client.
-func NewAwsResourceLister(client Ec2VpcClient) ResourceLister {
+func NewAwsResourceLister(client EC2Client) ResourceLister {
 	return &awsResourceLister{
 		ec2Client: client,
 	}
@@ -77,19 +71,18 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 		return nil, fmt.Errorf("failed to list subnets: %w", err)
 	}
 
-	subnetIds := make([]*string, 0, len(result.Subnets))
+	subnetIds := make([]string, 0, len(result.Subnets))
 	var subnets []Subnet
 	for _, subnet := range result.Subnets {
 		subnets = append(subnets, Subnet{
 			Id:    *subnet.SubnetId,
-			Name:  *subnet.Tags[0].Value,
 			VpcId: *subnet.VpcId,
 		})
-		subnetIds = append(subnetIds, subnet.SubnetId)
+		subnetIds = append(subnetIds, *subnet.SubnetId)
 	}
 
 	routeTables, err := r.ec2Client.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{
-		Filters: []*ec2.Filter{
+		Filters: []types.Filter{
 			{
 				Name:   aws.String("association.subnet-id"),
 				Values: subnetIds,
@@ -104,7 +97,7 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 		for _, routeTable := range routeTables.RouteTables {
 			for _, association := range routeTable.Associations {
 				if *association.SubnetId == subnet.Id {
-					subnets[i].Public = true
+					subnets[i].Public = association.GatewayId != nil
 					break
 				}
 			}
