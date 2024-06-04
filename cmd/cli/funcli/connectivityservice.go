@@ -2,6 +2,7 @@ package funcli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -63,10 +64,11 @@ func (s *httpConnectivityService) WaitForConnectivity(ctx context.Context, endpo
 				_ = resp.Body.Close()
 				return nil
 			}
-
-			fmt.Println(err)
-
-			time.Sleep(s.opts.RetryInterval)
+			if errors.Is(err, http.ErrServerClosed) || errors.Is(err, http.ErrHandlerTimeout) {
+				time.Sleep(s.opts.RetryInterval)
+				continue
+			}
+			return fmt.Errorf("failed to connect to %s: %w", endpoint, err)
 		}
 	}
 }

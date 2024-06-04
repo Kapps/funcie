@@ -8,46 +8,66 @@ import (
 	"strings"
 )
 
-type ConnectCommand struct {
+type ConnectConfig struct {
 	RemoteHost string `arg:"--remote-host,-r" help:"Override the remote host to connect to instead of the Redis default."`
 	RemotePort int    `arg:"--remote-port,-p" help:"Override the remote port to bind to." default:"6379"`
 	LocalPort  int    `arg:"--local-port,-l" help:"Override the local port to bind to." default:"6379"`
-
-	configStore   ConfigStore
-	connectClient SsmConnectClient
-	tunneller     Tunneller
 }
 
-type SsmConnectClient interface {
-	StartSession(ctx context.Context, params *ssm.StartSessionInput, optFns ...func(*ssm.Options)) (*ssm.StartSessionOutput, error)
-	TerminateSession(ctx context.Context, params *ssm.TerminateSessionInput, optFns ...func(*ssm.Options)) (*ssm.TerminateSessionOutput, error)
+type ConnectCommand struct {
+	cliConfig           *CliConfig
+	configStore         ConfigStore
+	connectClient       SsmClient
+	tunneller           Tunneller
+	connectivityService ConnectivityService
 }
 
-func NewConnectCommand(configStore ConfigStore, connectClient SsmConnectClient, tunneller Tunneller) *ConnectCommand {
+func NewConnectCommand(
+	cliConfig *CliConfig,
+	configStore ConfigStore,
+	connectClient SsmClient,
+	tunneller Tunneller,
+	connectivityService ConnectivityService,
+) *ConnectCommand {
+
 	return &ConnectCommand{
-		configStore:   configStore,
-		connectClient: connectClient,
-		tunneller:     tunneller,
+		cliConfig:           cliConfig,
+		configStore:         configStore,
+		connectClient:       connectClient,
+		tunneller:           tunneller,
+		connectivityService: connectivityService,
 	}
 }
 
 func (c *ConnectCommand) Run(ctx context.Context) error {
-	if c.RemoteHost == "" {
+	conf := c.cliConfig.ConnectConfig
+
+	if conf.RemoteHost == "" {
 		host, err := c.configStore.GetConfigValue(ctx, "redis_host")
 		if err != nil {
 			return fmt.Errorf("failed to get Redis host: %w", err)
 		}
-		c.RemoteHost = strings.Split(host, ":")[0]
+		conf.RemoteHost = strings.Split(host, ":")[0]
 	}
 
-	if err := c.startTunnel(ctx); err != nil {
-		return fmt.Errorf("failed to start tunnel: %w", err)
+	ssmEndpoint := fmt.Sprintf("https://ssm.%v.amazonaws.com", c.cliConfig.Region)
+
+	for ctx.Err() == nil {
+		if err := c.connectivityService.WaitForConnectivity(ctx, ssmEndpoint); err != nil {
+			return fmt.Errorf("failed to wait for connectivity: %w", err)
+		}
+
+		if err := c.startTunnel(ctx); err != nil {
+			return fmt.Errorf("failed to start tunnel: %w", err)
+		}
 	}
 
 	return nil
 }
 
 func (c *ConnectCommand) startTunnel(ctx context.Context) error {
+	conf := c.cliConfig.ConnectConfig
+
 	instanceId, err := c.configStore.GetConfigValue(ctx, "bastion_instance_id")
 	if err != nil {
 		return fmt.Errorf("failed to get instance ID: %w", err)
@@ -57,9 +77,9 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		Target:       aws.String(instanceId),
 		DocumentName: aws.String("AWS-StartPortForwardingSessionToRemoteHost"),
 		Parameters: map[string][]string{
-			"portNumber":      {fmt.Sprintf("%v", c.RemotePort)},
-			"localPortNumber": {fmt.Sprintf("%v", c.LocalPort)},
-			"host":            {c.RemoteHost},
+			"portNumber":      {fmt.Sprintf("%v", conf.RemotePort)},
+			"localPortNumber": {fmt.Sprintf("%v", conf.LocalPort)},
+			"host":            {conf.RemoteHost},
 		},
 		Reason: nil,
 	})
@@ -75,7 +95,7 @@ func (c *ConnectCommand) startTunnel(ctx context.Context) error {
 		Output:     *sess,
 		InstanceId: instanceId,
 	}
-	err = c.tunneller.OpenTunnel(ctx, *sess.StreamUrl, c.LocalPort, opts)
+	err = c.tunneller.OpenTunnel(ctx, *sess.StreamUrl, conf.LocalPort, opts)
 	if err != nil {
 		return fmt.Errorf("failed to open tunnel: %w", err)
 	}
