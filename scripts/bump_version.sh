@@ -42,10 +42,12 @@ case $BUMP_TYPE in
 esac
 
 echo $NEW_VERSION > VERSION
+echo $NEW_VERSION > cmd/cli/version.txt
 
 NEW_TAG="v$NEW_VERSION"
 
 git add VERSION
+git add cmd/cli/version.txt
 git commit -m "Bump version to $NEW_TAG"
 git tag $NEW_TAG
 
