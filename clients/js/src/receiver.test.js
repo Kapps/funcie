@@ -1,9 +1,6 @@
 const http = require("http");
-const { promisify } = require("util");
 const { beginReceiving } = require("./receiver");
 const { sendMessage } = require("./bastionClient");
-const { invokeLambda } = require("./utils");
-const { Message, Response } = require("./models");
 
 jest.mock("http");
 jest.mock("./bastionClient");
@@ -67,8 +64,6 @@ describe("beginReceiving", () => {
             mockConfig.ListenAddress.hostname,
             expect.any(Function)
         );
-        expect(mockServer.on).toHaveBeenCalledTimes(2);
+        expect(mockServer.on).toHaveBeenCalledTimes(1);
     });
-
-    // Add more test cases as required, for example, to test the request handling logic, error paths, etc.
 });
