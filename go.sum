@@ -1,3 +1,5 @@
+github.com/Kapps/session-manager-plugin v0.0.0-20240604041734-ee5af4222846 h1:c/NS2yo3QP1dIutmbG/HO59nZKIxPZdkyoTbnJmt85E=
+github.com/Kapps/session-manager-plugin v0.0.0-20240604041734-ee5af4222846/go.mod h1:vAm+qr4DLCQEkbLEoeaPVX2iT2Lr5aSgYkJtZMuegnA=
 github.com/alexflint/go-arg v1.5.0 h1:rwMKGiaQuRbXfZNyRUvIfke63QvOBt1/QTshlGQHohM=
 github.com/alexflint/go-arg v1.5.0/go.mod h1:A7vTJzvjoaSTypg4biM5uYNTkJ27SkNTArtYXnlqVO8=
 github.com/alexflint/go-scalar v1.2.0 h1:WR7JPKkeNpnYIOfHRa7ivM21aWAdHD0gEWHCx+WQBRw=
@@ -32,8 +34,6 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc v1.24.3 h1:Pav5q3cA260Zqez42T9UhIls
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.24.3/go.mod h1:9lmoVDVLz/yUZwLaQ676TK02fhCu4+PgRSmMaKR1ozk=
 github.com/aws/aws-sdk-go-v2/service/sts v1.28.10 h1:69tpbPED7jKPyzMcrwSvhWcJ9bPnZsZs18NT40JwM0g=
 github.com/aws/aws-sdk-go-v2/service/sts v1.28.10/go.mod h1:0Aqn1MnEuitqfsCNyKsdKLhDUOr4txD/g19EfiUqgws=
-github.com/aws/session-manager-plugin v0.0.0-20240103212942-e12e3d7a44af h1:mq6Swz3HVR1ZV9zkxgEj4ywg2R9s3MAAZXPVjPtz0U4=
-github.com/aws/session-manager-plugin v0.0.0-20240103212942-e12e3d7a44af/go.mod h1:7n17tunRPUsniNBu5Ja9C7WwJWTdOzaLqr/H0Ns3uuI=
 github.com/aws/smithy-go v1.20.2 h1:tbp628ireGtzcHDDmLT/6ADHidqnwgF57XOXZe6tp4Q=
 github.com/aws/smithy-go v1.20.2/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=

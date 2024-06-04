@@ -68,19 +68,7 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 		fx.Supply(fx.Annotate(context.Background(), fx.As(new(context.Context)))),
 		fx.Provide(
 			fx.Annotate(ssm.NewFromConfig, fx.As(new(funcli.SsmClient))),
-			func() (aws.Config, error) {
-				var opts []func(*config.LoadOptions) error
-				if cliConfig.Region != "" {
-					opts = append(opts, config.WithRegion(cliConfig.Region))
-				}
-
-				cfg, err := config.LoadDefaultConfig(context.Background(), opts...)
-				if err != nil {
-					return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
-				}
-
-				return cfg, nil
-			},
+			loadAwsConfig,
 			funcli.NewConfigStore,
 			funcli.NewConnectCommand,
 			newCli,
@@ -96,6 +84,20 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 	}
 
 	return res, nil
+}
+
+func loadAwsConfig(cliConfig *funcli.CliConfig) (aws.Config, error) {
+	var opts []func(*config.LoadOptions) error
+	if cliConfig.Region != "" {
+		opts = append(opts, config.WithRegion(cliConfig.Region))
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background(), opts...)
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	return cfg, nil
 }
 
 func newCli(

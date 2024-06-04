@@ -57,3 +57,5 @@ require (
 )
 
 replace github.com/twinj/uuid => github.com/twinj/uuid v0.0.0-20151029044442-89173bcdda19
+
+replace github.com/aws/session-manager-plugin => github.com/Kapps/session-manager-plugin v0.0.0-20240604041734-ee5af4222846

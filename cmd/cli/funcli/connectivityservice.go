@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -47,6 +48,7 @@ func NewHttpConnectivityService(opts ...HttpConnectivityServiceOptionSetter) Con
 }
 
 func (s *httpConnectivityService) WaitForConnectivity(ctx context.Context, endpoint string) error {
+	hadOutage := false
 	for {
 		select {
 		case <-ctx.Done():
@@ -61,10 +63,17 @@ func (s *httpConnectivityService) WaitForConnectivity(ctx context.Context, endpo
 
 			resp, err := http.DefaultClient.Do(req)
 			if err == nil {
+				if hadOutage {
+					log.Println("Internet connectivity restored")
+				}
 				_ = resp.Body.Close()
 				return nil
 			}
 			if errors.Is(err, http.ErrServerClosed) || errors.Is(err, http.ErrHandlerTimeout) {
+				if !hadOutage {
+					hadOutage = true
+					log.Println("Internet connectivity outage detected, waiting for it to be restored...")
+				}
 				time.Sleep(s.opts.RetryInterval)
 				continue
 			}

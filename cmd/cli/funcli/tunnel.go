@@ -44,6 +44,8 @@ func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPo
 		return fmt.Errorf("failed to resolve endpoint: %w", err)
 	}
 
+	channel := &datachannel.DataChannel{}
+	channel.GetAgentVersion()
 	ssmSession := &session.Session{
 		DataChannel: &datachannel.DataChannel{},
 		SessionId:   *opts.Output.SessionId,
@@ -54,5 +56,6 @@ func (t *webhookTunnel) OpenTunnel(ctx context.Context, endpoint string, localPo
 		TargetId:    opts.InstanceId,
 	}
 
+	fmt.Println("Opening tunnel to", endpoint, "on port", localPort)
 	return ssmSession.Execute(log.Logger(false, ssmSession.ClientId))
 }
