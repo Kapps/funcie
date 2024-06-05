@@ -5,43 +5,11 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/aws/aws-sdk-go/aws"
 	"sort"
 	"strings"
 )
-
-// Vpc provides some basic information about a VPC.
-type Vpc struct {
-	// ID is the AWS representation of the VPC ID (not the ARN).
-	Id string
-	// Name is a human-readable name for the VPC.
-	Name string
-}
-
-func (v Vpc) String() string {
-	return fmt.Sprintf("%s (%s)", v.Name, v.Id)
-}
-
-type Subnet struct {
-	// ID is the AWS representation of the Subnet ID (not the ARN).
-	Id string
-	// Name is a human-readable name for the Subnet.
-	Name string
-	// Public indicates whether the subnet is public or private.
-	Public bool
-	// VpcId is the ID of the VPC that the subnet is associated with.
-	VpcId string
-}
-
-func (s Subnet) String() string {
-	pubStr := ""
-	if s.Public {
-		pubStr = "Public"
-	} else {
-		pubStr = "Private"
-	}
-	return fmt.Sprintf("%s: %s (%s)", s.Name, s.Id, pubStr)
-}
 
 // ResourceLister allows retrieving a list of AWS resources.
 type ResourceLister interface {
@@ -49,16 +17,20 @@ type ResourceLister interface {
 	ListVpcs(ctx context.Context) ([]Vpc, error)
 	// ListSubnets returns a list of all Subnets within the region configured in the client, regardless of VPC.
 	ListSubnets(ctx context.Context) ([]Subnet, error)
+	// ListElastiCacheClusters returns a list of all ElastiCache clusters within the region configured in the client.
+	ListElastiCacheClusters(ctx context.Context) ([]ElastiCacheCluster, error)
 }
 
 type awsResourceLister struct {
-	ec2Client EC2Client
+	ec2Client         EC2Client
+	elasticacheClient ElastiCacheClient
 }
 
 // NewAwsResourceLister creates a new ResourceLister that uses the provided EC2 client.
-func NewAwsResourceLister(client EC2Client) ResourceLister {
+func NewAwsResourceLister(client EC2Client, elasticacheClient ElastiCacheClient) ResourceLister {
 	return &awsResourceLister{
-		ec2Client: client,
+		ec2Client:         client,
+		elasticacheClient: elasticacheClient,
 	}
 }
 
@@ -138,4 +110,44 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 	})
 
 	return subnets, nil
+}
+
+func (r *awsResourceLister) ListElastiCacheClusters(ctx context.Context) ([]ElastiCacheCluster, error) {
+	input := &elasticache.DescribeCacheClustersInput{
+		ShowCacheNodeInfo: aws.Bool(true),
+	}
+
+	result, err := r.elasticacheClient.DescribeCacheClusters(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list ElastiCache clusters: %w", err)
+	}
+
+	var clusters []ElastiCacheCluster
+	for _, cluster := range result.CacheClusters {
+		/*var nodes []ElastiCacheNode
+		for _, node := range cluster.CacheNodes {
+			nodes = append(nodes, ElastiCacheNode{
+				Name:     *node.CacheNodeId,
+				Endpoint: *node.Endpoint.Address,
+			})
+		}*/
+
+		c := ElastiCacheCluster{
+			Arn:  *cluster.ARN,
+			Name: *cluster.CacheClusterId,
+		}
+		if cluster.ConfigurationEndpoint != nil && cluster.ConfigurationEndpoint.Address != nil {
+			c.PrimaryEndpoint = *cluster.ConfigurationEndpoint.Address
+		} else {
+			c.PrimaryEndpoint = *cluster.CacheNodes[0].Endpoint.Address
+		}
+
+		clusters = append(clusters, c)
+	}
+
+	sort.Slice(clusters, func(i, j int) bool {
+		return clusters[i].Name < clusters[j].Name
+	})
+
+	return clusters, nil
 }

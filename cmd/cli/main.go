@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"go.uber.org/fx"
 	"os"
@@ -71,6 +72,7 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 		fx.Provide(
 			fx.Annotate(ssm.NewFromConfig, fx.As(new(funcliAws.SsmClient))),
 			fx.Annotate(ec2.NewFromConfig, fx.As(new(funcliAws.EC2Client))),
+			fx.Annotate(elasticache.NewFromConfig, fx.As(new(funcliAws.ElastiCacheClient))),
 			loadAwsConfig,
 			funcli.NewConfigStore,
 			funcli.NewConnectCommand,
