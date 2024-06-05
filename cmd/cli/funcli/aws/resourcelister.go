@@ -6,6 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"sort"
+	"strings"
 )
 
 // Vpc provides some basic information about a VPC.
@@ -16,13 +18,29 @@ type Vpc struct {
 	Name string
 }
 
+func (v Vpc) String() string {
+	return fmt.Sprintf("%s (%s)", v.Name, v.Id)
+}
+
 type Subnet struct {
 	// ID is the AWS representation of the Subnet ID (not the ARN).
 	Id string
+	// Name is a human-readable name for the Subnet.
+	Name string
 	// Public indicates whether the subnet is public or private.
 	Public bool
 	// VpcId is the ID of the VPC that the subnet is associated with.
 	VpcId string
+}
+
+func (s Subnet) String() string {
+	pubStr := ""
+	if s.Public {
+		pubStr = "Public"
+	} else {
+		pubStr = "Private"
+	}
+	return fmt.Sprintf("%s: %s (%s)", s.Name, s.Id, pubStr)
 }
 
 // ResourceLister allows retrieving a list of AWS resources.
@@ -60,6 +78,10 @@ func (r *awsResourceLister) ListVpcs(ctx context.Context) ([]Vpc, error) {
 		})
 	}
 
+	sort.Slice(vpcs, func(i, j int) bool {
+		return vpcs[i].Name < vpcs[j].Name
+	})
+
 	return vpcs, nil
 }
 
@@ -77,6 +99,7 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 		subnets = append(subnets, Subnet{
 			Id:    *subnet.SubnetId,
 			VpcId: *subnet.VpcId,
+			Name:  *subnet.Tags[0].Value,
 		})
 		subnetIds = append(subnetIds, *subnet.SubnetId)
 	}
@@ -93,16 +116,26 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 		return nil, fmt.Errorf("failed to list route tables: %w", err)
 	}
 
+	// Ick.
 	for i, subnet := range subnets {
+	rt:
 		for _, routeTable := range routeTables.RouteTables {
 			for _, association := range routeTable.Associations {
 				if *association.SubnetId == subnet.Id {
-					subnets[i].Public = association.GatewayId != nil
-					break
+					for _, route := range routeTable.Routes {
+						if strings.HasPrefix(*route.GatewayId, "igw-") {
+							subnets[i].Public = true
+							break rt
+						}
+					}
 				}
 			}
 		}
 	}
+
+	sort.Slice(subnets, func(i, j int) bool {
+		return subnets[i].Id < subnets[j].Id
+	})
 
 	return subnets, nil
 }

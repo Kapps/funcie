@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/cli/funcli/aws"
-	"github.com/c-bata/go-prompt"
+	"github.com/charmbracelet/huh"
 )
 
 type InitConfig struct {
@@ -29,33 +29,57 @@ func (c *InitCommand) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to prompt for VPC: %w", err)
 	}
 
-	fmt.Printf("Selected VPC: %s\n", vpc)
+	subnet, err := c.promptSubnet(ctx, vpc.Id)
+	if err != nil {
+		return fmt.Errorf("failed to prompt for subnet: %w", err)
+	}
+
+	fmt.Printf("Selected Subnet: %v\n", subnet)
 
 	return nil
 }
 
-func (c *InitCommand) promptVpc(ctx context.Context) (string, error) {
+func (c *InitCommand) promptVpc(ctx context.Context) (aws.Vpc, error) {
 	vpcs, err := c.resourceList.ListVpcs(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to list vpcs: %w", err)
+		return aws.Vpc{}, fmt.Errorf("failed to list vpcs: %w", err)
 	}
 
-	vpcNames := make([]prompt.Suggest, 0, len(vpcs))
-	for _, vpc := range vpcs {
-		vpcNames = append(vpcNames, prompt.Suggest{Text: vpc.Name, Description: vpc.Id})
+	var selected aws.Vpc
+	err = huh.NewSelect[aws.Vpc]().
+		Title("Which VPC would you like to use?").
+		Options(huh.NewOptions[aws.Vpc](vpcs...)...).
+		Value(&selected).
+		Run()
+	if err != nil {
+		return aws.Vpc{}, fmt.Errorf("failed to select VPC: %w", err)
 	}
 
-	completer := func(d prompt.Document) []prompt.Suggest {
-		return prompt.FilterFuzzy(vpcNames, d.GetWordBeforeCursor(), true)
+	return selected, nil
+}
+
+func (c *InitCommand) promptSubnet(ctx context.Context, vpcId string) (aws.Subnet, error) {
+	subnets, err := c.resourceList.ListSubnets(ctx)
+	if err != nil {
+		return aws.Subnet{}, fmt.Errorf("failed to list subnets: %w", err)
 	}
 
-	promp
-	p := prompt.New(
-		func(in string) {},
-		completer,
-		prompt.OptionPrefix("Select a VPC: "),
-		prompt.OptionShowCompletionAtStart(),
-	)
+	filtered := make([]aws.Subnet, 0, 4)
+	for _, subnet := range subnets {
+		if subnet.VpcId == vpcId {
+			filtered = append(filtered, subnet)
+		}
+	}
 
-	return p.Input(), nil
+	var selected aws.Subnet
+	err = huh.NewSelect[aws.Subnet]().
+		Title("Which subnet would you like to use?").
+		Options(huh.NewOptions[aws.Subnet](filtered...)...).
+		Value(&selected).
+		Run()
+	if err != nil {
+		return aws.Subnet{}, fmt.Errorf("failed to select subnet: %w", err)
+	}
+
+	return selected, nil
 }
