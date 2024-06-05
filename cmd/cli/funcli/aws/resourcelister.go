@@ -106,6 +106,9 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 	}
 
 	sort.Slice(subnets, func(i, j int) bool {
+		if subnets[i].Public != subnets[j].Public {
+			return !subnets[i].Public
+		}
 		return subnets[i].Id < subnets[j].Id
 	})
 
@@ -124,14 +127,6 @@ func (r *awsResourceLister) ListElastiCacheClusters(ctx context.Context) ([]Elas
 
 	var clusters []ElastiCacheCluster
 	for _, cluster := range result.CacheClusters {
-		/*var nodes []ElastiCacheNode
-		for _, node := range cluster.CacheNodes {
-			nodes = append(nodes, ElastiCacheNode{
-				Name:     *node.CacheNodeId,
-				Endpoint: *node.Endpoint.Address,
-			})
-		}*/
-
 		c := ElastiCacheCluster{
 			Arn:  *cluster.ARN,
 			Name: *cluster.CacheClusterId,
