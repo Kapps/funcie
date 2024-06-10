@@ -5,18 +5,23 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/cmd/cli/funcli/aws"
 	"github.com/Kapps/funcie/cmd/cli/funcli/internal"
+	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
 	"github.com/charmbracelet/huh"
 	"os"
 	"path"
 )
 
+const tfModuleRepo = "git@github.com:Kapps/terraform-aws-funcie.git"
+
 type InitConfig struct {
-	OutputFile string `arg:"--output-file,-o" help:"Output file to write the generated terraform configuration to." default:"funcli.tfvars"`
+	//OutputFile string `arg:"--output-file,-o" help:"Output file to write the generated terraform configuration to." default:"funcli.tfvars"`
 }
 
 type InitCommand struct {
-	cliConfig    *CliConfig
-	resourceList aws.ResourceLister
+	cliConfig       *CliConfig
+	resourceList    aws.ResourceLister
+	gitClient       tools.GitClient
+	terraformClient tools.TerraformClient
 }
 
 type TerraformVars struct {
@@ -27,10 +32,17 @@ type TerraformVars struct {
 	Region         string   `yaml:"region"`
 }
 
-func NewInitCommand(cliConfig *CliConfig, resourceList aws.ResourceLister) *InitCommand {
+func NewInitCommand(
+	cliConfig *CliConfig,
+	resourceList aws.ResourceLister,
+	gitClient tools.GitClient,
+	terraformClient tools.TerraformClient,
+) *InitCommand {
 	return &InitCommand{
-		cliConfig:    cliConfig,
-		resourceList: resourceList,
+		cliConfig:       cliConfig,
+		resourceList:    resourceList,
+		gitClient:       gitClient,
+		terraformClient: terraformClient,
 	}
 }
 
@@ -70,7 +82,7 @@ func (c *InitCommand) Run(ctx context.Context) error {
 		vars.PublicSubnets = append(vars.PublicSubnets, subnet.Id)
 	}
 
-	if err := writeTerraformVars(c.cliConfig.InitConfig.OutputFile, vars); err != nil {
+	if err := c.writeTerraformVars(vars); err != nil {
 		return fmt.Errorf("failed to write terraform vars: %w", err)
 	}
 
@@ -169,15 +181,59 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 	return &selected, nil
 }
 
-func writeTerraformVars(outputFile string, vars TerraformVars) error {
-	fileContents := marshalVariables(vars)
+func (c *InitCommand) writeTerraformVars(vars TerraformVars) error {
+	varFileContents := marshalVariables(vars)
 
-	outPath := path.Join(outputFile)
-	if err := os.WriteFile(outPath, []byte(fileContents), 0644); err != nil {
-		return fmt.Errorf("failed to write terraform vars to %s: %w", outPath, err)
+	baseDir := path.Join(os.Getenv("HOME"), ".funcie/")
+	varFile := path.Join(baseDir, "funcli.tfvars")
+
+	if err := os.Mkdir(baseDir, 0755); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("failed to create directory for terraform vars: %w", err)
 	}
 
-	fmt.Printf("Wrote terraform vars to %s\n", outPath)
+	if err := os.WriteFile(varFile, []byte(varFileContents), 0644); err != nil {
+		return fmt.Errorf("failed to write terraform vars to %s: %w", varFile, err)
+	}
+
+	branch := "v" + c.cliConfig.Version()
+	fmt.Printf("Cloning funcie terraform module with tag %v\n...", branch)
+
+	tfModuleDir := path.Join(baseDir, "terraform-aws-funcie/")
+	if err := c.gitClient.ShallowClone(tfModuleRepo, tfModuleDir, branch); err != nil {
+		return fmt.Errorf("failed to clone terraform module: %w", err)
+	}
+
+	fmt.Printf("Cloned terraform module to %s; running init.\n", tfModuleDir)
+
+	if err := c.terraformClient.Init(tfModuleDir); err != nil {
+		return fmt.Errorf("failed to initialize terraform module: %w", err)
+	}
+
+	fmt.Println("Terraform module initialized; will deploy module with the following parameters:")
+	fmt.Println(varFileContents)
+
+	confirmed := false
+	err := huh.NewConfirm().
+		Title("Would you like to proceed with the deployment? Remember, some resources are not part of the AWS free tier and therefore charges will apply.").
+		Affirmative("I understand, deploy module").
+		Value(&confirmed).
+		Run()
+	if err != nil {
+		return fmt.Errorf("failed to confirm deployment: %w", err)
+	}
+
+	if !confirmed {
+		return fmt.Errorf("deployment cancelled")
+	}
+
+	fmt.Println("Applying terraform configuration...")
+
+	if err := c.terraformClient.Apply(tfModuleDir, varFile); err != nil {
+		return fmt.Errorf("failed to apply terraform configuration: %w", err)
+	}
+
+	fmt.Println("Terraform configuration applied successfully.")
+
 	return nil
 }
 

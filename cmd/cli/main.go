@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Kapps/funcie/cmd/cli/funcli"
 	funcliAws "github.com/Kapps/funcie/cmd/cli/funcli/aws"
+	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
 	"github.com/alexflint/go-arg"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -81,6 +82,9 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 			funcli.NewSsmTunneller,
 			funcli.NewHttpConnectivityService,
 			funcliAws.NewAwsResourceLister,
+			tools.NewProcessRunner,
+			tools.NewGitCliClient,
+			tools.NewTerraformCliClient,
 		),
 		fx.NopLogger,
 		fx.Populate(&res),
