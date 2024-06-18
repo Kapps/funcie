@@ -35,7 +35,7 @@ func (g *gitCliClient) ShallowClone(url string, directory string, branch string)
 		return fmt.Errorf("failed to remove directory %v: %w", directory, err)
 	}
 
-	_, err := g.runner.Run("git", "clone", url, "--depth", "1", directory)
+	_, err := g.runner.Run("git", "clone", url, "-c", "advice.detachedHead=false", "--branch", branch, "--depth", "1", directory)
 	if err != nil {
 		return fmt.Errorf("failed to clone repository %v: %w", url, err)
 	}
