@@ -8,13 +8,12 @@ import (
 	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
 	"github.com/charmbracelet/huh"
 	"os"
-	"path"
+	"strings"
 )
 
 const tfModuleRepo = "git@github.com:Kapps/terraform-aws-funcie.git"
 
 type InitConfig struct {
-	//OutputFile string `arg:"--output-file,-o" help:"Output file to write the generated terraform configuration to." default:"funcli.tfvars"`
 }
 
 type InitCommand struct {
@@ -184,8 +183,8 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 func (c *InitCommand) writeTerraformVars(vars TerraformVars) error {
 	varFileContents := marshalVariables(vars)
 
-	baseDir := path.Join(os.Getenv("HOME"), ".funcie/")
-	varFile := path.Join(baseDir, "funcli.tfvars")
+	baseDir := internal.GetFuncieBaseDir()
+	varFile := internal.GetTerraformVarsPath()
 
 	if err := os.Mkdir(baseDir, 0755); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("failed to create directory for terraform vars: %w", err)
@@ -195,11 +194,11 @@ func (c *InitCommand) writeTerraformVars(vars TerraformVars) error {
 		return fmt.Errorf("failed to write terraform vars to %s: %w", varFile, err)
 	}
 
-	branch := "v" + c.cliConfig.Version()
-	fmt.Printf("Cloning funcie terraform module with tag %v\n...", branch)
+	branch := "v" + strings.TrimSpace(c.cliConfig.versionString)
+	fmt.Printf("Cloning funcie terraform module with tag %v...\n", branch)
 
-	tfModuleDir := path.Join(baseDir, "terraform-aws-funcie/")
-	if err := c.gitClient.ShallowClone(tfModuleRepo, tfModuleDir, branch); err != nil {
+	tfModuleDir := internal.GetTerraformDir()
+	if err := c.gitClient.Checkout(tfModuleRepo, tfModuleDir, branch); err != nil {
 		return fmt.Errorf("failed to clone terraform module: %w", err)
 	}
 

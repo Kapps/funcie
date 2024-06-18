@@ -85,6 +85,7 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 			tools.NewProcessRunner,
 			tools.NewGitCliClient,
 			tools.NewTerraformCliClient,
+			funcli.NewDestroyCommand,
 		),
 		fx.NopLogger,
 		fx.Populate(&res),
@@ -115,12 +116,14 @@ func newCli(
 	conf *funcli.CliConfig,
 	connectCmd *funcli.ConnectCommand,
 	initCmd *funcli.InitCommand,
+	destroyCmd *funcli.DestroyCommand,
 ) *cli {
 	inst := &cli{
 		commands: make(map[interface{}]Runnable),
 	}
 	inst.RegisterCommand(conf.ConnectConfig, connectCmd)
 	inst.RegisterCommand(conf.InitConfig, initCmd)
+	inst.RegisterCommand(conf.DestroyConfig, destroyCmd)
 
 	return inst
 }
