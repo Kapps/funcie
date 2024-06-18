@@ -55,6 +55,8 @@ func (p *processRunner) RunWithOptions(cmd string, options RunnerOpts) (string, 
 		}
 	}
 
+	proc.Env = append(proc.Env, os.Environ()...)
+
 	if options.WorkingDir != "" {
 		proc.Dir = options.WorkingDir
 	}
