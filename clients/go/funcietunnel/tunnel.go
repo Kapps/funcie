@@ -17,7 +17,7 @@ import (
 // See NewConfig for the environment variables that are used.
 // The application name is an arbitrary identifier to uniquely identify this application in order to route messages.
 func Start(appName string, handler interface{}) {
-	ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFn()
 
 	conf, err := config.LoadDefaultConfig(ctx)
