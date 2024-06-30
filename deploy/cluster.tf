@@ -38,7 +38,7 @@ resource "aws_launch_template" "bastion_launch_template" {
   name = "bastion-launch-template"
 
   image_id      = data.aws_ssm_parameter.ecs_al2023_arm64_ami.value
-  instance_type = "t3.micro"
+  instance_type = var.bastion_instance_type
 
   iam_instance_profile {
     name = aws_iam_instance_profile.instance_profile.name
