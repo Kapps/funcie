@@ -51,9 +51,12 @@ func (c *InitCommand) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to prompt for VPC: %w", err)
 	}
 
-	privSubnets, pubSubnets, err := c.promptSubnet(ctx, vpc.Id)
-	if err != nil {
-		return fmt.Errorf("failed to prompt for subnet: %w", err)
+	var privSubnets, pubSubnets []aws.Subnet
+	if vpc.Id != "" {
+		privSubnets, pubSubnets, err = c.promptSubnet(ctx, vpc.Id)
+		if err != nil {
+			return fmt.Errorf("failed to prompt for subnet: %w", err)
+		}
 	}
 
 	elastiCache, err := c.promptElasticache(ctx)
@@ -97,7 +100,10 @@ func (c *InitCommand) promptVpc(ctx context.Context) (aws.Vpc, error) {
 	var selected aws.Vpc
 	err = huh.NewSelect[aws.Vpc]().
 		Title("Which VPC would you like to use?").
-		Options(huh.NewOptions[aws.Vpc](vpcs...)...).
+		Options(append(
+			[]huh.Option[aws.Vpc]{huh.NewOption[aws.Vpc]("<create new VPC with NAT instance config>", aws.Vpc{})},
+			huh.NewOptions[aws.Vpc](vpcs...)...,
+		)...).
 		Value(&selected).
 		Run()
 	if err != nil {

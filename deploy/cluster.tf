@@ -48,7 +48,7 @@ resource "aws_launch_template" "bastion_launch_template" {
     associate_public_ip_address = true # Even though we have an EIP, we still need this to be able to use the CLI to associate it
     security_groups             = [aws_security_group.server_bastion_sg.id, aws_security_group.ec2_instance_connect.id]
 
-    subnet_id = var.public_subnet_ids[0]
+    subnet_id = local.public_subnet_ids[0]
   }
 
   metadata_options {
@@ -58,9 +58,11 @@ resource "aws_launch_template" "bastion_launch_template" {
   }
 
   user_data = base64encode(templatefile("${path.module}/userdata.sh", {
-    ECS_CLUSTER = aws_ecs_cluster.funcie_cluster.name
-    REGION      = var.region
-    FUNCIE_ENV  = var.funcie_env
+    ECS_CLUSTER    = aws_ecs_cluster.funcie_cluster.name
+    REGION         = var.region
+    FUNCIE_ENV     = var.funcie_env
+    ROUTE_TABLE_ID = aws_route_table.funcie_nat_route_table.id
+    CREATE_VPC     = var.vpc_id == ""
   }))
 
   tag_specifications {
@@ -83,7 +85,7 @@ resource "aws_autoscaling_group" "bastion_asg" {
     version = "$Latest"
   }
 
-  vpc_zone_identifier = var.public_subnet_ids
+  vpc_zone_identifier = local.public_subnet_ids
 
   tag {
     key                 = "Name"
@@ -119,6 +121,7 @@ resource "aws_iam_role_policy" "instance_policy" {
       {
         Effect = "Allow",
         Action = [
+          // ECS-related permissions to allow the instance to register with the cluster and run tasks / send logs
           "ecs:RegisterContainerInstance",
           "ecs:DeregisterContainerInstance",
           "ecs:DiscoverPollEndpoint",
@@ -132,10 +135,16 @@ resource "aws_iam_role_policy" "instance_policy" {
           "ecs:UpdateContainerInstancesState",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
+          # EC2 permissions to allow the instance to manage its own EIP
           "ec2:AssociateAddress",
           "ec2:DisassociateAddress",
           "ec2:DescribeAddresses",
           "ec2:DescribeInstances",
+          # EC2 permissions to allow the instance to update the route table to register itself as the NAT instance
+          "ec2:CreateRoute",
+          "ec2:DeleteRoute",
+          "ec2:DescribeRouteTables",
+          "ec2:ReplaceRoute",
         ],
         Resource = "*"
       },
@@ -166,9 +175,11 @@ resource "null_resource" "asg_update_trigger" {
   triggers = {
     launch_template_version = aws_launch_template.bastion_launch_template.latest_version
     user_data = base64encode(templatefile("${path.module}/userdata.sh", {
-      ECS_CLUSTER = aws_ecs_cluster.funcie_cluster.name
-      REGION      = var.region
-      FUNCIE_ENV  = var.funcie_env
+      ECS_CLUSTER    = aws_ecs_cluster.funcie_cluster.name
+      REGION         = var.region
+      FUNCIE_ENV     = var.funcie_env
+      ROUTE_TABLE_ID = var.vpc_id == "" ? aws_route_table.funcie_nat_route_table.id : ""
+      CREATE_VPC     = var.vpc_id == ""
     }))
     instance_policy = aws_iam_role_policy.instance_policy.policy
   }

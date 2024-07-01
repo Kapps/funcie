@@ -24,25 +24,15 @@ variable "vpc_id" {
 ############################################
 
 variable "public_subnet_ids" {
-  description = "IDs of the public subnets to deploy into."
+  description = "IDs of the public subnets to deploy into. Must be set if deploying into an existing VPC; ignored otherwise."
   type        = list(string)
   default     = []
-
-  validation {
-    condition     = var.vpc_id == "" || length(var.public_subnet_ids) > 0
-    error_message = "At least one public subnet ID must be provided if a vpc_id is set."
-  }
 }
 
 variable "private_subnet_ids" {
-  description = "IDs of the private subnets to deploy into."
+  description = "IDs of the private subnets to deploy into. Must be set if deploying into an existing VPC; ignored otherwise."
   type        = list(string)
   default     = []
-
-  validation {
-    condition     = var.vpc_id == "" || length(var.private_subnet_ids) > 0
-    error_message = "At least one private subnet ID must be provided if a vpc_id is set."
-  }
 }
 
 ############################################

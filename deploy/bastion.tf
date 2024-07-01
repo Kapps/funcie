@@ -79,7 +79,7 @@ resource "aws_ecs_service" "server_bastion_service" {
   network_configuration {
     assign_public_ip = false
     security_groups  = [aws_security_group.server_bastion_sg.id]
-    subnets          = var.private_subnet_ids
+    subnets          = local.private_subnet_ids
   }
 }
 

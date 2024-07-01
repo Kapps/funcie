@@ -23,7 +23,7 @@ resource "aws_elasticache_cluster" "redis" {
 
 resource "aws_elasticache_subnet_group" "redis" {
   name       = "funcie-redis"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = local.private_subnet_ids
 }
 
 resource "aws_security_group" "redis" {

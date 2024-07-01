@@ -1,5 +1,11 @@
 # TODO: Move this into a module.
-# Gets a bit tricky with needing the VPC for creating the instance but needing the instance for routing.
+
+locals {
+  public_subnet_cidrs  = var.vpc_id != "" ? var.public_subnet_cidrs : aws_subnet.funcie_public_subnets[*].cidr_block
+  public_subnet_ids    = var.vpc_id != "" ? var.public_subnet_ids : aws_subnet.funcie_public_subnets[*].id
+  private_subnet_cidrs = var.vpc_id != "" ? var.private_subnet_cidrs : aws_subnet.funcie_private_subnets[*].cidr_block
+  private_subnet_ids   = var.vpc_id != "" ? var.private_subnet_ids : aws_subnet.funcie_private_subnets[*].id
+}
 
 resource "aws_vpc" "funcie_vpc" {
   count      = var.vpc_id == "" ? 1 : 0
@@ -24,15 +30,6 @@ resource "aws_subnet" "funcie_public_subnets" {
   }
 }
 
-resource "aws_internet_gateway" "funcie_igw" {
-  count = var.vpc_id == "" ? 1 : 0
-  vpc_id = aws_vpc.funcie_vpc.id
-
-  tags = {
-    Name = "funcie-igw"
-  }
-}
-
 resource "aws_subnet" "funcie_private_subnets" {
   count                   = var.vpc_id == "" ? length(var.private_subnet_cidrs) : 0
   vpc_id                  = aws_vpc.funcie_vpc.id
@@ -41,6 +38,15 @@ resource "aws_subnet" "funcie_private_subnets" {
 
   tags = {
     Name = "funcie-private-subnet-${count.index}"
+  }
+}
+
+resource "aws_internet_gateway" "funcie_igw" {
+  count  = var.vpc_id == "" ? 1 : 0
+  vpc_id = aws_vpc.funcie_vpc.id
+
+  tags = {
+    Name = "funcie-igw"
   }
 }
 
@@ -58,6 +64,38 @@ resource "aws_route_table" "funcie_nat_route_table" {
   count  = var.vpc_id == "" ? 1 : 0
   vpc_id = aws_vpc.funcie_vpc.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    instance_id = aws_instance.funcie_nat.id
+  // The route here is created by the userdata script in the ASG.
+  // This is since the NAT instance may change if the instance becomes unhealthy or terminates.
+}
+
+resource "aws_route_table_association" "funcie_public_subnet_associations" {
+  count          = var.vpc_id == "" ? length(var.public_subnet_cidrs) : 0
+  subnet_id      = aws_subnet.funcie_public_subnets[count.index].id
+  route_table_id = aws_route_table.funcie_igw_route_table.id
+}
+
+resource "aws_route_table_association" "funcie_private_subnet_associations" {
+  count          = var.vpc_id == "" ? length(var.private_subnet_cidrs) : 0
+  subnet_id      = aws_subnet.funcie_private_subnets[count.index].id
+  route_table_id = aws_route_table.funcie_nat_route_table.id
+}
+
+output "vpc_id" {
+  value = var.vpc_id == "" ? aws_vpc.funcie_vpc.id : var.vpc_id
+}
+
+output "public_subnet_ids" {
+  value = local.public_subnet_ids
+}
+
+output "public_subnet_cidrs" {
+  value = local.public_subnet_cidrs
+}
+
+output "private_subnet_ids" {
+  value = local.private_subnet_ids
+}
+
+output "private_subnet_cidrs" {
+  value = local.private_subnet_cidrs
+}
