@@ -90,9 +90,7 @@ resource "aws_iam_policy" "ssm_policy" {
         "ssm:GetParameters",
         "ssm:GetParametersByPath"
       ],
-      "Principal": {
-        "ssm.amazonaws.com"
-      }
+      "Resource": "*"
     }
   ]
 }

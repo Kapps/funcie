@@ -1,5 +1,5 @@
-data "aws_ssm_parameter" "ecs_al2023_arm64_ami" {
-  name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id"
+data "aws_ssm_parameter" "al2023_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 resource "aws_ecs_cluster" "funcie_cluster" {
@@ -57,7 +57,7 @@ resource "aws_security_group" "nat_instance_sg" {
 resource "aws_launch_template" "bastion_launch_template" {
   name = "bastion-launch-template"
 
-  image_id      = data.aws_ssm_parameter.ecs_al2023_arm64_ami.value
+  image_id      = data.aws_ssm_parameter.al2023_ami.value
   instance_type = var.bastion_instance_type
 
   iam_instance_profile {
