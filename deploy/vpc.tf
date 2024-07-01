@@ -6,7 +6,7 @@ locals {
   private_subnet_cidrs = var.vpc_id != "" ? var.private_subnet_cidrs : aws_subnet.funcie_private_subnets[*].cidr_block
   private_subnet_ids   = var.vpc_id != "" ? var.private_subnet_ids : aws_subnet.funcie_private_subnets[*].id
 
-  vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.funcie_vpc[0].id
+  vpc_id   = var.vpc_id != "" ? var.vpc_id : aws_vpc.funcie_vpc[0].id
   vpc_cidr = data.aws_vpc.funcie_vpc.cidr_block
 }
 
@@ -67,7 +67,7 @@ resource "aws_route_table" "funcie_igw_route_table" {
   }
 
   tags = {
-      Name = "funcie-igw-route-table"
+    Name = "funcie-igw-route-table"
   }
 }
 

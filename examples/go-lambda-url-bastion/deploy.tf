@@ -20,9 +20,9 @@ resource "aws_security_group" "funcie_go_egress" {
   vpc_id      = var.vpc_id
 
   egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -44,7 +44,7 @@ resource "aws_lambda_function" "funcie_go" {
 
   environment {
     variables = {
-      FUNCIE_LOG_LEVEL               = "debug"
+      FUNCIE_LOG_LEVEL = "debug"
     }
   }
 }
@@ -72,6 +72,36 @@ EOF
 resource "aws_iam_role_policy_attachment" "terraform_lambda_policy" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+// Grant access to SSM and such:
+
+resource "aws_iam_policy" "ssm_policy" {
+  name        = "ssm_policy"
+  description = "Allow access to SSM"
+  policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Principal": {
+        "ssm.amazonaws.com"
+      }
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.ssm_policy.arn
 }
 
 resource "aws_lambda_function_url" "funcie_go" {
