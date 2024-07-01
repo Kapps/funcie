@@ -3,15 +3,28 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "security_group_ids" {
-  description = "List of security group IDs for the Lambda function"
-  type        = list(string)
+variable "vpc_id" {
+  description = "ID of the VPC to deploy into"
+  type        = string
 }
 
 data "archive_file" "zip" {
   type        = "zip"
   source_file = "bin/bootstrap"
   output_path = "funciego.zip"
+}
+
+resource "aws_security_group" "funcie_go_egress" {
+  name        = "funcie-go-egress"
+  description = "funcie-go-egress"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_lambda_function" "funcie_go" {
@@ -25,7 +38,7 @@ resource "aws_lambda_function" "funcie_go" {
   timeout          = 30
   vpc_config {
     subnet_ids         = var.subnet_ids
-    security_group_ids = var.security_group_ids
+    security_group_ids = aws_security_group.funcie_go_egress[*].id
   }
   environment {
     variables = {

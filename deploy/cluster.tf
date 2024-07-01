@@ -34,6 +34,26 @@ resource "aws_security_group" "ec2_instance_connect" {
   }
 }
 
+resource "aws_security_group" "nat_instance_sg" {
+  name        = "nat-instance-sg"
+  description = "Security group for the NAT instance"
+  vpc_id      = local.vpc_id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_launch_template" "bastion_launch_template" {
   name = "bastion-launch-template"
 
@@ -45,8 +65,11 @@ resource "aws_launch_template" "bastion_launch_template" {
   }
 
   network_interfaces {
-    associate_public_ip_address = true # Even though we have an EIP, we still need this to be able to use the CLI to associate it
-    security_groups             = [aws_security_group.server_bastion_sg.id, aws_security_group.ec2_instance_connect.id]
+    associate_public_ip_address = true
+    security_groups = concat(
+      [aws_security_group.server_bastion_sg.id, aws_security_group.ec2_instance_connect.id],
+      var.vpc_id == "" ? [aws_security_group.nat_instance_sg.id] : []
+    )
 
     subnet_id = local.public_subnet_ids[0]
   }

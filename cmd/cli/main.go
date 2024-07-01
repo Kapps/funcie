@@ -109,6 +109,10 @@ func loadAwsConfig(cliConfig *funcli.CliConfig) (aws.Config, error) {
 		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
+	if cliConfig.Region == "" {
+		cliConfig.Region = cfg.Region
+	}
+
 	return cfg, nil
 }
 

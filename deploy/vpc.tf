@@ -60,6 +60,10 @@ resource "aws_route_table" "funcie_igw_route_table" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.funcie_igw[0].id
   }
+
+  tags = {
+      Name = "funcie-igw-route-table"
+  }
 }
 
 resource "aws_route_table" "funcie_nat_route_table" {
@@ -68,6 +72,10 @@ resource "aws_route_table" "funcie_nat_route_table" {
 
   // The route here is created by the userdata script in the ASG.
   // This is since the NAT instance may change if the instance becomes unhealthy or terminates.
+
+  tags = {
+    Name = "funcie-nat-route-table"
+  }
 }
 
 resource "aws_route_table_association" "funcie_public_subnet_associations" {
