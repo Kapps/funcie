@@ -32,5 +32,13 @@ if [ "${CREATE_VPC}" = "true" ]; then
     systemctl start iptables
 
     # Update the route table to set this instance as the active NAT instance
-    aws ec2 replace-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --instance-id $INSTANCE_ID --region ${REGION}
+    OLD_NAT_INSTANCE_ID=$(aws ec2 describe-route-tables --route-table-ids ${ROUTE_TABLE_ID} --region ${REGION} --query "RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].InstanceId" --output text)
+
+    if [ ! -z "$OLD_NAT_INSTANCE_ID" ]; then
+        aws ec2 delete-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --region ${REGION}
+        echo "Deleted route for old NAT instance $OLD_NAT_INSTANCE_ID"
+    fi
+
+    aws ec2 create-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --instance-id $INSTANCE_ID --region ${REGION}
+    echo "Created route for new NAT instance $INSTANCE_ID"
 fi

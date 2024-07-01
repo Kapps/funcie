@@ -47,7 +47,7 @@ resource "aws_cloudwatch_log_group" "funcie_server_bastion_lg" {
 resource "aws_security_group" "server_bastion_sg" {
   name        = "funcie-server-bastion-sg"
   description = "funcie-server-bastion-sg"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   ingress {
     from_port   = 8082

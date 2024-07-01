@@ -29,7 +29,7 @@ resource "aws_elasticache_subnet_group" "redis" {
 resource "aws_security_group" "redis" {
   name        = "funcie-redis"
   description = "Security group for the Redis cluster"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   ingress {
     from_port   = 6379

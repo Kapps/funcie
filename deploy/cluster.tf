@@ -14,7 +14,7 @@ data "aws_ip_ranges" "ec2_instance_connect" {
 resource "aws_security_group" "ec2_instance_connect" {
   name        = "ec2-instance-connect"
   description = "Security group for EC2 Instance Connect"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id
 
   dynamic "ingress" {
     for_each = data.aws_ip_ranges.ec2_instance_connect.cidr_blocks
@@ -61,7 +61,7 @@ resource "aws_launch_template" "bastion_launch_template" {
     ECS_CLUSTER    = aws_ecs_cluster.funcie_cluster.name
     REGION         = var.region
     FUNCIE_ENV     = var.funcie_env
-    ROUTE_TABLE_ID = aws_route_table.funcie_nat_route_table.id
+    ROUTE_TABLE_ID = var.vpc_id == "" ? aws_route_table.funcie_nat_route_table[0].id : ""
     CREATE_VPC     = var.vpc_id == ""
   }))
 
@@ -145,6 +145,7 @@ resource "aws_iam_role_policy" "instance_policy" {
           "ec2:DeleteRoute",
           "ec2:DescribeRouteTables",
           "ec2:ReplaceRoute",
+          "ec2:ModifyInstanceAttribute",
         ],
         Resource = "*"
       },
@@ -178,7 +179,7 @@ resource "null_resource" "asg_update_trigger" {
       ECS_CLUSTER    = aws_ecs_cluster.funcie_cluster.name
       REGION         = var.region
       FUNCIE_ENV     = var.funcie_env
-      ROUTE_TABLE_ID = var.vpc_id == "" ? aws_route_table.funcie_nat_route_table.id : ""
+      ROUTE_TABLE_ID = var.vpc_id == "" ? aws_route_table.funcie_nat_route_table[0].id : ""
       CREATE_VPC     = var.vpc_id == ""
     }))
     instance_policy = aws_iam_role_policy.instance_policy.policy

@@ -1,7 +1,7 @@
 resource "aws_service_discovery_private_dns_namespace" "funcie_local" {
   name        = "funcie.local"
   description = "Service discovery namespace for the funcie to allow discovering of bastions and other services"
-  vpc         = var.vpc_id
+  vpc         = local.vpc_id
 }
 
 resource "aws_service_discovery_service" "server_bastion" {
