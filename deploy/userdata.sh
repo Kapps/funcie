@@ -7,6 +7,8 @@ TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-meta
 INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
 PRIVATE_IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/local-ipv4)
 
+PRIMARY_INTERFACE=$(ip -o -4 addr show | awk '{print $2 " " $4}' | grep "${PRIVATE_IP}" | awk '{print $1}')
+
 echo ECS_CLUSTER=${ECS_CLUSTER} >> /etc/ecs/ecs.config
 
 aws ssm put-parameter --name /funcie/${FUNCIE_ENV}/bastion_host --value $PRIVATE_IP --type String --overwrite --region ${REGION}
@@ -15,21 +17,24 @@ aws ssm put-parameter --name /funcie/${FUNCIE_ENV}/bastion_instance_id --value $
 sudo yum install -y ec2-instance-connect
 
 if [ "${CREATE_VPC}" = "true" ]; then
-    # Disable source/destination check
-    aws ec2 modify-instance-attribute --instance-id $INSTANCE_ID --no-source-dest-check --region ${REGION}
-
     # Enable IP forwarding
-    echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-    sysctl -p /etc/sysctl.conf
+    echo Enabling IP forwarding
+    sysctl -w net.ipv4.ip_forward=1
 
     # Configure iptables for NAT
-    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-    iptables-save > /etc/sysconfig/iptables
+    /sbin/iptables -t nat -A POSTROUTING -o ${PRIMARY_INTERFACE} -j MASQUERADE
+    echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
 
-    # Ensure iptables-persistent is installed and enabled
+    # Install iptables-services and save configuration
     yum install -y iptables-services
-    systemctl enable iptables
+    iptables-save > /etc/sysconfig/iptables
     systemctl start iptables
+    systemctl enable iptables
+
+    echo Ready
+
+    # Disable source/destination check
+    aws ec2 modify-instance-attribute --instance-id $INSTANCE_ID --no-source-dest-check --region ${REGION}
 
     PRIMARY_ENI_ID=$(aws ec2 describe-instances --instance-ids i-03933236642547520 --region ca-central-1 --query "Reservations[0].Instances[0].NetworkInterfaces[?Attachment.DeviceIndex==\`0\`].NetworkInterfaceId" --output text)
 
