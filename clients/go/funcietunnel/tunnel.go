@@ -20,13 +20,17 @@ func Start(appName string, handler interface{}) {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelFn()
 
+	fmt.Println("Loading AWS config")
 	conf, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("failed to load AWS config: %s", err))
 	}
 
+	fmt.Println("Creating Funcie config")
 	ssmClient := ssm.NewFromConfig(conf)
+	fmt.Println("Created SSM client")
 	funcieConfig := NewConfig(ctx, appName, ssmClient)
+	fmt.Println("Created Funcie config")
 	StartWithConfig(*funcieConfig, slog.Default(), handler)
 }
 

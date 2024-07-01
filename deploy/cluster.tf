@@ -85,7 +85,7 @@ resource "aws_launch_template" "bastion_launch_template" {
     REGION         = var.region
     FUNCIE_ENV     = var.funcie_env
     ROUTE_TABLE_ID = var.vpc_id == "" ? aws_route_table.funcie_nat_route_table[0].id : ""
-    CREATE_VPC     = var.vpc_id == ""
+    CREATE_VPC     = var.vpc_id == "" ? "true" : ""
   }))
 
   tag_specifications {

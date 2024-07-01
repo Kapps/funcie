@@ -36,10 +36,12 @@ resource "aws_lambda_function" "funcie_go" {
   runtime          = "provided.al2023"
   memory_size      = 128
   timeout          = 30
+
   vpc_config {
     subnet_ids         = var.subnet_ids
     security_group_ids = aws_security_group.funcie_go_egress[*].id
   }
+
   environment {
     variables = {
       FUNCIE_LOG_LEVEL               = "debug"

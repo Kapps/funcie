@@ -31,14 +31,16 @@ if [ "${CREATE_VPC}" = "true" ]; then
     systemctl enable iptables
     systemctl start iptables
 
-    # Update the route table to set this instance as the active NAT instance
-    OLD_NAT_INSTANCE_ID=$(aws ec2 describe-route-tables --route-table-ids ${ROUTE_TABLE_ID} --region ${REGION} --query "RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].InstanceId" --output text)
+    PRIMARY_ENI_ID=$(aws ec2 describe-instances --instance-ids i-03933236642547520 --region ca-central-1 --query "Reservations[0].Instances[0].NetworkInterfaces[?Attachment.DeviceIndex==\`0\`].NetworkInterfaceId" --output text)
 
-    if [ ! -z "$OLD_NAT_INSTANCE_ID" ]; then
+    # Update the route table to set this instance as the active NAT instance
+    OLD_NAT_ENI_ID=$(aws ec2 describe-route-tables --route-table-ids ${ROUTE_TABLE_ID} --region ${REGION} --query "RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].NetworkInterfaceId" --output text)
+
+    if [ ! -z "$OLD_NAT_ENI_ID" ]; then
         aws ec2 delete-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --region ${REGION}
-        echo "Deleted route for old NAT instance $OLD_NAT_INSTANCE_ID"
+        echo "Deleted route for old NAT instance $OLD_NAT_ENI_ID"
     fi
 
-    aws ec2 create-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --instance-id $INSTANCE_ID --region ${REGION}
+    aws ec2 create-route --route-table-id ${ROUTE_TABLE_ID} --destination-cidr-block 0.0.0.0/0 --network-interface-id $PRIMARY_ENI_ID --region ${REGION}
     echo "Created route for new NAT instance $INSTANCE_ID"
 fi
