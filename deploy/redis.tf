@@ -35,7 +35,7 @@ resource "aws_security_group" "redis" {
     from_port   = 6379
     to_port     = 6379
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"] # TODO: Should depend on the VPC CIDR
+    cidr_blocks = [local.vpc_cidr]
   }
 }
 

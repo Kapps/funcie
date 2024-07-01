@@ -7,6 +7,11 @@ locals {
   private_subnet_ids   = var.vpc_id != "" ? var.private_subnet_ids : aws_subnet.funcie_private_subnets[*].id
 
   vpc_id = var.vpc_id != "" ? var.vpc_id : aws_vpc.funcie_vpc[0].id
+  vpc_cidr = data.aws_vpc.funcie_vpc.cidr_block
+}
+
+data "aws_vpc" "funcie_vpc" {
+  id = local.vpc_id
 }
 
 resource "aws_vpc" "funcie_vpc" {

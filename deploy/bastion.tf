@@ -53,7 +53,7 @@ resource "aws_security_group" "server_bastion_sg" {
     from_port   = 8082
     to_port     = 8082
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/8"]
+    cidr_blocks = [local.vpc_cidr]
   }
 
   egress {
