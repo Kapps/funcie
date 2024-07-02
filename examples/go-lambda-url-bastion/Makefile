@@ -6,4 +6,5 @@ deploy:
 	make compile
 	# Deploy the Lambda function via terraform
 	terraform init
-	terraform apply
+	terraform apply -auto-approve
+

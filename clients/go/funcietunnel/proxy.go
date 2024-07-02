@@ -68,7 +68,7 @@ func (p *lambdaProxy) lambdaHandler() lambda.Handler {
 		resp, err := p.client.SendRequest(ctx, marshaled)
 		if err != nil {
 			// If we can't reach the bastion, we should just handle the request directly.
-			p.logger.WarnContext(ctx, "failed to send request to bastion", err, "messageId", message.ID)
+			p.logger.WarnContext(ctx, "failed to send request to bastion", "error", err, "messageId", message.ID)
 			p.logger.DebugContext(ctx, "failed delivery details", "message", message)
 			return p.handleDirect(ctx, payload)
 		}

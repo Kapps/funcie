@@ -156,6 +156,7 @@ resource "aws_iam_role_policy" "instance_policy" {
           "ecs:Poll",
           "ecs:StartTelemetrySession",
           "ecs:UpdateContainerInstancesState",
+
           "logs:CreateLogStream",
           "logs:PutLogEvents",
           # EC2 permissions to allow the instance to manage its own EIP

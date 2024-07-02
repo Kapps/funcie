@@ -9,7 +9,3 @@ output "server_bastion_sg_id" {
 output "redis_host" {
   value = local.redis_host
 }
-
-output "bastion_host" {
-  value = "${aws_service_discovery_service.server_bastion.name}.${aws_service_discovery_private_dns_namespace.funcie_local.name}"
-}
