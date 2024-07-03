@@ -5,9 +5,13 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/Kapps/funcie/cmd/cli/funcli"
+	funcliAws "github.com/Kapps/funcie/cmd/cli/funcli/aws"
+	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
 	"github.com/alexflint/go-arg"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"go.uber.org/fx"
 	"os"
@@ -67,13 +71,21 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 		fx.Supply(cliConfig),
 		fx.Supply(fx.Annotate(context.Background(), fx.As(new(context.Context)))),
 		fx.Provide(
-			fx.Annotate(ssm.NewFromConfig, fx.As(new(funcli.SsmClient))),
+			fx.Annotate(ssm.NewFromConfig, fx.As(new(funcliAws.SsmClient))),
+			fx.Annotate(ec2.NewFromConfig, fx.As(new(funcliAws.EC2Client))),
+			fx.Annotate(elasticache.NewFromConfig, fx.As(new(funcliAws.ElastiCacheClient))),
 			loadAwsConfig,
 			funcli.NewConfigStore,
 			funcli.NewConnectCommand,
+			funcli.NewInitCommand,
 			newCli,
 			funcli.NewSsmTunneller,
 			funcli.NewHttpConnectivityService,
+			funcliAws.NewAwsResourceLister,
+			tools.NewProcessRunner,
+			tools.NewGitCliClient,
+			tools.NewTerraformCliClient,
+			funcli.NewDestroyCommand,
 		),
 		fx.NopLogger,
 		fx.Populate(&res),
@@ -97,17 +109,25 @@ func loadAwsConfig(cliConfig *funcli.CliConfig) (aws.Config, error) {
 		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
 	}
 
+	if cliConfig.Region == "" {
+		cliConfig.Region = cfg.Region
+	}
+
 	return cfg, nil
 }
 
 func newCli(
 	conf *funcli.CliConfig,
 	connectCmd *funcli.ConnectCommand,
+	initCmd *funcli.InitCommand,
+	destroyCmd *funcli.DestroyCommand,
 ) *cli {
 	inst := &cli{
 		commands: make(map[interface{}]Runnable),
 	}
 	inst.RegisterCommand(conf.ConnectConfig, connectCmd)
+	inst.RegisterCommand(conf.InitConfig, initCmd)
+	inst.RegisterCommand(conf.DestroyConfig, destroyCmd)
 
 	return inst
 }

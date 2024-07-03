@@ -38,5 +38,5 @@ func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (*e
 
 func main() {
 	funcie.ConfigureLogging()
-	funcietunnel.Start(HandleRequest)
+	funcietunnel.Start("go-url", HandleRequest)
 }

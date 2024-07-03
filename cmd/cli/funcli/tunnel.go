@@ -45,8 +45,6 @@ func (t *ssmTunnel) OpenTunnel(ctx context.Context, opts interface{}) error {
 		return fmt.Errorf("failed to resolve endpoint: %w", err)
 	}
 
-	channel := &datachannel.DataChannel{}
-	channel.GetAgentVersion()
 	ssmSession := &session.Session{
 		DataChannel: &datachannel.DataChannel{},
 		SessionId:   *ssmOpts.Output.SessionId,

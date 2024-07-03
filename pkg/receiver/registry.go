@@ -22,7 +22,7 @@ func (r *memoryApplicationRegistry) Register(ctx context.Context, application *f
 	_, exists := r.registeredApplications.Swap(application.Name, application)
 	if exists {
 		slog.WarnContext(ctx,
-			"application %s already registered; overwriting",
+			"application already registered; overwriting",
 			"application", application.Name, "previous", application.Endpoint,
 			"new", application.Endpoint,
 		)

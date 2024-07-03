@@ -3,6 +3,7 @@ package funcli
 import (
 	"context"
 	"fmt"
+	aws2 "github.com/Kapps/funcie/cmd/cli/funcli/aws"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"strings"
@@ -17,7 +18,7 @@ type ConnectConfig struct {
 type ConnectCommand struct {
 	cliConfig           *CliConfig
 	configStore         ConfigStore
-	connectClient       SsmClient
+	connectClient       aws2.SsmClient
 	tunneller           Tunneller
 	connectivityService ConnectivityService
 }
@@ -25,7 +26,7 @@ type ConnectCommand struct {
 func NewConnectCommand(
 	cliConfig *CliConfig,
 	configStore ConfigStore,
-	connectClient SsmClient,
+	connectClient aws2.SsmClient,
 	tunneller Tunneller,
 	connectivityService ConnectivityService,
 ) *ConnectCommand {

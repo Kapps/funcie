@@ -3,29 +3,28 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "security_group_ids" {
-  description = "List of security group IDs for the Lambda function"
-  type        = list(string)
-}
-
-variable "redis_host" {
-  description = "Address of the Redis host"
-  type        = string
-}
-
-variable "bastion_lb_arn" {
-  description = "The ARN for the load balancer created to be used for the bastion (generally listens on port 8082)."
+variable "vpc_id" {
+  description = "ID of the VPC to deploy into"
   type        = string
 }
 
 data "archive_file" "zip" {
   type        = "zip"
-  source_file = "bin/main"
+  source_file = "bin/bootstrap"
   output_path = "funciego.zip"
 }
 
-data "aws_lb" "bastion_lb" {
-  arn = var.bastion_lb_arn
+resource "aws_security_group" "funcie_go_egress" {
+  name        = "funcie-go-egress"
+  description = "funcie-go-egress"
+  vpc_id      = var.vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 resource "aws_lambda_function" "funcie_go" {
@@ -34,19 +33,18 @@ resource "aws_lambda_function" "funcie_go" {
   handler          = "main"
   source_code_hash = data.archive_file.zip.output_base64sha256
   role             = aws_iam_role.iam_for_lambda.arn
-  runtime          = "go1.x"
+  runtime          = "provided.al2023"
   memory_size      = 128
   timeout          = 30
+
   vpc_config {
     subnet_ids         = var.subnet_ids
-    security_group_ids = var.security_group_ids
+    security_group_ids = aws_security_group.funcie_go_egress[*].id
   }
+
   environment {
     variables = {
-      FUNCIE_REDIS_ADDR              = var.redis_host,
-      FUNCIE_SERVER_BASTION_ENDPOINT = "http://${data.aws_lb.bastion_lb.dns_name}:8082/dispatch",
-      FUNCIE_APPLICATION_ID          = "url"
-      FUNCIE_LOG_LEVEL               = "debug"
+      FUNCIE_LOG_LEVEL = "debug"
     }
   }
 }
@@ -74,6 +72,34 @@ EOF
 resource "aws_iam_role_policy_attachment" "terraform_lambda_policy" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+// Grant access to SSM and such:
+
+resource "aws_iam_policy" "ssm_policy" {
+  name        = "ssm_policy"
+  description = "Allow access to SSM"
+  policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.ssm_policy.arn
 }
 
 resource "aws_lambda_function_url" "funcie_go" {

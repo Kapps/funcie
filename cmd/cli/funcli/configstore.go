@@ -3,6 +3,7 @@ package funcli
 import (
 	"context"
 	"fmt"
+	funcAws "github.com/Kapps/funcie/cmd/cli/funcli/aws"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
@@ -15,11 +16,11 @@ type ConfigStore interface {
 
 type configStore struct {
 	environment string
-	ssmClient   SsmClient
+	ssmClient   funcAws.SsmClient
 }
 
 // NewConfigStore creates a new ConfigStore.
-func NewConfigStore(config *CliConfig, ssmClient SsmClient) ConfigStore {
+func NewConfigStore(config *CliConfig, ssmClient funcAws.SsmClient) ConfigStore {
 	return &configStore{
 		environment: config.Environment,
 		ssmClient:   ssmClient,

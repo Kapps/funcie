@@ -1,18 +1,33 @@
 package funcietunnel
 
 import (
+	"context"
+	"fmt"
 	"github.com/Kapps/funcie/pkg/funcie"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"log/slog"
+	"time"
 )
 
-// Start is a replacement to lambda.Start that configures the proxy from environment variables.
+// Start is a replacement to lambda.Start that configures the proxy from environment variables and SSM.
 // It will start the proxy if the application is running in a Lambda, or start the receiver if it is running locally.
 // The handler is the handler that will be invoked when a request is received.
 // It is subject to the same restrictions as the handler for the underlying serverless function provider (such as lambda.Start).
-// See NewConfigFromEnvironment for the environment variables that are used.
-func Start(handler interface{}) {
-	config := NewConfigFromEnvironment()
-	StartWithConfig(*config, slog.Default(), handler)
+// See NewConfig for the environment variables that are used.
+// The application name is an arbitrary identifier to uniquely identify this application in order to route messages.
+func Start(appName string, handler interface{}) {
+	ctx, cancelFn := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelFn()
+
+	conf, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("failed to load AWS config: %s", err))
+	}
+
+	ssmClient := ssm.NewFromConfig(conf)
+	funcieConfig := NewConfig(ctx, appName, ssmClient)
+	StartWithConfig(*funcieConfig, slog.Default(), handler)
 }
 
 // StartWithConfig is a replacement to lambda.Start that configures the proxy from the given config.
