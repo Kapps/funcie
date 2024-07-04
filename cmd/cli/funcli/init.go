@@ -101,7 +101,7 @@ func (c *InitCommand) promptVpc(ctx context.Context) (aws.Vpc, error) {
 	err = huh.NewSelect[aws.Vpc]().
 		Title("Which VPC would you like to use?").
 		Options(append(
-			[]huh.Option[aws.Vpc]{huh.NewOption[aws.Vpc]("<create new VPC with NAT instance config>", aws.Vpc{})},
+			[]huh.Option[aws.Vpc]{huh.NewOption[aws.Vpc]("<use funcie-managed VPC with NAT instance config>", aws.Vpc{})},
 			huh.NewOptions[aws.Vpc](vpcs...)...,
 		)...).
 		Value(&selected).
