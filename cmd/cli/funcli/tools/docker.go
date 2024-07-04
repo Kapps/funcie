@@ -40,7 +40,7 @@ func (d *dockerCliClient) RunContainer(image string, opts DockerRunOptions) erro
 	}
 
 	for _, port := range opts.ExposedPorts {
-		args = append(args, "-p", fmt.Sprintf("%d", port))
+		args = append(args, "-p", fmt.Sprintf("%d:%[1]d", port))
 	}
 
 	if opts.RestartPolicy != "" {

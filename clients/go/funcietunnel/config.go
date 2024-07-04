@@ -58,7 +58,7 @@ func NewConfig(ctx context.Context, applicationId string, ssmClient *ssm.Client)
 	}
 
 	return &FuncieConfig{
-		ClientBastionEndpoint: internal.OptionalUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", "http://127.0.0.1:24193"),
+		ClientBastionEndpoint: internal.OptionalUrlEnv("FUNCIE_CLIENT_BASTION_ENDPOINT", "http://localhost:24193"),
 		ServerBastionEndpoint: internal.OptionalUrlEnv("FUNCIE_SERVER_BASTION_ENDPOINT", serverEndpoint),
 		ApplicationId:         applicationId,
 		ListenAddress:         internal.OptionalEnv("FUNCIE_LISTEN_ADDRESS", "0.0.0.0:0"),

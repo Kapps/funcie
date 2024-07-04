@@ -197,8 +197,6 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 }
 
 func (c *InitCommand) promptDockerRun(_ context.Context) error {
-	clearScreen()
-
 	var confirmed bool
 	err := huh.NewConfirm().
 		Title("Would you like to configure the client bastion to auto-launch?").
@@ -263,8 +261,6 @@ func (c *InitCommand) runTerraform(vars TerraformVars) error {
 		return fmt.Errorf("failed to initialize terraform module: %w", err)
 	}
 
-	clearScreen()
-
 	fmt.Println("Terraform module initialized; will deploy module with the following parameters:")
 	fmt.Println(varFileContents)
 
@@ -301,8 +297,4 @@ public_subnet_ids  = %s
 redis_host         = "%s"
 region             = "%s"
 `, vars.VpcId, internal.MarshalArray(vars.PrivateSubnets), internal.MarshalArray(vars.PublicSubnets), vars.RedisHost, vars.Region)
-}
-
-func clearScreen() {
-	fmt.Print("\033[H\033[2J")
 }
