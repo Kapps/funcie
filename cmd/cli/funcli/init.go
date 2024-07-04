@@ -100,6 +100,7 @@ func (c *InitCommand) promptVpc(ctx context.Context) (aws.Vpc, error) {
 	var selected aws.Vpc
 	err = huh.NewSelect[aws.Vpc]().
 		Title("Which VPC would you like to use?").
+		Description("Or default to have funcie provision / reuse a VPC.").
 		Options(append(
 			[]huh.Option[aws.Vpc]{huh.NewOption[aws.Vpc]("<create funcie-managed VPC with NAT instance config>", aws.Vpc{})},
 			huh.NewOptions[aws.Vpc](vpcs...)...,
@@ -168,7 +169,7 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 	var selected aws.ElastiCacheCluster
 	err = huh.NewSelect[aws.ElastiCacheCluster]().
 		Title("Which ElastiCache cluster would you like to use?").
-		Description("Leave blank to have funcie provision a new single-node cluster.").
+		Description("Or default to have funcie provision / reuse a cluster.").
 		Options(append(
 			[]huh.Option[aws.ElastiCacheCluster]{huh.NewOption[aws.ElastiCacheCluster]("<create new cluster>", aws.ElastiCacheCluster{})},
 			huh.NewOptions[aws.ElastiCacheCluster](clusters...)...,
