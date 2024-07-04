@@ -197,8 +197,7 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 }
 
 func (c *InitCommand) promptDockerRun(_ context.Context) error {
-	// Clear the screen of the terraform output.
-	fmt.Print("\033[H\033[2J")
+	clearScreen()
 
 	var confirmed bool
 	err := huh.NewConfirm().
@@ -220,10 +219,10 @@ func (c *InitCommand) promptDockerRun(_ context.Context) error {
 		redisHost = "host.docker.internal"
 	}
 
-	bastionImageUrl := fmt.Sprintf("%v:v%v", dockerClientImage, c.cliConfig.versionString)
+	bastionImageUrl := strings.TrimSpace(fmt.Sprintf("%v:v%v", dockerClientImage, c.cliConfig.versionString))
 	err = c.dockerClient.RunContainer(bastionImageUrl, tools.DockerRunOptions{
 		Env: map[string]string{
-			"FUNCIE_REDIS_ADDRESS":  redisHost,
+			"FUNCIE_REDIS_ADDRESS":  fmt.Sprintf("%v:%v", redisHost, "6379"),
 			"FUNCIE_LISTEN_ADDRESS": "0.0.0.0:24193",
 		},
 		ExposedPorts:  []int{24193},
@@ -264,6 +263,8 @@ func (c *InitCommand) runTerraform(vars TerraformVars) error {
 		return fmt.Errorf("failed to initialize terraform module: %w", err)
 	}
 
+	clearScreen()
+
 	fmt.Println("Terraform module initialized; will deploy module with the following parameters:")
 	fmt.Println(varFileContents)
 
@@ -300,4 +301,8 @@ public_subnet_ids  = %s
 redis_host         = "%s"
 region             = "%s"
 `, vars.VpcId, internal.MarshalArray(vars.PrivateSubnets), internal.MarshalArray(vars.PublicSubnets), vars.RedisHost, vars.Region)
+}
+
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
 }

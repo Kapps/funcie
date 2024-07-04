@@ -1,6 +1,9 @@
 package tools
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+)
 
 // DockerRunOptions provides options for how to run a container.
 type DockerRunOptions struct {
@@ -41,13 +44,17 @@ func (d *dockerCliClient) RunContainer(image string, opts DockerRunOptions) erro
 	}
 
 	if opts.RestartPolicy != "" {
-		args = append(args, "--restart", opts.RestartPolicy, image)
+		args = append(args, "--restart", opts.RestartPolicy)
 	}
+
+	args = append(args, image)
 
 	_, err := d.runner.Run("docker", args...)
 	if err != nil {
 		return fmt.Errorf("failed to run container %v: %w", image, err)
 	}
+
+	slog.Info("container started; remember to run funcie connect to open the tunnel")
 
 	return nil
 }
