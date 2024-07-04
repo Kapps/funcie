@@ -8,10 +8,12 @@ import (
 	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
 	"github.com/charmbracelet/huh"
 	"os"
+	"runtime"
 	"strings"
 )
 
 const tfModuleRepo = "git@github.com:Kapps/terraform-aws-funcie.git"
+const dockerClientImage = "public.ecr.aws/w1h1o7p8/funcie-client-bastion"
 
 type InitConfig struct {
 }
@@ -21,6 +23,7 @@ type InitCommand struct {
 	resourceList    aws.ResourceLister
 	gitClient       tools.GitClient
 	terraformClient tools.TerraformClient
+	dockerClient    tools.DockerClient
 }
 
 type TerraformVars struct {
@@ -36,12 +39,14 @@ func NewInitCommand(
 	resourceList aws.ResourceLister,
 	gitClient tools.GitClient,
 	terraformClient tools.TerraformClient,
+	dockerClient tools.DockerClient,
 ) *InitCommand {
 	return &InitCommand{
 		cliConfig:       cliConfig,
 		resourceList:    resourceList,
 		gitClient:       gitClient,
 		terraformClient: terraformClient,
+		dockerClient:    dockerClient,
 	}
 }
 
@@ -84,8 +89,12 @@ func (c *InitCommand) Run(ctx context.Context) error {
 		vars.PublicSubnets = append(vars.PublicSubnets, subnet.Id)
 	}
 
-	if err := c.writeTerraformVars(vars); err != nil {
+	if err := c.runTerraform(vars); err != nil {
 		return fmt.Errorf("failed to write terraform vars: %w", err)
+	}
+
+	if err := c.promptDockerRun(ctx); err != nil {
+		return fmt.Errorf("failed to configure docker container: %w", err)
 	}
 
 	return nil
@@ -187,7 +196,47 @@ func (c *InitCommand) promptElasticache(ctx context.Context) (*aws.ElastiCacheCl
 	return &selected, nil
 }
 
-func (c *InitCommand) writeTerraformVars(vars TerraformVars) error {
+func (c *InitCommand) promptDockerRun(_ context.Context) error {
+	// Clear the screen of the terraform output.
+	fmt.Print("\033[H\033[2J")
+
+	var confirmed bool
+	err := huh.NewConfirm().
+		Title("Would you like to configure the client bastion to auto-launch?").
+		Affirmative("Yes, auto-launch the client bastion").
+		Value(&confirmed).
+		Run()
+	if err != nil {
+		return fmt.Errorf("failed to confirm docker run: %w", err)
+	}
+
+	if !confirmed {
+		return nil
+	}
+
+	// TODO: Determine appropriate redis host value for Linux/Windows.
+	redisHost := "localhost"
+	if runtime.GOOS == "darwin" {
+		redisHost = "host.docker.internal"
+	}
+
+	bastionImageUrl := fmt.Sprintf("%v:v%v", dockerClientImage, c.cliConfig.versionString)
+	err = c.dockerClient.RunContainer(bastionImageUrl, tools.DockerRunOptions{
+		Env: map[string]string{
+			"FUNCIE_REDIS_ADDRESS":  redisHost,
+			"FUNCIE_LISTEN_ADDRESS": "0.0.0.0:24193",
+		},
+		ExposedPorts:  []int{24193},
+		RestartPolicy: "unless-stopped",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to run client bastion container: %w", err)
+	}
+
+	return nil
+}
+
+func (c *InitCommand) runTerraform(vars TerraformVars) error {
 	varFileContents := marshalVariables(vars)
 
 	baseDir := internal.GetFuncieBaseDir()

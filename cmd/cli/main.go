@@ -85,6 +85,7 @@ func makeCli(cliConfig *funcli.CliConfig) (*cli, error) {
 			tools.NewProcessRunner,
 			tools.NewGitCliClient,
 			tools.NewTerraformCliClient,
+			tools.NewDockerCliClient,
 			funcli.NewDestroyCommand,
 		),
 		fx.NopLogger,

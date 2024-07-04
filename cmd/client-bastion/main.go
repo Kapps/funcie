@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/Kapps/funcie/cmd/client-bastion/bastion"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/Kapps/funcie/pkg/funcie/transports"
@@ -15,6 +14,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 )
 
 func newRedisClient(conf *bastion.Config) *redis.Client {
@@ -61,6 +61,7 @@ func main() {
 			bastion.NewHandler,
 			bastion.NewDockerHostTranslator,
 		),
+		fx.StartTimeout(time.Hour*24*365*100), // Effectively infinite timeout to allow launching without starting Redis tunnel
 		fx.Invoke(func(lc fx.Lifecycle, consumer funcie.Consumer, host transports.Host) {
 			lc.Append(fx.Hook{
 				OnStart: func(_ context.Context) error {
@@ -75,9 +76,14 @@ func main() {
 }
 
 func Start(ctx context.Context, consumer funcie.Consumer, host transports.Host) error {
-	err := consumer.Connect(ctx)
-	if err != nil {
-		return fmt.Errorf("connect to consumer: %w", err)
+	for {
+		err := consumer.Connect(ctx)
+		if err == nil {
+			break
+		}
+
+		slog.WarnContext(ctx, "failed to connect to Redis; trying again in 10 seconds", "error", err.Error())
+		time.Sleep(10 * time.Second)
 	}
 
 	go func() {
