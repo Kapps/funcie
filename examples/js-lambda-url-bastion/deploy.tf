@@ -3,18 +3,8 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "redis_host" {
-  description = "Address of the Redis host, including port"
-  type        = string
-}
-
-variable "bastion_host" {
-  description = "The IP or host to be used for the bastion (often <outputs.bastion_host>:8082 unless using a VPN)."
-  type        = string
-}
-
 variable "vpc_id" {
-  description = "VPC ID for the Lambda function"
+  description = "ID of the VPC to deploy into"
   type        = string
 }
 
@@ -25,9 +15,10 @@ data "archive_file" "zip" {
   excludes    = [".terraform", "terraform.tfstate*", "*.tfvars", "deploy.tf", "README.md", "funciejs.zip", ".terraform.lock.hcl"]
 }
 
-resource "aws_security_group" "lambda_sg" {
-  name   = "funcie-lambda-sg"
-  vpc_id = var.vpc_id
+resource "aws_security_group" "funcie_js_egress" {
+  name        = "funcie-js-egress"
+  description = "funcie-js-egress"
+  vpc_id      = var.vpc_id
 
   egress {
     from_port   = 0
@@ -42,26 +33,25 @@ resource "aws_lambda_function" "funcie_js" {
   filename         = "funciejs.zip"
   handler          = "src/index.handler"
   source_code_hash = data.archive_file.zip.output_base64sha256
-  role             = aws_iam_role.iam_for_js_url_lambda.arn
+  role             = aws_iam_role.iam_for_lambda.arn
   runtime          = "nodejs18.x"
   memory_size      = 128
   timeout          = 30
+
   vpc_config {
     subnet_ids         = var.subnet_ids
-    security_group_ids = [aws_security_group.lambda_sg.id]
+    security_group_ids = aws_security_group.funcie_js_egress[*].id
   }
+
   environment {
     variables = {
-      FUNCIE_REDIS_ADDR              = var.redis_host,
-      FUNCIE_SERVER_BASTION_ENDPOINT = "http://${var.bastion_host}:8082/dispatch",
-      FUNCIE_APPLICATION_ID          = "url"
-      FUNCIE_LOG_LEVEL               = "debug"
+      FUNCIE_LOG_LEVEL = "debug"
     }
   }
 }
 
-resource "aws_iam_role" "iam_for_js_url_lambda" {
-  name = "iam_for_js_url_lambda"
+resource "aws_iam_role" "iam_for_lambda" {
+  name = "iam_for_lambda"
 
   assume_role_policy = <<EOF
 {
@@ -81,8 +71,36 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "terraform_lambda_policy" {
-  role       = aws_iam_role.iam_for_js_url_lambda.name
+  role       = aws_iam_role.iam_for_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+// Grant access to SSM and such:
+
+resource "aws_iam_policy" "ssm_policy" {
+  name        = "ssm_policy"
+  description = "Allow access to SSM"
+  policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_policy_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.ssm_policy.arn
 }
 
 resource "aws_lambda_function_url" "funcie_js" {
