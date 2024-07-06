@@ -54,7 +54,6 @@ func NewConfig(ctx context.Context, applicationId string, ssmClient *ssm.Client)
 	if serverEndpoint == "" {
 		// Do this after the env check to allow avoiding SSM calls entirely.
 		serverEndpoint = fmt.Sprintf("http://%v:8082/dispatch", loadSSMParameter(ctx, ssmClient, "default", "bastion_host"))
-
 	}
 
 	return &FuncieConfig{

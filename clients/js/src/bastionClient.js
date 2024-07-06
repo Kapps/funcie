@@ -14,8 +14,7 @@ const sendMessage = async (baseUrl, message) => {
     }
 
     const responseData = httpResponse.data;
-    const response = Response.fromObject(responseData);
-    return response;
+    return Response.fromObject(responseData);
 };
 
 module.exports = {
