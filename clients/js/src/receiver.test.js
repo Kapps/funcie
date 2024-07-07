@@ -1,10 +1,12 @@
-const http = require("http");
-const { beginReceiving } = require("./receiver");
-const { sendMessage } = require("./bastionClient");
+import http from 'http';
+import { beginReceiving } from './receiver.js';
+import { sendMessage } from './bastionClient.js';
+
+import { jest } from '@jest/globals';
 
 jest.mock("http");
-jest.mock("./bastionClient");
-jest.mock("./utils");
+jest.mock("./bastionClient.js");
+jest.mock("./utils.js");
 
 describe("beginReceiving", () => {
     const mockConfig = {

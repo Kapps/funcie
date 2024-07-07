@@ -1,10 +1,10 @@
-const http = require('http');
-const { promisify } = require('util');
-const { Message, Response } = require('./models');
-const { sendMessage } = require('./bastionClient');
-const { invokeLambda, info, error } = require('./utils');
+import http from 'http';
+import { promisify } from 'util';
+import { Message, Response } from './models.js';
+import { sendMessage } from './bastionClient.js';
+import { invokeLambda, info, error } from './utils.js';
 
-const beginReceiving = async (config, handler) => {
+export const beginReceiving = async (config, handler) => {
     if (config.ListenAddress.protocol !== 'http:') {
         throw new Error('Only HTTP is supported');
     }
@@ -62,7 +62,3 @@ const subscribe = async (config, address) => {
 
     info(`Funcie registered with registration ID ${resp.data.RegistrationId}`);
 };
-
-module.exports = {
-    beginReceiving,
-}

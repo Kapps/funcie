@@ -2,9 +2,10 @@
   "name": "@funcie/client",
   "version": "0.1.0",
   "description": "JavaScript client for funcie -- proxy Lambda requests to a local handler when debugging, or handle them in the cloud when not debugging.",
-  "main": "src/index.js",
+  "main": "./index.cjs",
+  "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,11 @@
     "@aws-sdk/client-ssm": "^3.609.0",
     "axios": "^1.4.0",
     "uuid": "^9.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs"
+    }
   }
 }

@@ -1,11 +1,13 @@
-const { lambdaProxy } = require('./proxy');
-const { sendMessage } = require('./bastionClient');
-const { loadConfig } = require('./config');
-const { invokeLambda } = require('./utils');
+import { lambdaProxy } from './proxy.js';
+import { sendMessage } from './bastionClient.js';
+import { loadConfig } from './config.js';
+import { invokeLambda } from './utils.js';
 
-jest.mock('./bastionClient');
-jest.mock('./config');
-jest.mock('./utils');
+import { jest } from '@jest/globals';
+
+jest.mock('./bastionClient.js');
+jest.mock('./config.js');
+jest.mock('./utils.js');
 
 describe('lambdaProxy', () => {
   const mockEvent = { some: 'event' };

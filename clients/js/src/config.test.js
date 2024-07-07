@@ -1,5 +1,7 @@
-const { FuncieConfig, getConfigPurpose, loadConfig} = require('./config');
-const { URL } = require('url');
+import { FuncieConfig, getConfigPurpose, loadConfig } from './config.js';
+import { URL } from 'url';
+
+import { jest } from '@jest/globals';
 
 jest.mock('@aws-sdk/client-ssm', () => {
     const originalModule = jest.requireActual('@aws-sdk/client-ssm');
