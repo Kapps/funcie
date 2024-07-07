@@ -14,24 +14,28 @@ Next, you will need to install the funcie client package:
 npm install --save @funcie/client
 ```
 
-Then, simply import it and wrap your existing Lambda handler:
+Then, simply import it and wrap your existing Lambda handler along-side a user-defined application name:
 
 ```javascript
 const { lambdaWrapper } = require("@funcie/client");
 
-exports.handler = lambdaWrapper(async (event) => {
+exports.handler = lambdaWrapper('app-name', async (event) => {
   // Your existing Lambda handler code here
 });
 ```
 
 Now if you run your Lambda locally, the deployed Lambda will automatically invoke your local code when hit.
-You will however, need the below environment variables set.
+
+You may find it useful to use the --watch flag when running your Lambda locally, so that it will automatically reload when you make changes:
+
+```bash
+node --watch src/index.js
+```
 
 ## Configuration
 
 The funcie client can be configured via environment variables:
 
-- `FUNCIE_APPLICATION_ID`: The application ID to use for the Lambda function. This should match the application ID used when deploying the Lambda function.
 - `FUNCIE_CLIENT_BASTION_ENDPOINT` (optional): The endpoint for the client bastion -- defaults to `http://localhost:27193`.
 - `FUNCIE_SERVER_BASTION_ENDPOINT`: The endpoint for the server bastion (only used when not local).
 - `FUNCIE_LISTEN_ADDRESS` (optional): The address to listen on -- defaults to `0.0.0.0` on a random port).
