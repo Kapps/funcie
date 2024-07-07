@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // Tells Jest to look for test files with any name ending in .test.js
   testMatch: ['**/*.test.js'],
 
@@ -7,4 +7,7 @@ module.exports = {
 
   // Indicates whether each individual test should be reported during the run
   verbose: true,
+
+  transform: {},
+  testEnvironment: 'node',
 };

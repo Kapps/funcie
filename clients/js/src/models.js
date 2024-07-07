@@ -1,8 +1,8 @@
-const uuid = require('uuid');
+import { v4 } from 'uuid';
 
-class Message {
+export class Message {
     constructor(kind, application, payload) {
-        this.id = uuid.v4();
+        this.id = v4();
         this.kind = kind;
         this.application = application;
         this.payload = payload;
@@ -20,7 +20,7 @@ class Message {
     }
 }
 
-class Response {
+export class Response {
     constructor(id, data, error, received) {
         this.id = id;
         this.data = data;
@@ -42,8 +42,3 @@ class Response {
         return `Response{ID: ${this.id}, Data: ${marshaledData}, Error: ${this.error?.message}, Received: ${this.received?.toISOString()}}`;
     }
 }
-
-module.exports = {
-    Message,
-    Response,
-};

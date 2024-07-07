@@ -1,13 +1,32 @@
-const { sendMessage } = require("./bastionClient");
-const { Message } = require("./models");
-const { invokeLambda, info, error } = require("./utils");
+import { sendMessage } from "./bastionClient.js";
+import { Message } from "./models.js";
+import { loadConfig } from "./config.js";
+
+import { invokeLambda, info, error } from "./utils";
 
 // TODO: Proper response codes. This is... gross.
 const errNoConsumerActive = 'no consumer is active on this tunnel';
 const errApplicationNotFound = 'application not found';
 
-const lambdaProxy = (config, handler) => {
+export const lambdaProxy = (appId, handler) => {
+    let conf;
     return async (event, context) => {
+        if (!conf) {
+            conf = await loadConfig(appId);
+        }
+        return lambdaProxyWithConfig(conf, handler)(event, context);
+    }
+}
+
+/**
+ * Returns a Lambda handler that forwards requests when a consumer is active on the bastion, and handles requests directly otherwise.
+ * @param config - The Funcie configuration.
+ * @param handler - The Lambda handler to invoke when no consumer is active on the bastion.
+ * @returns {(function(*, *): Promise<unknown>)|*}
+ */
+export const lambdaProxyWithConfig = (config, handler) => {
+    return async (event, context) => {
+        // load config here, but app ID ot avail here?
         const payload = {
             body: event,
         };
@@ -40,8 +59,4 @@ const lambdaProxy = (config, handler) => {
 
         return forwardResponse.data.body;
     };
-};
-
-module.exports = {
-    lambdaProxy,
 };

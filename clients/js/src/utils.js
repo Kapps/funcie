@@ -1,4 +1,4 @@
-const invokeLambda = (handler, event, context) => {
+export const invokeLambda = (handler, event, context) => {
     // Callback-based handlers are supported, but we wrap them in a promise
     if (handler.length >= 3) {
         return new Promise((resolve, reject) => {
@@ -16,18 +16,12 @@ const invokeLambda = (handler, event, context) => {
     return handler(event, context);
 }
 
-const info = (message) => {
+export const info = (message) => {
     if (process.env.FUNCIE_DEBUG) {
         console.log(message);
     }
 }
 
-const error = (message) => {
+export const error = (message) => {
     console.error(message);
 }
-
-module.exports = {
-    invokeLambda,
-    info,
-    error,
-};

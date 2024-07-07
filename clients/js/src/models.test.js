@@ -1,4 +1,4 @@
-const { Message, Response } = require('./models');
+import { Message, Response } from './models.js';
 
 describe('Message', () => {
     it('should create a message with the correct properties', () => {

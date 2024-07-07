@@ -1,7 +1,8 @@
-const { invokeLambda } = require('./utils');
+import { invokeLambda } from './utils.js';
+
+import { jest } from '@jest/globals';
 
 describe('invokeLambda', () => {
-
     it('should handle async handlers correctly', async () => {
         const mockHandler = jest.fn().mockResolvedValue('some data');
         const event = { some: 'event' };

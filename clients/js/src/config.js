@@ -1,22 +1,8 @@
-const url = require('url');
-const process = require('process');
-const SSM = require('@aws-sdk/client-ssm');
+import { URL } from 'url';
+import process from 'process';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 
-const ssmClient = new SSM.SSMClient();
-
-const CONFIG_PURPOSE_CLIENT = 'client';
-const CONFIG_PURPOSE_SERVER = 'server';
-const CONFIG_PURPOSE_ANY = 'any';
-
-/**
- * Returns the current configuration purpose, which is either "client" or "server".
- */
-function getConfigPurpose() {
-    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-        return CONFIG_PURPOSE_SERVER;
-    }
-    return CONFIG_PURPOSE_CLIENT;
-}
+const ssmClient = new SSMClient();
 
 /**
  * Represents the configuration for a Funcie client or server application.
@@ -27,7 +13,7 @@ function getConfigPurpose() {
  * @property {string} ListenAddress
  * @property {string} ApplicationId
  */
-class FuncieConfig {
+export class FuncieConfig {
     constructor(clientBastionEndpoint, serverBastionEndpoint, listenAddress, applicationId) {
         this.ClientBastionEndpoint = clientBastionEndpoint;
         this.ServerBastionEndpoint = serverBastionEndpoint;
@@ -47,7 +33,7 @@ class FuncieConfig {
  * @param {string?} env - The deployment environment, or "default" if not specified.
  * @returns {Promise<FuncieConfig>}
  */
-async function loadConfig(applicationId, env) {
+export async function loadConfig(applicationId, env) {
     if (!env) {
         env = "default";
     }
@@ -102,9 +88,3 @@ function optionalEnv(name, defaultValue) {
     }
     return value;
 }
-
-module.exports = {
-    FuncieConfig,
-    loadConfig,
-    getConfigPurpose,
-};

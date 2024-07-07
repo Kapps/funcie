@@ -1,12 +1,13 @@
-const { lambdaWrapper } = require('./index');
-const { beginReceiving } = require('./receiver');
-const { lambdaProxy } = require('./proxy');
-const config = require('./config');
-const {FuncieConfig} = require("./config");
+import { lambdaWrapper } from './index.js';
+import { beginReceiving } from './receiver.js';
+import { lambdaProxy } from './proxy.js';
+import * as config from './config.js';
 
-jest.mock('./receiver');
-jest.mock('./proxy');
-jest.mock('./config');
+import { jest } from '@jest/globals';
+
+jest.mock('./receiver.js');
+jest.mock('./proxy.js');
+jest.mock('./config.js');
 
 describe('lambdaWrapper', () => {
     let conf;
@@ -14,7 +15,7 @@ describe('lambdaWrapper', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
-        conf = new FuncieConfig(undefined, undefined, undefined, 'app');
+        conf = new config.FuncieConfig(undefined, undefined, undefined, 'app');
         config.loadConfig.mockReturnValue(conf);
     });
 

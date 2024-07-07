@@ -1,9 +1,14 @@
-const { sendMessage } = require('./bastionClient');
-const { Response } = require('./models');
-const axios = require('axios');
-const url = require('node:url');
+import { sendMessage } from './bastionClient.js';
+import { Response } from './models.js';
+import { URL } from 'url';
 
-jest.mock('axios');
+import { jest } from '@jest/globals';
+
+jest.unstable_mockModule('axios', () => ({
+    post: jest.fn(),
+}));
+
+import axios from 'axios';
 
 describe('bastionClient', () => {
     const baseUrl = 'http://localhost:3000';
@@ -22,7 +27,7 @@ describe('bastionClient', () => {
             const response = await sendMessage(baseUrl, message);
 
             expect(axios.post).toHaveBeenCalledTimes(1);
-            expect(axios.post).toHaveBeenCalledWith(new url.URL('/dispatch', baseUrl), message);
+            expect(axios.post).toHaveBeenCalledWith(new URL('/dispatch', baseUrl), message);
             expect(response).toEqual(expectedResponse);
         });
 
