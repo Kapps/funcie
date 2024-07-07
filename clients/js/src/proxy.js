@@ -1,5 +1,4 @@
 const { sendMessage } = require("./bastionClient");
-const { loadConfigFromEnvironment } = require("./config");
 const { Message } = require("./models");
 const { invokeLambda, info, error } = require("./utils");
 
@@ -7,9 +6,8 @@ const { invokeLambda, info, error } = require("./utils");
 const errNoConsumerActive = 'no consumer is active on this tunnel';
 const errApplicationNotFound = 'application not found';
 
-const lambdaProxy = (handler) => {
+const lambdaProxy = (config, handler) => {
     return async (event, context) => {
-        const config = loadConfigFromEnvironment();
         const payload = {
             body: event,
         };

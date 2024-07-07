@@ -3,16 +3,16 @@ const { lambdaProxy } = require('./proxy');
 const { info } = require('./utils');
 
 
-const lambdaWrapper = (handler) => {
-    const config = require('./config').loadConfigFromEnvironment();
+const lambdaWrapper = async (appId, handler) => {
+    const config = await require('./config').loadConfig(appId);
     const isRunningInLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
     if (isRunningInLambda) {
-        info('Starting Funcie proxy with config: ', JSON.stringify(config));
-        return lambdaProxy(handler);
+        info('Starting Funcie proxy for app:', config.ApplicationId);
+        return lambdaProxy(config, handler);
     }
 
-    info('Starting Funcie server with config: ', JSON.stringify(config));
+    info('Starting Funcie server for app:', config.ApplicationId);
     return beginReceiving(config, handler);
 };
 

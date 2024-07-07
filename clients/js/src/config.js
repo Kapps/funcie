@@ -86,15 +86,6 @@ async function loadSSMParameter(env, name) {
     }
 }
 
-function requireUrlEnv(name, purpose) {
-    const value = requiredEnv(name, purpose);
-    if (!value) {
-        return null;
-    }
-
-    return new url.URL(value);
-}
-
 function optionalUrlEnv(name, defaultValue) {
     const value = optionalEnv(name, defaultValue);
     if (!value) {
@@ -102,18 +93,6 @@ function optionalUrlEnv(name, defaultValue) {
     }
 
     return new url.URL(value);
-}
-
-function requiredEnv(name, purpose) {
-    const value = process.env[name];
-    if (!value) {
-        const currPurpose = getConfigPurpose();
-        const purposeMatches = purpose === CONFIG_PURPOSE_ANY || currPurpose === purpose;
-        if (purposeMatches) {
-            throw new Error(`required environment variable ${name} not set`);
-        }
-    }
-    return value;
 }
 
 function optionalEnv(name, defaultValue) {

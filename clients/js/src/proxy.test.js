@@ -1,8 +1,7 @@
 const { lambdaProxy } = require('./proxy');
 const { sendMessage } = require('./bastionClient');
-const { loadConfigFromEnvironment } = require('./config');
+const { loadConfig } = require('./config');
 const { invokeLambda } = require('./utils');
-const { Message } = require('./models');
 
 jest.mock('./bastionClient');
 jest.mock('./config');
@@ -19,7 +18,7 @@ describe('lambdaProxy', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    loadConfigFromEnvironment.mockReturnValue(mockConfig);
+    loadConfig.mockReturnValue(mockConfig);
   });
 
   it('should forward response data body if no error occurs', async () => {
