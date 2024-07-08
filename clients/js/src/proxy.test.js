@@ -1,13 +1,13 @@
-const { lambdaProxy } = require('./proxy');
+const { lambdaProxy, lambdaProxyWithConfig } = require('./proxy');
 const { sendMessage } = require('./bastionClient');
 const { loadConfig } = require('./config');
 const { invokeLambda } = require('./utils');
 
-jest.mock('./bastionClient');
 jest.mock('./config');
+jest.mock('./bastionClient');
 jest.mock('./utils');
 
-describe('lambdaProxy', () => {
+describe('lambdaProxy[WithConfig]', () => {
   const mockEvent = { some: 'event' };
   const mockContext = { some: 'context' };
   const mockHandler = jest.fn();
@@ -21,11 +21,20 @@ describe('lambdaProxy', () => {
     loadConfig.mockReturnValue(mockConfig);
   });
 
+  it('should forward from lambdaProxy to lambdaProxyWithConfig', async () => {
+    const mockResponse = { data: { body: 'some-data' } };
+    sendMessage.mockResolvedValue(mockResponse);
+
+    const result = await lambdaProxy('app-id', mockHandler)(mockEvent, mockContext);
+    expect(loadConfig).toHaveBeenCalledWith('app-id');
+    expect(result).toBe('some-data');
+  });
+
   it('should forward response data body if no error occurs', async () => {
     const mockResponse = { data: { body: 'some-data' } };
     sendMessage.mockResolvedValue(mockResponse);
 
-    const result = await lambdaProxy(mockHandler)(mockEvent, mockContext);
+    const result = await lambdaProxyWithConfig(mockConfig, mockHandler)(mockEvent, mockContext);
     expect(result).toBe('some-data');
   });
 
@@ -33,7 +42,7 @@ describe('lambdaProxy', () => {
     sendMessage.mockRejectedValue(new Error('some error'));
     invokeLambda.mockResolvedValue('direct-response');
 
-    const result = await lambdaProxy(mockHandler)(mockEvent, mockContext);
+    const result = await lambdaProxyWithConfig(mockConfig, mockHandler)(mockEvent, mockContext);
     expect(result).toBe('direct-response');
   });
 
@@ -42,7 +51,7 @@ describe('lambdaProxy', () => {
     sendMessage.mockResolvedValue(mockResponse);
     invokeLambda.mockResolvedValue('direct-response');
 
-    const result = await lambdaProxy(mockHandler)(mockEvent, mockContext);
+    const result = await lambdaProxyWithConfig(mockConfig, mockHandler)(mockEvent, mockContext);
     expect(result).toBe('direct-response');
   });
 
@@ -51,7 +60,7 @@ describe('lambdaProxy', () => {
     sendMessage.mockResolvedValue(mockResponse);
     invokeLambda.mockResolvedValue('direct-response');
 
-    const result = await lambdaProxy(mockHandler)(mockEvent, mockContext);
+    const result = await lambdaProxyWithConfig(mockConfig, mockHandler)(mockEvent, mockContext);
     expect(result).toBe('direct-response');
   });
 
@@ -59,6 +68,7 @@ describe('lambdaProxy', () => {
     const mockResponse = { error: { message: 'some-other-error' } };
     sendMessage.mockResolvedValue(mockResponse);
 
-    await expect(lambdaProxy(mockHandler)(mockEvent, mockContext)).rejects.toThrow('some-other-error');
+    await expect(lambdaProxyWithConfig(mockConfig, mockHandler)(mockEvent, mockContext))
+        .rejects.toThrow('some-other-error');
   });
 });

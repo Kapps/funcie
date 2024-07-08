@@ -51,7 +51,7 @@ resource "aws_lambda_function" "funcie_js" {
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name = "iam_for_lambda"
+  name = "funcie_js_lambda_iam"
 
   assume_role_policy = <<EOF
 {
@@ -78,7 +78,7 @@ resource "aws_iam_role_policy_attachment" "terraform_lambda_policy" {
 // Grant access to SSM and such:
 
 resource "aws_iam_policy" "ssm_policy" {
-  name        = "ssm_policy"
+  name        = "funcie_js_ssm_policy"
   description = "Allow access to SSM"
   policy      = <<EOF
 {

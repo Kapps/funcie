@@ -1,17 +1,17 @@
 const { FuncieConfig, getConfigPurpose, loadConfig} = require('./config');
 const { URL } = require('url');
+const client = require('@aws-sdk/client-ssm');
 
 jest.mock('@aws-sdk/client-ssm', () => {
-    const originalModule = jest.requireActual('@aws-sdk/client-ssm');
     return {
-        ...originalModule,
         SSMClient: jest.fn().mockImplementation(() => ({
             send: jest.fn().mockResolvedValue({
                 Parameter: {
                     Value: "example.org"
                 }
             })
-        }))
+        })),
+        GetParameterCommand: jest.fn().mockImplementation(() => ({})),
     };
 });
 
@@ -33,18 +33,6 @@ describe('FuncieConfig Module Tests', () => {
         process.env = originalEnv;
         jest.clearAllMocks();
         jest.resetModules();
-    });
-
-    describe('getConfigPurpose', () => {
-        it('should return "server" if AWS_LAMBDA_FUNCTION_NAME is set', () => {
-            process.env.AWS_LAMBDA_FUNCTION_NAME = "test_function";
-            expect(getConfigPurpose()).toBe("server");
-        });
-
-        it('should return "client" if AWS_LAMBDA_FUNCTION_NAME is not set', () => {
-            process.env.AWS_LAMBDA_FUNCTION_NAME = undefined;
-            expect(getConfigPurpose()).toBe("client");
-        });
     });
 
     describe('FuncieConfig', () => {

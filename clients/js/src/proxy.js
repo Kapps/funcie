@@ -1,12 +1,35 @@
 const { sendMessage } = require("./bastionClient");
 const { Message } = require("./models");
 const { invokeLambda, info, error } = require("./utils");
+const { loadConfig } = require('./config');
 
 // TODO: Proper response codes. This is... gross.
 const errNoConsumerActive = 'no consumer is active on this tunnel';
 const errApplicationNotFound = 'application not found';
 
-const lambdaProxy = (config, handler) => {
+/**
+ * Returns a lambda handler much like `lambdaProxyWithConfig`, but lazily loads the configuration before first execution.
+ * @param appId - arbitrary unique application identifier.
+ * @param handler - lambda handler to be wrapped.
+ * @returns {function(*, *): Promise<*>}
+ */
+const lambdaProxy = (appId, handler) => {
+    let conf;
+    return async (event, context) => {
+        if (!conf) {
+            conf = await loadConfig(appId);
+        }
+        return await lambdaProxyWithConfig(conf, handler)(event, context);
+    }
+};
+
+/**
+ * Returns a lambda handler that forwards requests to the bastion server or handles them directly when required.
+ * @param config - configuration object, often loaded from `loadConfig`
+ * @param handler - lambda handler to be wrapped.
+ * @returns {(function(*, *): Promise<unknown>)|*}
+ */
+const lambdaProxyWithConfig = (config, handler) => {
     return async (event, context) => {
         const payload = {
             body: event,
@@ -44,4 +67,5 @@ const lambdaProxy = (config, handler) => {
 
 module.exports = {
     lambdaProxy,
+    lambdaProxyWithConfig,
 };

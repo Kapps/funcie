@@ -3,8 +3,26 @@ const { promisify } = require('util');
 const { Message, Response } = require('./models');
 const { sendMessage } = require('./bastionClient');
 const { invokeLambda, info, error } = require('./utils');
+const { loadConfig } = require("./config");
 
-const beginReceiving = async (config, handler) => {
+/**
+ * Helper function to load the default configuration and pass it to `beginReceivingWithConfig`.
+ * @param appId - arbitrary unique application identifier.
+ * @param handler - lambda handler to be wrapped.
+ * @returns {Promise<Server<IncomingMessage, ServerResponse>>}
+ */
+const beginReceiving = async (appId, handler) => {
+    const conf = await loadConfig(appId);
+    return beginReceivingWithConfig(conf, handler);
+};
+
+/**
+ * Starts a server that listens for incoming requests and forwards them to the provided handler.
+ * @param config - configuration object, often loaded from `loadConfig`
+ * @param handler - lambda handler to be wrapped.
+ * @returns {Promise<Server<typeof IncomingMessage, typeof ServerResponse>>}
+ */
+const beginReceivingWithConfig = async (config, handler) => {
     if (config.ListenAddress.protocol !== 'http:') {
         throw new Error('Only HTTP is supported');
     }
@@ -65,4 +83,5 @@ const subscribe = async (config, address) => {
 
 module.exports = {
     beginReceiving,
+    beginReceivingWithConfig,
 }

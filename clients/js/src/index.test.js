@@ -1,21 +1,13 @@
 const { lambdaWrapper } = require('./index');
 const { beginReceiving } = require('./receiver');
 const { lambdaProxy } = require('./proxy');
-const config = require('./config');
-const {FuncieConfig} = require("./config");
 
 jest.mock('./receiver');
 jest.mock('./proxy');
-jest.mock('./config');
 
 describe('lambdaWrapper', () => {
-    let conf;
-
     beforeEach(() => {
         jest.clearAllMocks();
-
-        conf = new FuncieConfig(undefined, undefined, undefined, 'app');
-        config.loadConfig.mockReturnValue(conf);
     });
 
     it('should start the proxy if running in AWS Lambda', async () => {
@@ -27,9 +19,8 @@ describe('lambdaWrapper', () => {
         const result = await lambdaWrapper("app", handler);
 
         expect(result).toBe(expectedProxy);
-        expect(lambdaProxy).toHaveBeenCalledWith(conf, handler);
+        expect(lambdaProxy).toHaveBeenCalledWith('app', handler);
         expect(beginReceiving).not.toHaveBeenCalled();
-        expect(config.loadConfig).toHaveBeenCalledWith("app");
 
         delete process.env.AWS_LAMBDA_FUNCTION_NAME;
     });
@@ -42,8 +33,7 @@ describe('lambdaWrapper', () => {
         const result = await lambdaWrapper('app', handler);
 
         expect(result).toBe(expectedServer);
-        expect(beginReceiving).toHaveBeenCalledWith(conf, handler);
+        expect(beginReceiving).toHaveBeenCalledWith('app', handler);
         expect(lambdaProxy).not.toHaveBeenCalledWith(handler);
-        expect(config.loadConfig).toHaveBeenCalledWith('app');
     });
 });

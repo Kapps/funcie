@@ -1,12 +1,14 @@
 const http = require("http");
-const { beginReceiving } = require("./receiver");
+const { beginReceiving, beginReceivingWithConfig} = require("./receiver");
 const { sendMessage } = require("./bastionClient");
+const { loadConfig } = require("./config");
 
 jest.mock("http");
 jest.mock("./bastionClient");
 jest.mock("./utils");
+jest.mock("./config");
 
-describe("beginReceiving", () => {
+describe("beginReceiving[WithConfig]", () => {
     const mockConfig = {
         ListenAddress: {
             protocol: "http:",
@@ -40,7 +42,7 @@ describe("beginReceiving", () => {
 
     it("should throw error if protocol is not http", async () => {
         await expect(
-            beginReceiving(
+            beginReceivingWithConfig(
                 { ...mockConfig, ListenAddress: { protocol: "https:" } },
                 mockHandler
             )
@@ -57,7 +59,7 @@ describe("beginReceiving", () => {
             cb();
         });
 
-        await beginReceiving(mockConfig, mockHandler);
+        await beginReceivingWithConfig(mockConfig, mockHandler);
 
         expect(mockServer.listen).toHaveBeenCalledWith(
             mockConfig.ListenAddress.port,
@@ -65,5 +67,22 @@ describe("beginReceiving", () => {
             expect.any(Function)
         );
         expect(mockServer.on).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward from beginReceiving to beginReceivingWithConfig', async () => {
+        loadConfig.mockReturnValue(mockConfig);
+
+        const mockAddress = { address: "localhost", port: 8080 };
+        const mockRegisterResp = { data: { RegistrationId: "reg-id" } };
+
+        mockServer.address.mockReturnValue(mockAddress);
+        sendMessage.mockResolvedValue(mockRegisterResp);
+        mockServer.listen.mockImplementation((port, hostname, cb) => {
+            cb();
+        });
+
+        await beginReceiving('app-id', mockHandler);
+        expect(http.createServer).toHaveBeenCalled();
+        expect(loadConfig).toHaveBeenCalledWith('app-id');
     });
 });

@@ -4,20 +4,6 @@ const SSM = require('@aws-sdk/client-ssm');
 
 const ssmClient = new SSM.SSMClient();
 
-const CONFIG_PURPOSE_CLIENT = 'client';
-const CONFIG_PURPOSE_SERVER = 'server';
-const CONFIG_PURPOSE_ANY = 'any';
-
-/**
- * Returns the current configuration purpose, which is either "client" or "server".
- */
-function getConfigPurpose() {
-    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-        return CONFIG_PURPOSE_SERVER;
-    }
-    return CONFIG_PURPOSE_CLIENT;
-}
-
 /**
  * Represents the configuration for a Funcie client or server application.
  *
@@ -106,5 +92,4 @@ function optionalEnv(name, defaultValue) {
 module.exports = {
     FuncieConfig,
     loadConfig,
-    getConfigPurpose,
 };
