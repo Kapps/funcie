@@ -1,6 +1,6 @@
 const { sendMessage } = require("./bastionClient");
 const { Message } = require("./models");
-const { invokeLambda, info, error } = require("./utils");
+const { invokeLambda, info, error, debug} = require("./utils");
 const { loadConfig } = require('./config');
 
 // TODO: Proper response codes. This is... gross.
@@ -53,7 +53,7 @@ const lambdaProxyWithConfig = (config, handler) => {
 
             // If there is no consumer active on the bastion, handle the request directly.
             if (forwardResponse.error.message === errNoConsumerActive || forwardResponse.error === errApplicationNotFound) {
-                info(`no consumer active on bastion; handling request directly`);
+                debug(`no consumer active on bastion; handling request directly`);
                 return invokeLambda(handler, event, context);
             }
 

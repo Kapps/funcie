@@ -3,7 +3,7 @@ const { lambdaProxy } = require('./proxy');
 const { info } = require('./utils');
 
 
-const lambdaWrapper = async (appId, handler) => {
+const lambdaWrapper = (appId, handler) => {
     const isRunningInLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
     if (isRunningInLambda) {
