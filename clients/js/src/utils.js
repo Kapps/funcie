@@ -16,20 +16,20 @@ const invokeLambda = (handler, event, context) => {
     return handler(event, context);
 }
 
-const debug = (message) => {
+const debug = (message, ...args) => {
     if (process.env.FUNCIE_DEBUG) {
-        console.log(message);
+        console.log(message, ...args);
     }
 }
 
-const info = (message) => {
+const info = (message, ...args) => {
     if (!process.env.FUNCIE_QUIET) {
-        console.log(message);
+        console.log(message, ...args);
     }
 }
 
-const error = (message) => {
-    console.error(message);
+const error = (message, ...args) => {
+    console.error(message, ...args);
 }
 
 module.exports = {

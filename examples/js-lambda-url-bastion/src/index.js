@@ -21,7 +21,7 @@ exports.handler = lambdaWrapper("js-url", async (event) => {
     }
     return {
         statusCode: 200,
-        body: 'Hello, world... :)',
+        body: 'Hello, world! :)',
         headers: {
             'Content-Type': 'text/plain',
         },

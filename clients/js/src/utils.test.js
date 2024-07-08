@@ -1,4 +1,4 @@
-const { invokeLambda } = require('./utils');
+const { invokeLambda, debug, info} = require('./utils');
 
 describe('invokeLambda', () => {
 
@@ -36,5 +36,35 @@ describe('invokeLambda', () => {
         const context = { some: 'context' };
 
         await expect(invokeLambda(mockHandler, event, context)).rejects.toThrow('some error');
+    });
+});
+
+describe('debug', () => {
+    let consoleLogSpy;
+
+    beforeEach(() => {
+        consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    });
+
+    afterEach(() => {
+        consoleLogSpy.mockRestore();
+    });
+
+    it('should log if FUNCIE_DEBUG is set', () => {
+        process.env.FUNCIE_DEBUG = 'true';
+
+        const { debug } = require('./utils');
+        debug('some message', 'some arg1', 'some arg2');
+
+        expect(consoleLogSpy).toHaveBeenCalledWith('some message', 'some arg1', 'some arg2');
+    });
+
+    it('should not log if FUNCIE_DEBUG is not set', () => {
+        process.env.FUNCIE_DEBUG = '';
+
+        const { debug } = require('./utils');
+        debug('some message', 'some arg1', 'some arg2');
+
+        expect(consoleLogSpy).not.toHaveBeenCalled();
     });
 });
