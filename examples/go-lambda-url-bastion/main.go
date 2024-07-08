@@ -8,6 +8,7 @@ import (
 	"github.com/Kapps/funcie/clients/go/funcietunnel"
 	"github.com/Kapps/funcie/pkg/funcie"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"strings"
 )
 
@@ -37,6 +38,7 @@ func HandleRequest(_ context.Context, event events.LambdaFunctionURLRequest) (*e
 }
 
 func main() {
+	lambda.Start(HandleRequest)
 	funcie.ConfigureLogging()
 	funcietunnel.Start("go-url", HandleRequest)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Kapps/funcie/cmd/cli/funcli"
+	"github.com/Kapps/funcie/cmd/funcie/funcli"
 	"net/http"
 	"testing"
 	"time"

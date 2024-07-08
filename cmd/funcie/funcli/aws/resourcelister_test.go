@@ -2,8 +2,8 @@ package aws_test
 
 import (
 	"context"
-	. "github.com/Kapps/funcie/cmd/cli/funcli/aws"
-	"github.com/Kapps/funcie/cmd/cli/funcli/aws/mocks"
+	. "github.com/Kapps/funcie/cmd/funcie/funcli/aws"
+	"github.com/Kapps/funcie/cmd/funcie/funcli/aws/mocks"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	ecTypes "github.com/aws/aws-sdk-go-v2/service/elasticache/types"
 	"testing"

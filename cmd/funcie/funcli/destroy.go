@@ -3,8 +3,8 @@ package funcli
 import (
 	"context"
 	"fmt"
-	"github.com/Kapps/funcie/cmd/cli/funcli/internal"
-	"github.com/Kapps/funcie/cmd/cli/funcli/tools"
+	"github.com/Kapps/funcie/cmd/funcie/funcli/internal"
+	"github.com/Kapps/funcie/cmd/funcie/funcli/tools"
 	"os"
 )
 

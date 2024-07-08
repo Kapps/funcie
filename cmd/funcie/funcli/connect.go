@@ -3,7 +3,7 @@ package funcli
 import (
 	"context"
 	"fmt"
-	aws2 "github.com/Kapps/funcie/cmd/cli/funcli/aws"
+	aws2 "github.com/Kapps/funcie/cmd/funcie/funcli/aws"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"strings"

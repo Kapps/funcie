@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	aws "github.com/Kapps/funcie/cmd/cli/funcli/aws"
+	aws "github.com/Kapps/funcie/cmd/funcie/funcli/aws"
 
 	mock "github.com/stretchr/testify/mock"
 )
