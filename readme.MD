@@ -1,21 +1,20 @@
 # Funcie
 
-Funcie simplifies local development for AWS Lambda and other serverless functions, enabling direct local execution of your code.
+Funcie simplifies local development for AWS Lambda and other serverless functions, enabling direct local execution of your code, while leaving invocation in the hands of the cloud provider.
 Inspired by SST's [Live Lambda Development](https://docs.sst.dev/live-lambda-development), Funcie takes this further and ensures seamless transition between cloud and local execution.
 
 In typical use, your functions execute entirely within your cloud provider. Then, as soon as you launch or debug your application locally, Funcie begins redirecting incoming requests to the local instance. Once you're done, closing the local application immediately resumes execution on the cloud function.
 
-Funcie doesn't care how your function is invoked, what your development environment is, or what frameworks you're using.
+Because the cloud provider is the one invoking your function, funcie doesn't care how your function is invoked, what your development environment is, or what frameworks you're using.
 This means you can trigger your Lambda via S3 triggers, Step Functions, or however else you decide, while debugging locally using VS Code, GoLand, or anything else.
 
 Currently, Funcie supports AWS Lambdas running Go or JavaScript/TypeScript, but is designed such that adding new languages requires only minimal effort.
-It's also designed to be very simple to plug in, just replacing `lambda.Start` in Go with `funcie.Start`, or wrapping your JS handler with our wrapper function.
 
 ## Getting Started
 
 To get started, we recommend using the Funcie CLI. The CLI allows you to easily deploy the necessary infrastructure via terraform, and securely connects your local instance to your VPC, facilitating access to VPC resources like RDS without needing a VPN.
 
-The installation process takes approximately 10 minutes when using the CLI.
+The setup process takes approximately 15 minutes when using the CLI.
 
 ### Prerequisites
 
@@ -115,7 +114,7 @@ Alternatively, use an example from the `examples` directory.
     with:
     ```javascript
     const { lambdaWrapper } = require('@funcie/client');
-    export const handler = lambdaWrapper("js-url", async (event, context) => {
+    export const handler = lambdaWrapper("my-app", async (event, context) => {
         // Your Lambda handler code here
     });
     ```    
