@@ -39,5 +39,8 @@ func (c *DestroyCommand) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to destroy funcie instance: %w", err)
 	}
 
+	fmt.Println("The funcie infrastructure has been destroyed.")
+	fmt.Println("Destroying the docker container is not yet implemented. Please run `docker ps` and `docker rm` to remove the container.")
+
 	return nil
 }
