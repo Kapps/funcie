@@ -1,34 +1,32 @@
 # Funcie
 
-Funcie is a framework for easier local development of AWS Lambda or other serverless functions.
-It is inspired by the Live Lambda Development from SST (https://docs.sst.dev/live-lambda-development).
+Funcie simplifies local development for AWS Lambda and other serverless functions, enabling direct local execution of your code.
+Inspired by SST's [Live Lambda Development](https://docs.sst.dev/live-lambda-development), Funcie takes this further and ensures seamless transition between cloud and local execution.
 
-Funcie is designed to seamlessly transition between cloud and local execution of your serverless functions.
-Under ordinary usage, your cloud functions execute directly in your cloud provider, handling any requests with your published code.
-Then, when you want to debug or try a new local version, simply launch your application locally and funcie
-will instantly recognize that a client endpoint is active, forwarding all incoming requests to that client.
-Once you're done your local development / debugging, just close the local application and your cloud function
-will immediately resume handling the request directly once more.
+In typical use, your functions execute entirely within your cloud provider. Then, as soon as you launch or debug your application locally, Funcie begins redirecting incoming requests to the local instance. Once you're done, closing the local application immediately resumes execution on the cloud function.
 
-Funcie doesn't care how your function is invoked, what your development environment is, or what framework you're using.
-This means you can trigger your Lambda via S3 triggers, Step Functions, or however else you decide, while debugging locally using VS Code, Goland, or whatever editor/IDE you prefer.
+Funcie doesn't care how your function is invoked, what your development environment is, or what frameworks you're using.
+This means you can trigger your Lambda via S3 triggers, Step Functions, or however else you decide, while debugging locally using VS Code, GoLand, or anything else.
 
-Currently, funcie supports Go and JavaScript/TypeScript, but is designed such that adding new languages requires only minimal effort.
-At this time, the only provided wrappers are for AWS Lambda, but there is nothing that inherently ties funcie to Lambda.
+Currently, Funcie supports AWS Lambdas running Go or JavaScript/TypeScript, but is designed such that adding new languages requires only minimal effort.
+It's also designed to be very simple to plug in, just replacing `lambda.Start` in Go with `funcie.Start`, or wrapping your JS handler with our wrapper function.
 
 ## Getting Started
 
-To get started, we recommend using the CLI. The CLI allows you to easily deploy the necessary infrastructure via terraform,
-and also provides a simple and secure way for your local instance to connect to your AWS VPC.
+To get started, we recommend using the Funcie CLI. The CLI allows you to easily deploy the necessary infrastructure via terraform, and securely connects your local instance to your VPC, facilitating access to VPC resources like RDS without needing a VPN.
 
-The installation process is split up into two parts: deploying the infrastructure and updating your code to use the funcie library.
+The installation process takes approximately 10 minutes when using the CLI.
+
+### Prerequisites
+
+- Go 1.21 or later
+- AWS CLI configured
+- Terraform installed
 
 ### Deploying the Infrastructure
 
 **Warning:** This will deploy a Redis instance and a bastion server to your AWS account, which will incur costs.
-Make sure to run `funcie destroy` if you're no longer using funcie to clean up the resources.
-
-The primary costs come from a t3.micro EC2 instance, and a t4g.micro Elasticache instance.
+Make sure to run `funcie destroy` if you're no longer using Funcie in order to clean up the resources. We estimate the costs at roughly $20-25 USD per month, but it can vary depending on region and other factors.
 
 1. Clone the repository:
     
@@ -48,69 +46,65 @@ The primary costs come from a t3.micro EC2 instance, and a t4g.micro Elasticache
     ```bash
     funcie init
     ```
-    
-    You can also deploy the infrastructure manually using the terraform files at https://github.com/Kapps/terraform-aws-funcie
+    If you encounter a file not found error, ensure your `PATH` environment variable is set for `go install`. Alternatively, run the CLI from the `cli` folder.
 
-    If you receive a file not found error, you may need to add the go bin directory to your PATH. You can do this by adding the following line to your shell profile:
-   
-    ```bash
-    export PATH=$PATH:$(go env GOPATH)/bin
-    ```
-
-4. Now that funcie is deployed, you can run `funcie connect` to allow your local bastion to access the Elasticache instance.
+4. Now that funcie is deployed, you can run `funcie connect` to allow your local bastion to access the ElastiCache instance.
     
     ```bash
     funcie connect
     ```
 
-5. You can now run your Lambda locally and have it connect to the bastion server.
+5. You can now run your Lambda locally and have it connect to the bastion server. Check out one of the examples to play with it.
 
 ### Updating Your Code
 
-To use funcie, you need to update your Lambda handler to use the funcie library.
-The library will handle the communication between your Lambda and the local environment.
+To use funcie, you need to update your Lambda handler to use the Funcie library for your language.
+The library handles communication between your Lambda and the local environment.
 Libraries are provided for AWS Lambda in Go and JavaScript/TypeScript.
 
-Alternatively you can use one of the examples in the `examples` directory as a starting point.
+Alternatively, use an example from the `examples` directory.
 
-1. Go to the directory where your Lambda handler is located.
+#### Go
 
-2. Install the funcie library for your language:
-
-    Go:
-    
+1. Install the funcie library:
     ```bash
     go get github.com/Kapps/funcie
     ```
-    
-    JavaScript/TypeScript:
-    
-    ```bash
-    npm install @funcie/client
-    ```
-   
-3. Update your Lambda handler to use the funcie library.
 
-    For Go, replace:
+2. Update your Lambda handler to use the funcie library.
+    
+    Replace:
     ```go
     import "github.com/aws/aws-lambda-go/lambda"
-   
+
     func main() {
         lambda.Start(handler)
     }
     ```
-   
+
     with:
 
     ```go
     import "github.com/Kapps/funcie/clients/go/funcietunnel"
-   
+
     func main() {
         funcietunnel.Start("my-app", handler)
     }
     ```
+
+3. Run your Lambda locally. You should see the logs in your terminal.
+
+#### JavaScript/TypeScript
+
+1. Install the funcie library:
+    ```bash
+    npm install @funcie/client
+    ```
+
    
-    For JavaScript/TypeScript, replace:
+2. Update your Lambda handler to use the funcie library.
+
+    Replace:
     
     ```javascript
     export const handler = async (event, context) => {
@@ -126,14 +120,26 @@ Alternatively you can use one of the examples in the `examples` directory as a s
     });
     ```    
 
-4. Run your Lambda locally.
+3. Run your Lambda locally. You should see the logs in your terminal.
+
+## Accessing VPC Resources
+
+If you have a VPN, often accessing resources like an RDS is trivial. If you don't though, the Funcie CLI can help here via the `funcie connect` command.
+
+For instance, if you have an RDS at `abc.id.us-east-1.rds.amazonaws.com`, which accepts connections from within the VPC, set up a tunnel using:
+
+```
+funcie connect -r abc.id.us-east-1.rds.amazonaws.com -p 5432 -l 5432
+```
+
+Now, localhost on port 5432 will tunnel to your RDS. This uses SSM port forwarding to securely create the tunnel.
 
 ## Security
 
 Funcie is intended for use in development and staging environments, and is not recommended to enable in production.
 While the default deployment is protected by being behind a VPC, it's recommended to detect if in a production environment and disable funcie.
 
-For example, you could use an environment variable to decide to run `lambda.Start` or `funcietunnel.Start`.
+For example, you could use an environment variable to decide whether to run `lambda.Start` or `funcie.Start`.
 
 ## High Level Overview
 
