@@ -1,35 +1,33 @@
 # Lambda URL Sample
 
-This is a very simple example that uses Lambda Function URLs to return a JSON response.
-This sample uses the bastion deployed from the `deploy` folder, referencing the bastion IP by passing in the LB.
+This is a very simple example that uses Lambda Function URLs to return a JSON response. This is a good starting point for building more complex Lambda applications.
 
 ## Prerequisites
 
-- To run this sample, you will need to have deployed the terraform in the `deploy` folder.
-- You will also need to have the bastion docker image running locally.
-  - You can run the bastion docker image with the following command:
-    ```bash
-    docker run -e FUNCIE_REDIS_ADDRESS=<elasticachehost>:6379 -e FUNCIE_LISTEN_ADDRESS=0.0.0.0:24193 -p 24193:24193 public.ecr.aws/w1h1o7p8/funcie-client-bastion:0.3.3
-    ```
-- You will need to be able to access the Redis host from your local machine.
-  - One approach is using an OpenVPN Access Server connection, or following the AWS guide for external connections.
+To run this sample, you will need the following:
+
+- Active Funcie deployment (see the [Funcie README](https://github.com/Kapps/funcie/blob/main/readme.MD) for instructions).
+- Client bastion running locally (automatically launched by the CLI if you enabled it).
+- Access to the Redis host (run `funcie connect` to open a tunnel if you used the CLI).
 
 ## Deployment
 
-- Create a `terraform.tfvars` file that contains values for the variables (according to `sample.tfvars`)
-- Build the lambda by running `make`
-- Deploy the Lambda function via `terraform apply`
-- Note the lambda_url output from the terraform apply -- this is the URL you will use to access the Lambda function.
+1. Create a `terraform.tfvars` file with values for the variables (refer to `sample.tfvars`).
+
+2. Build and deploy the Lambda:
+
+    ```bash
+    make deploy
+    ```
+
+3. Note the `lambda_url` output from `terraform apply`. This is the URL to access the Lambda function.
 
 ## Running Locally
 
-When running this locally, you may wish to use `gow` to watch for changes and rebuild
-the binary automatically. See https://github.com/mitranim/gow for details on `gow`.`
-
-For example, to run this locally and automatically restart on any change, you can use:
+To run this locally, use [gow](https://github.com/mitranim/gow) to watch for changes and rebuild the binary automatically. Alternatively, run:
 
 ```bash
-FUNCIE_APPLICATION_ID=url gow run main.go
+go run main.go
 ```
 
 Open the URL to see requests in your terminal.
@@ -44,10 +42,8 @@ make destroy
 
 ## Deployment Variables
 
-When deploying this Lambda, you will need to pass the following Terraform variables in your terraform.tfvars file:
+When deploying this Lambda, you will need to pass the following Terraform variables in your terraform.tfvars file. These are all also available from the outputs of the funcie deployment terraform module.
 
 - subnet_ids: List of (private) subnet IDs for the Lambda function
-- security_group_ids: List of security group IDs for the Lambda function
-- redis_host: Address of the Redis host, including port.
-- bastion_lb_arn: The ARN for the load balancer created to be used for the bastion (can be viewed in the outputs).
+- vpc_id: VPC the Lambda should run in.
 - region: AWS region to deploy to.
