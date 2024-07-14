@@ -1,36 +1,49 @@
 # Lambda URL Sample
 
-This is a very simple JavaScript example that uses Lambda Function URLs to return a JSON response.
-This sample requires funcie to be deployed via the deploy folder in the root of the repository.
+This is a very simple example that uses Lambda Function URLs to return a JSON response. This is a good starting point for building more complex Lambda applications.
 
-## PREREQUISITES
+## Prerequisites
 
-- To run this sample, you will need to have deployed the terraform in the `deploy` folder.
+To run this sample, you will need the following:
 
-To run this sample, create a `terraform.tfvars` file that contains values for the variables (according to `sample.tfvars`).
-Then deploy the Lambda using `terraform apply`.
+- Active Funcie deployment (see the [Funcie README](https://github.com/Kapps/funcie/blob/main/readme.MD) for instructions).
+- Client bastion running locally (automatically launched by the CLI if you enabled it).
+- Access to the Redis host (run `funcie connect` to open a tunnel if you used the CLI).
 
-When running this locally, you may wish to use `node --watch` to watch for changes and rebuild automatically.
+## Deployment
 
-For example, to run this locally and automatically restart on any change, you can use:
+1. Create a `terraform.tfvars` file with values for the variables (refer to `sample.tfvars`).
+
+2. Build and deploy the Lambda:
+
+    ```bash
+    make deploy
+    ```
+
+3. Note the `lambda_url` output from `terraform apply`. This is the URL to access the Lambda function.
+
+## Running Locally
+
+To run this locally, simply run node on the index file (preferably with --watch to reload on changes).
 
 ```bash
-FUNCIE_APPLICATION_ID=url node --watch index.js
+node --watch src/index.js
 ```
 
-Then you can simply hit the URL, apply some changes, and see the next invocation automatically
-pick up the changes.
+Open the URL to see requests in your terminal.
+If you close the local instance, the Lambda will respond using the last uploaded code.
+Restarting the local instance resumes request forwarding.
 
-If you close the local instance, the Lambda will simply respond using the last code you uploaded
-to the Lambda. Then when you start the local instance, it will automatically continue forwarding
-requests.
+When you're done, don't forget to clean up by running:
+
+```bash
+make destroy
+```
 
 ## Deployment Variables
 
-When deploying this Lambda, you will need to pass the following Terraform variables in your terraform.tfvars file:
+When deploying this Lambda, you will need to pass the following Terraform variables in your terraform.tfvars file. These are all also available from the outputs of the funcie deployment terraform module.
 
-- subnet_ids: List of (private) subnet IDs for the Lambda function. Example: ["subnet-12345678", "subnet-87654321"]
-- redis_host: Address of the Redis host, including port. Example: "abc.cache.amazonaws.com:6379"
-- region: AWS region to deploy to. Example: "us-east-1"
-- vpc_id: VPC ID for the Lambda function. Example: "vpc-12345678"
-- bastion_host: Host name for the bastion ECS. Usually the bastion_host output from the deployment file. Example: "server-bastion.funcie.local"
+- subnet_ids: List of (private) subnet IDs for the Lambda function
+- redis_host: Address of the Redis host, including port.
+- region: AWS region to deploy to.

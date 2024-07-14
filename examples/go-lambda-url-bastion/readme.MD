@@ -32,12 +32,15 @@ For example, to run this locally and automatically restart on any change, you ca
 FUNCIE_APPLICATION_ID=url gow run main.go
 ```
 
-Then you can simply hit the URL, apply some changes, and see the next invocation automatically
-pick up the changes.
+Open the URL to see requests in your terminal.
+If you close the local instance, the Lambda will respond using the last uploaded code.
+Restarting the local instance resumes request forwarding.
 
-If you close the local instance, the Lambda will simply respond using the last code you uploaded
-to the Lambda. Then when you start the local instance, it will automatically continue forwarding
-requests.
+When you're done, don't forget to clean up by running:
+
+```bash
+make destroy
+```
 
 ## Deployment Variables
 

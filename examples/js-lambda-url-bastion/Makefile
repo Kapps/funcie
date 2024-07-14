@@ -3,6 +3,7 @@ destroy:
 
 deploy:
 	# Deploy the Lambda function via terraform
+	npm install
 	terraform init
 	terraform apply -auto-approve
 

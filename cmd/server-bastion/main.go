@@ -83,7 +83,7 @@ func Start(ctx context.Context, consumer funcie.Consumer, host transports.Host) 
 		// Goroutine for host requests -- a socket for receiving messages from other clients.
 		err := host.Listen(ctx)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.ErrorContext(ctx, "host closed", err)
+			slog.ErrorContext(ctx, "host closed", "error", err)
 			os.Exit(1)
 		}
 		slog.WarnContext(ctx, "host closed", "error", err.Error())
@@ -93,7 +93,7 @@ func Start(ctx context.Context, consumer funcie.Consumer, host transports.Host) 
 		// Goroutine for incoming messages -- registers on the consumer and starts listening.
 		err := consumer.Consume(ctx)
 		if err != nil {
-			slog.ErrorContext(ctx, "consume", err)
+			slog.ErrorContext(ctx, "consume", "error", err)
 			os.Exit(1)
 		}
 		slog.WarnContext(ctx, "consume", "error", err.Error())

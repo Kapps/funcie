@@ -180,7 +180,7 @@ func (r *bastionReceiver) handleRequest(w http.ResponseWriter, req *http.Request
 	var response *funcie.ResponseBase[messages.ForwardRequestResponsePayload]
 	invokeResponse, err := handler.Invoke(ctx, payload)
 	if err != nil {
-		r.logger.ErrorContext(ctx, "failed to handle message", err)
+		r.logger.ErrorContext(ctx, "failed to handle message", "error", err)
 		response = funcie.NewResponseWithPayload[messages.ForwardRequestResponsePayload](message.ID, nil, err)
 	} else {
 		r.logger.DebugContext(ctx, "received response", "response", invokeResponse)

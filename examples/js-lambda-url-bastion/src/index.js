@@ -1,6 +1,8 @@
 const { lambdaWrapper } = require('@funcie/client');
 
 exports.handler = lambdaWrapper("js-url", async (event) => {
+    console.log('Received request');
+
     if (event.queryStringParameters && event.queryStringParameters.name) {
         if (event.queryStringParameters.name === 'error') {
             throw new Error('error being forwarded');
