@@ -156,3 +156,33 @@ as normal, and the local function will not be invoked. Once a local function is 
 
 Currently, even when no local function is connected, each Lambda invocation
 request has an overhead of a single request to the server Bastion, which makes a Redis call. In general, both to avoid this overhead and to minimize surface area for security reasons, it is recommended to use funcie only in development or staging environments. Running funcie in a production environment is not currently recommended.
+
+## Message Flows
+
+
+### Successful Forward
+```mermaid
+sequenceDiagram
+    AWS ->> Lambda: Invoke
+    Lambda ->> Server Bastion: Request Received (via HTTP)
+    Server Bastion ->> Redis: Request Received (via Publish on channel)
+    Redis -->> Client Bastion: Request Received (via Subscribe on channel)
+    Client Bastion ->> Local Function: Request Received (via HTTP)
+    Local Function -->> Client Bastion: Response (response via HTTP)
+    Client Bastion ->> Redis: Response (via RPUSH)
+    Redis -->> Server Bastion: Response (via BRPOP)
+    Server Bastion -->> Lambda: Response (via HTTP)
+    Lambda -->> AWS: InvokeResponse
+
+```
+
+### No Receiver
+```mermaid
+sequenceDiagram
+    AWS ->> Lambda: Invoke
+    Lambda ->> Server Bastion: Request Received (via HTTP)
+    Server Bastion ->> Redis: Request Received (via Publish on channel)
+    Redis -->> Server Bastion: No Receiver (via Publish on channel)
+    Server Bastion -->> Lambda: No Receiver (via HTTP)
+    Lambda -->> AWS: InvokeResponse
+```
