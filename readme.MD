@@ -1,166 +1,189 @@
 # Funcie
 
-Funcie simplifies local development for AWS Lambda and other serverless functions, enabling direct local execution of your code, while leaving invocation in the hands of the cloud provider.
-Inspired by SST's [Live Lambda Development](https://docs.sst.dev/live-lambda-development), Funcie takes this further and ensures seamless transition between cloud and local execution.
+Funcie streamlines local development for AWS Lambda and other serverless functions by enabling you to run and debug your code locally, while still being invoked by AWS. Funcie exists due to frustrations with the local development process in AWS, in particular wanting to avoid emulating complex data pipelines locally or waiting for deployments to test changes.
 
-In typical use, your functions execute entirely within your cloud provider. Then, as soon as you launch or debug your application locally, Funcie begins redirecting incoming requests to the local instance. Once you're done, closing the local application immediately resumes execution on the cloud function.
+## Table of Contents
 
-Because the cloud provider is the one invoking your function, funcie doesn't care how your function is invoked, what your development environment is, or what frameworks you're using.
-This means you can trigger your Lambda via S3 triggers, Step Functions, or however else you decide, while debugging locally using VS Code, GoLand, or anything else.
+- [Key Features](#key-features)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+- [Examples](#examples)
+- [Accessing VPC Resources](#accessing-vpc-resources)
+- [Cleaning Up](#cleaning-up)
+- [Security Considerations](#security-considerations)
+- [How Funcie Works](#how-funcie-works)
+- [Feedback](#feedback)
+- [License](#license)
 
-Currently, Funcie supports AWS Lambdas running Go or JavaScript/TypeScript, but is designed such that adding new languages requires only minimal effort.
+## Key Features
+
+- **Seamless Integration**: Automatically redirects requests to your local environment when running, without altering your cloud setup or deployments.
+- **Flexible Invocation**: Compatible with any AWS Lambda triggers (S3 events, Step Functions, etc.).
+- **Language Support**: Currently supports Go and JavaScript/TypeScript, with more languages to come.
+- **No Dependency on Development Tools**: Use your preferred IDE or editor.
+- **Rapid Iteration**: Run your local code without needing to deploy to AWS for every change.
 
 ## Getting Started
 
-To get started, we recommend using the Funcie CLI. The CLI allows you to easily deploy the necessary infrastructure via terraform, and securely connects your local instance to your VPC, facilitating access to VPC resources like RDS without needing a VPN.
+Getting started with the CLI takes about 15 minutes.
 
-The setup process takes approximately 15 minutes when using the CLI.
+> **⚠️ Warning**: Once you run `funcie init`, resources will be spun up in your AWS account that total ~$20-25 USD/month. To prevent that cost, be sure to run `funcie destroy` when you're done.
 
 ### Prerequisites
 
-- Go 1.21 or later
-- AWS CLI configured
-- Terraform installed
+- **Go 1.21 or later**
+- **AWS CLI** configured
+- **Terraform** installed
 
-### Deploying the Infrastructure
+### Setup
 
-**Warning:** This will deploy a Redis instance and a bastion server to your AWS account, which will incur costs.
-Make sure to run `funcie destroy` if you're no longer using Funcie in order to clean up the resources. We estimate the costs at roughly $20-25 USD per month, but it can vary depending on region and other factors.
+1. **Clone the Repository**
 
-1. Clone the repository:
-    
     ```bash
     git clone git@github.com:Kapps/funcie.git
     ```
-   
-2. Install the CLI:
+
+2. **Install the Funcie CLI**
 
     ```bash
     cd funcie/cmd/cli
     go install
     ```
-   
-3. Run `funcie init` and follow the prompts to deploy the necessary infrastructure to your AWS account.
+
+3. **Initialize Funcie**
+
+    Deploy the necessary infrastructure to your AWS account.
 
     ```bash
     funcie init
     ```
-    If you encounter a file not found error, ensure your `PATH` environment variable is set for `go install`. Alternatively, run the CLI from the `cli` folder.
 
-4. Now that funcie is deployed, you can run `funcie connect` to allow your local bastion to access the ElastiCache instance.
-    
+    _If you encounter a file not found error, ensure your `PATH` environment variable is set for `go install`. Alternatively, run the CLI from the `cli` folder._
+
+4. **Connect Funcie**
+
+    Create a tunnel for funcie to connect to your AWS instance.
+
     ```bash
     funcie connect
     ```
 
-5. You can now run your Lambda locally and have it connect to the bastion server. Check out one of the examples to play with it.
+5. **Update Your Lambda Handler**
 
-### Updating Your Code
+    Modify your Lambda function to use funcie (or run an example from the `examples` folder instead).
 
-To use funcie, you need to update your Lambda handler to use the Funcie library for your language.
-The library handles communication between your Lambda and the local environment.
-Libraries are provided for AWS Lambda in Go and JavaScript/TypeScript.
+    **For Go**:
 
-Alternatively, use an example from the `examples` directory.
+    1. Install the library:
 
-#### Go
+        ```bash
+        go get github.com/Kapps/funcie
+        ```
 
-1. Install the funcie library:
-    ```bash
-    go get github.com/Kapps/funcie
-    ```
+    2. Update your Lambda Start method.
 
-2. Update your Lambda handler to use the funcie library.
+        ```go
+        import "github.com/Kapps/funcie/clients/go/funcietunnel"
     
-    Replace:
-    ```go
-    import "github.com/aws/aws-lambda-go/lambda"
+        func main() {
+            funcietunnel.Start("my-app", handlerFunc)
+        }
+        ```
 
-    func main() {
-        lambda.Start(handler)
-    }
-    ```
+    **For JavaScript/TypeScript**:
 
-    with:
+    1. Install the library:
 
-    ```go
-    import "github.com/Kapps/funcie/clients/go/funcietunnel"
-
-    func main() {
-        funcietunnel.Start("my-app", handler)
-    }
-    ```
-
-3. Run your Lambda locally. You should see the logs in your terminal.
-
-#### JavaScript/TypeScript
-
-1. Install the funcie library:
-    ```bash
-    npm install @funcie/client
-    ```
-
-   
-2. Update your Lambda handler to use the funcie library.
-
-    Replace:
+        ```bash
+        npm install @funcie/client
+        ```
     
-    ```javascript
-    export const handler = async (event, context) => {
-        // Your Lambda handler code here
-    };
-    ```
-   
-    with:
-    ```javascript
-    const { lambdaWrapper } = require('@funcie/client');
-    export const handler = lambdaWrapper("my-app", async (event, context) => {
-        // Your Lambda handler code here
-    });
-    ```    
+    2. Update your Lambda handler function.
+    
+        ```javascript
+        const { lambdaWrapper } = require('@funcie/client');
+    
+        exports.handler = lambdaWrapper("my-app", handlerFunc);
+        ```
 
-3. Run your Lambda locally. You should see the logs in your terminal.
+6. **Run Your Lambda Locally**
+
+    - Start your Lambda function locally using your preferred method.
+    - Trigger your Lambda within AWS.
+    - You should see logs indicating that funcie is redirecting requests to your local instance.
+         
+## Examples
+
+Explore the `examples` directory in the funcie repository for sample projects and additional guidance. Each example contains a reasonable starting point for a new Lambda if you wish to use it as a template.
 
 ## Accessing VPC Resources
 
-If you have a VPN, often accessing resources like an RDS is trivial. If you don't though, the Funcie CLI can help here via the `funcie connect` command.
+If your Lambda function interacts with resources inside a VPC (e.g., private RDS instances, ElastiCache clusters), `funcie connect` allows your local environment to securely access these resources without a VPN.
 
-For instance, if you have an RDS at `abc.id.us-east-1.rds.amazonaws.com`, which accepts connections from within the VPC, set up a tunnel using:
+For example, to connect to an RDS instance:
 
+```bash
+funcie connect -r your-rds-endpoint -p 5432 -l 5432
 ```
-funcie connect -r abc.id.us-east-1.rds.amazonaws.com -p 5432 -l 5432
+
+This forwards your local port `5432` to the RDS instance, allowing you to interact with it via `localhost:5432`.
+
+## Cleaning Up
+
+To prevent unnecessary AWS charges, destroy the funcie infrastructure when you're done:
+    
+```bash
+funcie destroy
 ```
 
-Now, localhost on port 5432 will tunnel to your RDS. This uses SSM port forwarding to securely create the tunnel.
+## Security Considerations
 
-## Security
+Funcie is designed for development and staging environments. It's **not recommended** to use funcie in production due to potential overhead and security considerations.
 
-Funcie is intended for use in development and staging environments, and is not recommended to enable in production.
-While the default deployment is protected by being behind a VPC, it's recommended to detect if in a production environment and disable funcie.
+- **Disable Funcie in Production**:
 
-For example, you could use an environment variable to decide whether to run `lambda.Start` or `funcie.Start`.
+    - Use environment variables or configuration settings to switch between funcie and the standard Lambda handler.
 
-## High Level Overview
+    - Example in Go:
 
-It works by creating a tunnel where messages can pass through between
-a local environment and a Lambda. When a Lambda is invoked, it
-checks if there is a local function connected to that tunnel, and if so,
-forwards the request to that local function handler. Once the local function returns, the response is returned to the Lambda which sends it back to the cloud provider.
+        ```go
+        import (
+            "os"
+            "github.com/aws/aws-lambda-go/lambda"
+            "github.com/Kapps/funcie/clients/go/funcietunnel"
+        )
 
-Funcie provides a library that wraps the original Lambda handler or `lambda.Start` call. In addition, a bastion process runs on both the server and on the client, which contains most of the logic for forwarding requests and connection management. On the server side, the funcie wrapper sends each request that comes in to the server bastion, via an HTTP call. The server bastion sends the request to the client bastion through the tunnel, and finally, client bastion sends the request to a small HTTP server the client library starts, which then invokes your Lambda handler.
+        func main() {
+            if os.Getenv("USE_FUNCIE") == "true" {
+                funcietunnel.Start("my-app", handler)
+            } else {
+                lambda.Start(handler)
+            }
+        }
+        ```
 
-This means that you can use Step Functions, triggers, or any other method of invoking the Lambda, as the invocation is separated from the implementation. In addition, local changes are immediately applied without needing to republish anything, and you can debug and step through your code just like you would any other local process.
+## How Funcie Works
 
-When there is no local function connected, the Lambda will simply execute
-as normal, and the local function will not be invoked. Once a local function is connected, the Lambda will forward all requests to the local function until the local function disconnects.
+Funcie sets up a communication tunnel between your cloud-invoked Lambda functions and your local environment.
 
-Currently, even when no local function is connected, each Lambda invocation
-request has an overhead of a single request to the server Bastion, which makes a Redis call. In general, both to avoid this overhead and to minimize surface area for security reasons, it is recommended to use funcie only in development or staging environments. Running funcie in a production environment is not currently recommended.
+When your Lambda function is invoked by AWS:
 
-## Message Flows
+- **If your local environment is connected**: The funcie handler intercepts the request and forwards it to your local function for processing.
+- **If not connected**: The Lambda function runs in the cloud as usual.
 
+This approach allows you to:
 
-### Successful Forward
+- Debug and test your functions locally without changing how they're triggered.
+- Use real AWS services and triggers (like S3 events) during development.
+- Seamlessly switch between local and cloud execution.
+
+The CLI tool abstracts away much of the complexity of setting up the tunnel, but if you prefer to not use the CLI, you can use the [Terraform Module](https://registry.terraform.io/modules/Kapps/funcie/aws/latest) to set up the infrastructure. You will need to be connected to a VPN for this approach. Generally this might be a better approach for full development teams where you want to automate the setup of the tunnel.
+
+### Message Flows
+
+#### Successful Forward
+
 ```mermaid
 sequenceDiagram
     AWS ->> Lambda: Invoke
@@ -176,7 +199,8 @@ sequenceDiagram
 
 ```
 
-### No Receiver
+#### No Receiver
+
 ```mermaid
 sequenceDiagram
     AWS ->> Lambda: Invoke
@@ -186,3 +210,11 @@ sequenceDiagram
     Server Bastion -->> Lambda: No Receiver (via HTTP)
     Lambda -->> AWS: InvokeResponse
 ```
+
+## Feedback
+
+Funcie is a brand new project, and we'd love to hear any feedback you have. Please open an issue on the [GitHub issue tracker](https://github.com/Kapps/funcie/issues) with any comments or if you encounter any issues.
+
+## License
+
+Funcie is released under the [MIT License](LICENSE).
