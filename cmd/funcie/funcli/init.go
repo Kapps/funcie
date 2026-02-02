@@ -3,13 +3,14 @@ package funcli
 import (
 	"context"
 	"fmt"
+	"os"
+	"runtime"
+	"strings"
+
 	"github.com/Kapps/funcie/cmd/funcie/funcli/aws"
 	"github.com/Kapps/funcie/cmd/funcie/funcli/internal"
 	"github.com/Kapps/funcie/cmd/funcie/funcli/tools"
 	"github.com/charmbracelet/huh"
-	"os"
-	"runtime"
-	"strings"
 )
 
 const tfModuleRepo = "git@github.com:Kapps/terraform-aws-funcie.git"

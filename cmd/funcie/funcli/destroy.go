@@ -3,9 +3,11 @@ package funcli
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/Kapps/funcie/cmd/funcie/funcli/internal"
 	"github.com/Kapps/funcie/cmd/funcie/funcli/tools"
-	"os"
+	"github.com/charmbracelet/huh"
 )
 
 type DestroyConfig struct {
@@ -33,6 +35,21 @@ func (c *DestroyCommand) Run(ctx context.Context) error {
 	_, err := os.Stat(varsFile)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("could not find an instance of funcie to destroy")
+	}
+
+	confirmed := false
+	err = huh.NewConfirm().
+		Title("Are you sure you want to destroy all funcie infrastructure?").
+		Affirmative("Yes, destroy").
+		Negative("Cancel").
+		Value(&confirmed).
+		Run()
+	if err != nil {
+		return fmt.Errorf("failed to confirm destroy: %w", err)
+	}
+
+	if !confirmed {
+		return fmt.Errorf("destroy cancelled")
 	}
 
 	if err := c.terraformClient.Destroy(tfDir, varsFile); err != nil {

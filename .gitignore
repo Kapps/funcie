@@ -28,4 +28,5 @@ node_modules/
 .terraform.lock.hcl
 .terraform.tfstate.lock.info
 *.tfstate
+.claude
 

@@ -3,12 +3,13 @@ package tools
 import (
 	"bytes"
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"github.com/fatih/color"
 )
 
 // RunnerOpts provides options for running shell commands.
@@ -63,7 +64,7 @@ func (p *processRunner) RunWithOptions(cmd string, options RunnerOpts) (string, 
 
 	// Ensure process is killed if the parent process is killed
 	// TODO: Validate this and if other signals are needed
-	proc.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	proc.SysProcAttr = &syscall.SysProcAttr{}
 
 	fmt.Println(color.HiBlackString(fmt.Sprintf("%v %v", cmd, strings.Join(options.Args, " "))))
 

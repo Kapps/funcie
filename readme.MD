@@ -47,7 +47,7 @@ Getting started with the CLI takes about 15 minutes.
 2. **Install the Funcie CLI**
 
     ```bash
-    cd funcie/cmd/cli
+    cd funcie/cmd/funcie
     go install
     ```
 

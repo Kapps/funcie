@@ -7,7 +7,11 @@ import (
 
 // GetFuncieBaseDir returns the base directory for funcie configuration and storage.
 func GetFuncieBaseDir() string {
-	return path.Join(os.Getenv("HOME"), ".funcie/")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = os.Getenv("HOME")
+	}
+	return path.Join(home, ".funcie/")
 }
 
 // GetTerraformDir returns the directory where the Terraform repository for funcie is stored.

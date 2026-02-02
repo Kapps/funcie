@@ -3,12 +3,13 @@ package aws
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/aws/aws-sdk-go/aws"
-	"sort"
-	"strings"
 )
 
 // ResourceLister allows retrieving a list of AWS resources.
@@ -93,9 +94,9 @@ func (r *awsResourceLister) ListSubnets(ctx context.Context) ([]Subnet, error) {
 	rt:
 		for _, routeTable := range routeTables.RouteTables {
 			for _, association := range routeTable.Associations {
-				if *association.SubnetId == subnet.Id {
+				if association.SubnetId != nil && *association.SubnetId == subnet.Id {
 					for _, route := range routeTable.Routes {
-						if strings.HasPrefix(*route.GatewayId, "igw-") {
+						if route.GatewayId != nil && strings.HasPrefix(*route.GatewayId, "igw-") {
 							subnets[i].Public = true
 							break rt
 						}
